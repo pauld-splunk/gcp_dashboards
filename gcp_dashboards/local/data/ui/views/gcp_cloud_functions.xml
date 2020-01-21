@@ -71,6 +71,7 @@
       </table>
     </panel>
   </row>
+  <row><panel><html><center><h1>Click on a function to see more details</h1></center></html></panel></row>
   <row>
     <panel>
       <title>Execution Times (Milliseconds)</title>
