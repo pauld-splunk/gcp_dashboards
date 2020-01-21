@@ -7,16 +7,15 @@
   </search>
   <label>GCP Cloud Functions</label>
   <fieldset submitButton="false">
-    <input type="time" token="field1">
+    <input type="time" token="time">
       <label></label>
       <default>
         <earliest>-24h@h</earliest>
         <latest>now</latest>
       </default>
     </input>
-    <input type="multiselect" token="project_id_tok" searchWhenChanged="true">
+    <input type="dropdown" token="project_id_tok" searchWhenChanged="true">
       <label>Project ID</label>
-      <delimiter> ,</delimiter>
       <fieldForLabel>project_id</fieldForLabel>
       <fieldForValue>project_id</fieldForValue>
       <search base="baseInfo">
@@ -26,12 +25,11 @@
       <default>*</default>
       <initialValue>*</initialValue>
     </input>
-    <input type="multiselect" token="zone_tok" searchWhenChanged="true">
+    <input type="dropdown" token="zone_tok" searchWhenChanged="true">
       <label>Zone</label>
       <choice value="*">ALL</choice>
       <default>*</default>
       <initialValue>*</initialValue>
-      <delimiter>,</delimiter>
       <fieldForLabel>region</fieldForLabel>
       <fieldForValue>region</fieldForValue>
       <search base="baseInfo">
@@ -60,9 +58,6 @@
 | rename function_name as Function, project_id as Project,region as Zone, status as Status, memory as Memory, trigger_metric_name as Trigger
 |table Project, Zone, Function, Memory, Status, Trigger </query>
         </search>
-        <!--  <link target="_blank"></link>
-          project=$click.name$&amp;clickvalue=$click.value$&amp;function=$row.Function$
-           /app/gcp_dashboards/cloud_function_details?$project$=$click.name$&amp;$clickvalue$=$click.value$&amp;$function$=$row.Function$ -->
         <option name="count">20</option>
         <option name="dataOverlayMode">none</option>
         <option name="drilldown">cell</option>
@@ -71,20 +66,9 @@
         <option name="totalsRow">false</option>
         <option name="wrap">true</option>
         <drilldown>
-          <set token="cfunction">$row.Function$</set>
-          <set token="cproject">$row.Project$</set>
-          <link target="_blank">/app/gcp_dashboards/cloud_function_details?form.project_id_tok=$cproject$&amp;form.function_tok=$cfunction$</link>
+          <link target="_blank">/app/gcp_dashboards/cloud_function_details?form.project_id_tok=$row.Project$&amp;form.function_tok=$row.Function$</link>
         </drilldown>
       </table>
-    </panel>
-  </row>
-  <row>
-    <panel>
-      <html>
-        <center>
-          <h1>Click on a Function above to get more details</h1>
-        </center>
-      </html>
     </panel>
   </row>
   <row>
@@ -96,8 +80,8 @@
 | eval ms=Avg/1000000 
 | timechart avg(ms) as Milliseconds  limit=10 useother=false BY function_name
 | fields - _span*</query>
-          <earliest>$field1.earliest$</earliest>
-          <latest>$field1.latest$</latest>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
@@ -143,8 +127,8 @@
           <query>| mstats avg(_value) as Avg WHERE metric_name="cloudfunctions.googleapis.com/function/execution_count" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=1m BY function_name
 | timechart avg(Avg) as Count  limit=10 useother=false BY function_name
 | fields - _span*</query>
-          <earliest>$field1.earliest$</earliest>
-          <latest>$field1.latest$</latest>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
@@ -192,8 +176,8 @@
           <query>| mstats avg(_value) as Avg WHERE metric_name="cloudfunctions.googleapis.com/function/active_instances" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=1m BY function_name
 | timechart avg(Avg) as Count  limit=10 useother=false BY function_name
 | fields - _span*</query>
-          <earliest>$field1.earliest$</earliest>
-          <latest>$field1.latest$</latest>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
@@ -240,8 +224,8 @@
 | eval mb=Avg/1024/1024 
 | timechart avg(mb) as MB  limit=10 useother=false BY function_name
 | fields - _span*</query>
-          <earliest>$field1.earliest$</earliest>
-          <latest>$field1.latest$</latest>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
