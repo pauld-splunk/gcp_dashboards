@@ -1,0 +1,283 @@
+<form>
+  <search id="baseInfo">
+    <query>
+      |tstats count where index=* sourcetype="google:gcp:assets" asset_type="compute.googleapis.com/Instance" earliest=$time_tok.earliest$ latest=$time_tok.latest$ by name,resource.data.id,resource.data.name,resource.data.machineType,resource.data.cpuPlatform,resource.data.zone,resource.data.status,resource.data.networkInterface{}.subnetwork,resource.data.networkInterfaces{}.networkIP, resource.data.networkInterfaces{}.accessConfigs{}.natIP
+|dedup resource.data.id 
+|rename name as mProjectID, resource.data.machineType as mType, resource.data.networkInterface{}.subnetwork as msubNet, resource.data.zone as aZone, resource.data.id as ID, resource.data.name as Name, resource.data.cpuPlatform as cpuPlatform, resource.data.status as Status, resource.data.networkInterfaces{}.accessConfigs{}.natIP as PublicIP, resource.data.networkInterfaces{}.networkIP as InternalIP 
+| eval Type=replace(mType,"^\S+machineTypes\/(\S+)","\1")
+| eval SubNet=replace(msubNet,"^\S+subnetworks\/(\S+)","\1")
+| eval Zone=replace(aZone,"^\S+zones\/(\S+)","\1")
+| eval ProjectID= replace(mProjectID,"^\S+projects\/(\S+)\/zones\S*","\1")
+    </query>
+  </search>
+  <label>GCP Instance Details old</label>
+  <fieldset submitButton="false" autoRun="true">
+    <input type="multiselect" token="project_id_tok" searchWhenChanged="true">
+      <label>Project ID</label>
+      <choice value="*">ALL</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <delimiter> ,</delimiter>
+      <fieldForLabel>ProjectID</fieldForLabel>
+      <fieldForValue>ProjectID</fieldForValue>
+      <search base="baseInfo">
+        <query>dedup ProjectID</query>
+      </search>
+    </input>
+    <input type="multiselect" token="zone_tok" searchWhenChanged="true">
+      <label>Zones</label>
+      <choice value="*">ALL</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <fieldForLabel>Zone</fieldForLabel>
+      <fieldForValue>Zone</fieldForValue>
+      <search base="baseInfo">
+        <query>search ProjectID IN ($project_id_tok$)|dedup Zone</query>
+      </search>
+      <delimiter>,</delimiter>
+    </input>
+    <input type="multiselect" token="instance_tok">
+      <label>Instance</label>
+      <choice value="*">ALL</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <fieldForLabel>Name</fieldForLabel>
+      <fieldForValue>Name</fieldForValue>
+      <search base="baseInfo">
+        <query>
+          search ProjectID IN ($project_id_tok$) AND Zone IN ($zone_tok$)|dedup Name
+        </query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+      <delimiter>,</delimiter>
+    </input>
+    <input type="time" token="time_tok">
+      <label>Time Range</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="dropdown">
+      <label>Time Span</label>
+      <choice value="auto">auto</choice>
+      <choice value="5s">5s</choice>
+      <choice value="10s">10s</choice>
+      <choice value="30s">30s</choice>
+      <choice value="1m">1m</choice>
+      <choice value="5m">5m</choice>
+      <choice value="10m">10m</choice>
+      <choice value="30m">30m</choice>
+      <choice value="1h">1h</choice>
+      <default>auto</default>
+      <change>
+        <eval token="timechart_span">if($value$ == "auto", "", "span=".$value$)</eval>
+        <eval token="mstats_span">"span=".$value$</eval>
+      </change>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Instance Details $time_tok.earliest$</title>
+      <table>
+        <search base="baseInfo">
+          <query>search ProjectID IN ($project_id_tok$) AND Zone IN ($zone_tok$) AND Name IN ($instance_tok$)
+          |table ID, Name , Zone ,Type, cpuPlatform, PublicIP, Status, InternalIP, SubNet</query>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>CPU Utilization</title>
+      <single>
+        <search>
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/cpu/utilization" AND index="gcp_metrics" AND instance_name IN ($instance_tok$) span=1h earliest=$time_tok.earliest$ latest=$time_tok.latest$ BY instance_name
+| timechart avg(_value) AS Avg span=1h</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="trendDisplayMode">absolute</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Network: Received</title>
+      <single>
+        <search>
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/network/received_bytes_count" AND index="gcp_metrics" AND instance_name IN ($instance_tok$) span=1h earliest=$time_tok.earliest$ latest=$time_tok.latest$ BY instance_name
+| timechart eval(avg(_value)/1024/1024) AS Avg span=1h
+| fields - _span*</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">MB</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Network: Sent</title>
+      <single>
+        <search>
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/network/sent_bytes_count" AND index="gcp_metrics" AND instance_name IN ($instance_tok$) span=1h earliest=$time_tok.earliest$ latest=$time_tok.latest$ BY instance_name
+| timechart eval(avg(_value)/1024/1024) AS Avg span=1h BY instance_name
+| fields - _span*</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">MB</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>CPU Utilization</title>
+      <chart>
+        <search>
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/cpu/utilization" AND index="gcp_metrics" AND instance_name IN ($instance_tok$) $mstats_span$ earliest=$time_tok.earliest$ latest=$time_tok.latest$ BY instance_name
+| timechart avg(_value) AS Avg $timechart_span$ BY instance_name
+| fields - _span*</query>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.includeZero">1</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.gridLinesX.showMajorLines">1</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">seriesCompare</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Network - Received MB</title>
+      <chart>
+        <search>
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/network/received_bytes_count" AND index="gcp_metrics"  AND instance_name IN ($instance_tok$) $mstats_span$ earliest=$time_tok.earliest$ latest=$time_tok.latest$ BY instance_name
+| timechart eval(avg(_value)/1024/1024) AS Avg $timechart_span$ BY instance_name
+| fields - _span*</query>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.includeZero">1</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.gridLinesX.showMajorLines">1</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">seriesCompare</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Network - Sent MB</title>
+      <chart>
+        <search>
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/network/sent_bytes_count" AND index="gcp_metrics" AND instance_name IN ($instance_tok$) $mstats_span$ earliest=$time_tok.earliest$ latest=$time_tok.latest$ BY instance_name
+| timechart eval(avg(_value)/1024/1024) AS Avg $timechart_span$ BY instance_name
+| fields - _span*</query>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.includeZero">1</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.gridLinesX.showMajorLines">1</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">seriesCompare</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+</form>

@@ -1,0 +1,136 @@
+<form>
+  <search id="baseInstances">
+    <query>|tstats dc(resource.data.id) as Count where index=* sourcetype="google:gcp:assets" asset_type=compute.googleapis.com/Instance $text_search$ by _time, name, resource.data.name, resource.data.status, resource.data.id, resource.data.machineType 
+       | eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1") 
+       |eval zone=replace(name,"\S+zones\/(\S+)\/instances\S+","\1")
+    </query>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
+  </search>
+  <search base="baseInstances">
+    <query>
+       search resource.data.status="Running"  projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
+       |stats dc(resource.data.id) as count
+    </query>
+    <done>
+      <set token="running_tok">$result.count$</set>
+    </done>
+  </search>
+  <search base="baseInstances">
+    <query> search resource.data.status="TERMINATED"  projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
+    |stats dc(resource.data.id) as count</query>
+    <done>
+      <set token="stopped_tok">$result.count$</set>
+    </done>
+  </search>
+  <label>GCP Compute Engine Overview</label>
+  <description>marker</description>
+  <fieldset submitButton="false">
+    <input type="time" token="time">
+      <label>Timespan</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="multiselect" token="project_id_tok" searchWhenChanged="true">
+      <label>Project ID</label>
+      <choice value="*">ALL</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <delimiter> ,</delimiter>
+      <fieldForLabel>Project_ID</fieldForLabel>
+      <fieldForValue>Project_ID</fieldForValue>
+      <search base="baseInstances">
+        <query> |stats count by projectid |rename projectid as Project_ID</query>
+      </search>
+    </input>
+    <input type="multiselect" token="zone_tok" searchWhenChanged="true">
+      <label>Zone</label>
+      <choice value="*">ALL</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <delimiter> </delimiter>
+      <fieldForLabel>zone</fieldForLabel>
+      <fieldForValue>zone</fieldForValue>
+      <search base="baseInstances">
+        <query> search projectid IN ($project_id_tok$)  | stats count by zone</query>
+      </search>
+    </input>
+    <input type="text" token="text_search" searchWhenChanged="true">
+      <label>Text Search (e.g. labels)</label>
+      <default></default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <html>Usage note: setting time&gt;6hrs will potentially result in instances that no longer exist be displayed</html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Running Instances</title>
+      <html>
+        <center>
+          <h1 style="background-color:MediumSeaGreen;">Running Instances: $running_tok$</h1>
+          <h1 style="background-color:Tomato;"> Stopped Instances: $stopped_tok$</h1>
+        </center>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Running Instances by Type</title>
+      <chart>
+        <search base="baseInstances">
+          <query>search resource.data.status="Running"  projectid IN ($project_id_tok$) zone IN ($zone_tok$) | stats count by resource.data.id, resource.data.machineType | rename resource.data.machineType as mType | eval Type=replace(mType,"^\S+machineTypes\/(\S+)","\1") | stats count by Type</query>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Running Instances by Zones Over Time</title>
+      <chart>
+        <search>
+          <query>| mstats max(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/uptime" AND index="gcp_metrics" AND project_id IN ($project_id_tok$)  span=10s BY zone
+| timechart max(_value)  agg=max   BY zone
+| fields - _span*</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.stackMode">stacked100</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Instances</title>
+      <table>
+        <search base="baseInstances">
+          <query>search projectid IN ($project_id_tok$) zone IN ($zone_tok$) | stats count by resource.data.id, name, projectid, zone, resource.data.status, resource.data.machineType
+          | rename resource.data.machineType as mType resource.data.id as "Instance ID"| eval Type=replace(mType,"^\S+machineTypes\/(\S+)","\1")
+          | eval Name=replace(name,"^\S+instances\/(\S+)","\1")
+          |table "Instance ID" , Name, projectid, zone, resource.data.status, Type
+          |rename projectid as ProjectID, resource.data.status as "Last Known Status"</query>
+        </search>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+        <drilldown>
+          <link target="_blank">/app/gcp_dashboards/single_instance?form.selected_instance=$click.value$</link>
+        </drilldown>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <center>Click on one of the instances above to view detailed instance information</center>
+      </html>
+    </panel>
+  </row>
+</form>

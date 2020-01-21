@@ -1,0 +1,74 @@
+<form>
+  <label>GCP - Security Overview: Public Access</label>
+  <description>marker</description>
+  <fieldset submitButton="false">
+    <input type="time" token="time">
+      <label></label>
+      <default>
+        <earliest>-7d@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="dropdown" token="project_id_tok" searchWhenChanged="true">
+      <label>Project ID</label>
+      <fieldForLabel>ProjectID</fieldForLabel>
+      <fieldForValue>ProjectID</fieldForValue>
+      <search>
+        <query>|tstats count where index=* sourcetype="google:gcp:pubsub:message" by "data.resource.labels.project_id" |rename "data.resource.labels.project_id" as "ProjectID"</query>
+      </search>
+      <choice value="*">ALL</choice>
+      <default>*</default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Public GCS Buckets</title>
+      <table>
+        <search>
+          <query>|tstats count where index=* sourcetype="google:gcp:pubsub:message" data.resource.labels.project_id=$project_id_tok$ "data.protoPayload.serviceData.policyDelta.bindingDeltas{}.member"=allUsers "data.protoPayload.serviceData.policyDelta.bindingDeltas{}.action"=ADD "data.protoPayload.serviceName"="storage.googleapis.com" by "data.resource.labels.project_id", "data.resource.labels.bucket_name", "data.protoPayload.resourceName", "data.resource.labels.location", "data.protoPayload.methodName", "data.protoPayload.serviceData.policyDelta.bindingDeltas{}.action","data.protoPayload.serviceData.policyDelta.bindingDeltas{}.member", "data.protoPayload.serviceData.policyDelta.bindingDeltas{}.role", "data.protoPayload.authenticationInfo.principalEmail", "data.protoPayload.requestMetadata.callerIp", attributes.receiveTimestamp
+| table "data.resource.labels.project_id", "data.resource.labels.bucket_name", "data.protoPayload.resourceName", "data.resource.labels.location", "data.protoPayload.methodName", "data.protoPayload.serviceData.policyDelta.bindingDeltas{}.action","data.protoPayload.serviceData.policyDelta.bindingDeltas{}.member", "data.protoPayload.serviceData.policyDelta.bindingDeltas{}.role", "data.protoPayload.authenticationInfo.principalEmail", "data.protoPayload.requestMetadata.callerIp", attributes.receiveTimestamp
+| rename "data.resource.labels.project_id" as "Project ID", "data.resource.labels.location" as Location, "data.protoPayload.methodName" AS methodName, "data.protoPayload.serviceData.policyDelta.bindingDeltas{}.action" as action, "data.resource.labels.bucket_name" as Bucket, "data.protoPayload.resourceName" as resourceName, "data.protoPayload.serviceData.policyDelta.bindingDeltas{}.member" as Member, "data.protoPayload.serviceData.policyDelta.bindingDeltas{}.role" as role, "data.protoPayload.authenticationInfo.principalEmail" as "Principal email", "data.protoPayload.requestMetadata.callerIp" as callerIp, attributes.receiveTimestamp as logTimestamp</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>GCP Instances Created / updated with External IP address</title>
+      <table>
+        <search>
+          <query>|tstats count where index=* sourcetype="google:gcp:pubsub:message" data.resource.labels.project_id=$project_id_tok$ "data.protoPayload.authorizationInfo{}.permission"="compute.subnetworks.useExternalIp" by attributes.timestamp, "data.protoPayload.resourceName", "data.protoPayload.authenticationInfo.principalEmail" 
+| rename attributes.timestamp as Time, "data.protoPayload.resourceName" as "Resource Name", "data.protoPayload.authenticationInfo.principalEmail" as "Principal email"
+| table Time, "Resource Name", "Principal email"</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>GCP Instances with access/activity on port 22</title>
+      <table>
+        <search>
+          <query>|tstats count where index=* sourcetype="google:gcp:pubsub:message" data.resource.labels.project_id=$project_id_tok$ "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows" "data.jsonPayload.reporter"=DEST "data.jsonPayload.connection.dest_port"=22 by "data.resource.labels.project_id", "data.jsonPayload.dest_instance.vm_name", "data.jsonPayload.connection.dest_ip", "data.resource.labels.location",  "data.resource.labels.subnetwork_name" 
+| dedup "data.jsonPayload.connection.dest_ip" 
+| rename "data.resource.labels.project_id" as "Project ID", "data.jsonPayload.dest_instance.vm_name" as "VM name", "data.jsonPayload.connection.dest_ip" as "Dest IP", "data.resource.labels.location" as Location,  "data.resource.labels.subnetwork_name" as "Subnetwork Name"
+| table "Project ID", "VM name", "Dest IP", Location, "Subnetwork Name"</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+</form>

@@ -1,0 +1,27 @@
+<nav search_view="search" color="#4285f4">
+  <collection label ="Operational Views">
+        <view name="gcp_infrastructure_activity"/>
+       <view name="gcp_compute"/>
+       <view name="single_instance"/>
+       <view name="gcp_storage_overview"/>
+       <view name="gcp_individual_storage"/>
+       <view name="gcp_containers_overview"/>
+       <view name="gcp_container_details"/>
+       <view name="gcp_cloud_functions"/>	
+       <view name="cloud_function_details"/>
+  </collection>
+  <collection label ="Security and Audit">
+       <view name="gcp_audit_investigation"/>
+       <view name="gcp__security"/>
+       <view name="gcp_vpc_logs_dashboards_tstats"/>
+       <view name="gcp_vpc_ts"/>
+  </collection>
+  <view name="audit_log_overview" />
+  <view name="billing_overview" />
+  <collection label="Search">
+        <view name="dashboards"/>
+        <view name="reports"/>
+        <view name="alerts"/>
+        <view name="search"/>
+    </collection>
+</nav>

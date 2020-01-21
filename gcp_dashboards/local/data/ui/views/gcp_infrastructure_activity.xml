@@ -1,0 +1,155 @@
+<form>
+  <search id="CreateCount">
+    <query>
+       |tstats count where index=* sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  create data.resource.labels.project_id IN ($project_id_tok$) AND data.protoPayload.authorizationInfo{}.resourceAttributes.type IN($resource_type_tok$)
+    </query>
+    <earliest>$field1.earliest$</earliest>
+    <latest>$field1.latest$</latest>
+    <done>
+      <set token="creates_tok">$result.count$</set>
+    </done>
+  </search>
+  <search id="DeleteCount">
+    <query>
+       |tstats count where index=* sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  delete data.resource.labels.project_id IN ($project_id_tok$) AND data.protoPayload.authorizationInfo{}.resourceAttributes.type IN($resource_type_tok$)
+    </query>
+    <earliest>$field1.earliest$</earliest>
+    <latest>$field1.latest$</latest>
+    <done>
+      <set token="deletes_tok">$result.count$</set>
+    </done>
+  </search>
+  <search id="TimeChartSlots">
+    <query>
+      |makeresults  |addinfo |eval secs=(info_max_time-info_min_time)
+       |eval slotcount=100
+       |eval rounder=3
+       |eval easy=floor(secs/slotcount)
+       |eval num_field = tostring(easy)
+       |eval divider=pow(10,len(num_field)-1)
+       |eval divider=if(easy&lt;10, 10, pow(10,len(num_field)-1))
+       |eval spn=round(easy/divider,0)*divider
+       |eval spn=if(spn=0,1,spn)
+       |eval spn=printf("%*d", 0, spn)
+       |eval infinity=if(info_max_time="+Infinity","auto",0)
+       |eval spn=if(infinity=0,spn,infinity)
+       |eval spn2=if(spn="auto","","span="+spn)
+    </query>
+    <earliest>$field1.earliest$</earliest>
+    <latest>$field1.latest$</latest>
+    <done>
+      <set token="spanning_tok">$result.spn$</set>
+      <set token="spanning_tok2">$result.spn2$</set>
+    </done>
+  </search>
+  <label>GCP Infrastructure Activity</label>
+  <description>marker</description>
+  <fieldset submitButton="false"></fieldset>
+  <row>
+    <panel>
+      <input type="time" token="field1">
+        <label></label>
+        <default>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </default>
+      </input>
+      <input type="multiselect" token="project_id_tok" searchWhenChanged="true">
+        <label>Project ID</label>
+        <fieldForLabel>Project_ID</fieldForLabel>
+        <fieldForValue>Project_ID</fieldForValue>
+        <search>
+          <query>|tstats count where index=* sourcetype=google:gcp:pubsub:message by data.resource.labels.project_id| fields data.resource.labels.project_id | rename data.resource.labels.project_id as Project_ID</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <choice value="*">ALL</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+        <delimiter> </delimiter>
+      </input>
+      <input type="dropdown" token="resource_type_tok" searchWhenChanged="true">
+        <label>Resource Type</label>
+        <fieldForLabel>resourceType</fieldForLabel>
+        <fieldForValue>resourceType</fieldForValue>
+        <search>
+          <query>|tstats dc(data.protoPayload.authorizationInfo{}.resourceAttributes.type) where index=* sourcetype=google:gcp:pubsub:message data.resource.labels.project_id IN ($project_id_tok$) by data.resource.labels.project_id, "data.protoPayload.authorizationInfo{}.resourceAttributes.type"| rename "data.protoPayload.authorizationInfo{}.resourceAttributes.type" as resourceType|dedup resourceType</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <choice value="*">ALL</choice>
+        <default>*</default>
+        <initialValue>*</initialValue>
+      </input>
+      <html>
+        <center>
+          <h1 style="background-color:MediumSeaGreen;">Creates: $creates_tok$</h1>
+          <h1 style="background-color:Tomato;"> Deletes: $deletes_tok$</h1>
+        </center>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <input type="checkbox" token="create_del_tok" searchWhenChanged="true">
+        <label>Create/Delete</label>
+        <choice value="create">Create</choice>
+        <choice value="delete">Delete</choice>
+        <default>create,delete</default>
+        <initialValue>create,delete</initialValue>
+        <delimiter> OR </delimiter>
+      </input>
+      <chart>
+        <search>
+          <query>|tstats count where index=* sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" data.resource.labels.project_id IN ($project_id_tok$) $create_del_tok$ AND data.protoPayload.authorizationInfo{}.resourceAttributes.type IN($resource_type_tok$) by _time, "data.protoPayload.methodName" span=$spanning_tok$ | timechart $spanning_tok2$ sum(count) by data.protoPayload.methodName </query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Create</title>
+      <table>
+        <search>
+          <query>index=* sourcetype="google:gcp:pubsub:message" "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" data.resource.labels.project_id IN ($project_id_tok$) AND data.protoPayload.authorizationInfo{}.resourceAttributes.type IN($resource_type_tok$)
+| eval name1='data.protoPayload.authorizationInfo{}.resourceAttributes.name'
+| eval name2='data.protoPayload.authorizationInfo{}.resource'
+| eval Name=if(isnull(name1), name2,name1)
+| rename "data.protoPayload.methodName" as Method, "data.protoPayload.authorizationInfo{}.resourceAttributes.type" as "Resource Type", data.protoPayload.authorizationInfo{}.permission as Permission, "data.protoPayload.requestMetadata.requestAttributes.time" as Time, "data.protoPayload.authenticationInfo.principalEmail" as Email, data.protoPayload.requestMetadata.callerIp as "Caller IP"
+| table Method, "Resource Type",Permission, Name, Time, Email, "Caller IP"</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Delete</title>
+      <table>
+        <search>
+          <query>index=* sourcetype="google:gcp:pubsub:message"  "data.logName"="*.cloudaudit.googleapis.com%2Factivity"  delete data.resource.labels.project_id IN ($project_id_tok$) AND data.protoPayload.authorizationInfo{}.resourceAttributes.type IN($resource_type_tok$)
+| eval name1='data.protoPayload.authorizationInfo{}.resourceAttributes.name'
+| eval name2='data.protoPayload.authorizationInfo{}.resource'
+| eval Name=if(isnull(name1), name2,name1)
+| table "data.protoPayload.methodName", "data.protoPayload.authorizationInfo{}.resourceAttributes.type",data.protoPayload.authorizationInfo{}.permission, Name, "data.protoPayload.requestMetadata.requestAttributes.time", data.protoPayload.authenticationInfo.principalEmail, data.protoPayload.requestMetadata.callerIp 
+| rename "data.protoPayload.methodName" as Method, "data.protoPayload.authorizationInfo{}.resourceAttributes.type" as "Resource Type", data.protoPayload.authorizationInfo{}.permission as Permission, "data.protoPayload.requestMetadata.requestAttributes.time" as Time, "data.protoPayload.authenticationInfo.principalEmail" as Email, data.protoPayload.requestMetadata.callerIp as "Caller IP"</query>
+          <earliest>$field1.earliest$</earliest>
+          <latest>$field1.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+</form>
