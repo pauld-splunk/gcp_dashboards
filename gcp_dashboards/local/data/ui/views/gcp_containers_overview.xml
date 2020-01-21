@@ -11,7 +11,6 @@
     <latest>$time.latest$</latest>
   </search>
   <label>Containers Overview</label>
-  <description>marker</description>
   <fieldset submitButton="false">
     <input type="time" token="time">
       <label>Time</label>

@@ -1,6 +1,5 @@
 <form>
   <label>GCP Instance Details</label>
-  <description>marker</description>
   <init>
     <set token="minspan">60</set>
   </init>

@@ -1,6 +1,5 @@
 <form>
   <label>GCP VPC Traffic Overview</label>
-  <description>marker</description>
   <fieldset submitButton="false">
     <input type="time" token="field1">
       <label></label>

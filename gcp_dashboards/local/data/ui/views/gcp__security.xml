@@ -1,6 +1,5 @@
 <form>
   <label>GCP - Security Overview: Public Access</label>
-  <description>marker</description>
   <fieldset submitButton="false">
     <input type="time" token="time">
       <label></label>

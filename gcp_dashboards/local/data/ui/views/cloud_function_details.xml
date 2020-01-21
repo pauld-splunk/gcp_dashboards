@@ -6,7 +6,6 @@
     </query>
   </search>
   <label>GCP Cloud Function Details</label>
-  <description>marker</description>
   <init>
     <set token="minspan">30</set>
     <set token="show_annotations">*</set>

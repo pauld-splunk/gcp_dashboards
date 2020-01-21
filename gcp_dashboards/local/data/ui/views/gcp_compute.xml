@@ -24,7 +24,6 @@
     </done>
   </search>
   <label>GCP Compute Engine Overview</label>
-  <description>marker</description>
   <fieldset submitButton="false">
     <input type="time" token="time">
       <label>Timespan</label>

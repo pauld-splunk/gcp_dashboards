@@ -43,7 +43,6 @@
     </done>
   </search>
   <label>GCP Infrastructure Activity</label>
-  <description>marker</description>
   <fieldset submitButton="false"></fieldset>
   <row>
     <panel>

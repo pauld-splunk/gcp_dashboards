@@ -36,7 +36,6 @@
     </done>
   </search>
   <label>GCP Storage Overview</label>
-  <description>marker</description>
   <fieldset submitButton="false" autoRun="true">
     <input type="time" token="time_tok" searchWhenChanged="true">
       <label>Time Range</label>

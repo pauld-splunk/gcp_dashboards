@@ -1,6 +1,5 @@
 <form>
   <label>GCP VPC Overview Dashboard</label>
-  <description>marker</description>
   <fieldset submitButton="false" autoRun="true">
     <input type="time" token="TimeRangePicker">
       <label></label>

@@ -13,7 +13,6 @@
     <set token="minspan">60</set>
     <set token="show_annotations">*</set>
   </init>
-  <description>marker</description>
   <fieldset submitButton="false">
     <input type="time" searchWhenChanged="true" token="time">
       <label>Time Range</label>
