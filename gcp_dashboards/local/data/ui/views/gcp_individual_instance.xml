@@ -1,152 +1,258 @@
 <form>
+  <label>GCP Single Instance Details</label>
+  <description>v1.0</description>
+  <init>
+    <set token="minspan">60</set>
+  </init>
   <search id="baseInfo">
+    <query>| tstats count fillnull_value=true
+    where 
+    resource.data.id=$selected_instance$
+    index=* 
+    sourcetype="google:gcp:assets" 
+    asset_type="compute.googleapis.com/Instance" 
+    earliest=-24h@h latest=now by 
+    name,
+    resource.data.id,
+    resource.data.name,
+    resource.data.machineType,
+    resource.data.cpuPlatform,
+    resource.data.zone,
+    resource.data.status
+    resource.data.deletionProtection
+    resource.data.selfLink
+    "resource.data.disk{}.license{}"
+    |rename name as fullName, resource.data.zone as fullZone, resource.data.machineType as mType, resource.data.disk{}.license{} as license
+| stats count by
+    fullName,
+    resource.data.id,
+    resource.data.name,
+    mType,
+    resource.data.cpuPlatform,
+    fullZone,
+    resource.data.status,
+    resource.data.deletionProtection,
+    resource.data.selfLink,
+    license
+| eval ProjectID= replace(fullName,"^\S+projects\/(\S+)\/zones\S*","\1")
+| eval Zone=replace(fullZone,"^\S+zones\/(\S+)","\1")
+| eval machineType=replace(mType,"^\S+machineTypes\/(\S+)","\1")
+| eval OS= replace(license,"^\S+licenses\/(\S+)","\1")
+</query>
+    <earliest>-7h</earliest>
+    <latest>now</latest>
+    <progress>
+      <set token="Fullname">$result.fullName$</set>
+      <set token="id">$result.resource.data.id$</set>
+      <set token="name">$result.resource.data.name$</set>
+      <set token="machineType">$result.machineType$</set>
+      <set token="cpuPlatform">$result.resource.data.cpuPlatform$</set>
+      <set token="deletion">$result.resource.data.deletionProtection$</set>
+      <set token="zone">$result.Zone$</set>
+      <set token="status">$result.resource.data.status$</set>
+      <set token="ProjectID">$result.ProjectID$</set>
+      <set token="selfLink">$result.resource.data.selfLink$</set>
+      <set token="OS">$result.OS$</set>
+    </progress>
+    <done>
+      <set token="Fullname">$result.fullName$</set>
+      <set token="id">$result.resource.data.id$</set>
+      <set token="name">$result.resource.data.name$</set>
+      <set token="machineType">$result.machineType$</set>
+      <set token="cpuPlatform">$result.resource.data.cpuPlatform$</set>
+      <set token="zone">$result.Zone$</set>
+      <set token="status">$result.resource.data.status$</set>
+      <set token="ProjectID">$result.ProjectID$</set>
+      <set token="selfLink">$result.resource.data.selfLink$</set>
+      <set token="OS">$result.OS$</set>
+    </done>
+  </search>
+  <search id="baseDisk">
+    <query>|tstats count where index=* sourcetype="google:gcp:assets" resource.data.user{}=$selfLink$ by resource.data.id | rename resource.data.id as ids|eval ids=ids+" ,"|fields - count|stats values(ids) as ids|nomv ids
+|eval ids=rtrim(ids," ,")
+      </query>
+    <done>
+      <set token="diskids">$result.ids$</set>
+    </done>
+  </search>
+  <search id="mstatsBase">
     <query>
-      |tstats count where index=* sourcetype="google:gcp:assets" asset_type="compute.googleapis.com/Instance" earliest=$time_tok.earliest$ latest=$time_tok.latest$ by name,resource.data.id,resource.data.name,resource.data.machineType,resource.data.cpuPlatform,resource.data.zone,resource.data.status,resource.data.networkInterface{}.subnetwork,resource.data.networkInterfaces{}.networkIP, resource.data.networkInterfaces{}.accessConfigs{}.natIP
-|dedup resource.data.id 
-|rename name as mProjectID, resource.data.machineType as mType, resource.data.networkInterface{}.subnetwork as msubNet, resource.data.zone as aZone, resource.data.id as ID, resource.data.name as Name, resource.data.cpuPlatform as cpuPlatform, resource.data.status as Status, resource.data.networkInterfaces{}.accessConfigs{}.natIP as PublicIP, resource.data.networkInterfaces{}.networkIP as InternalIP 
-| eval Type=replace(mType,"^\S+machineTypes\/(\S+)","\1")
-| eval SubNet=replace(msubNet,"^\S+subnetworks\/(\S+)","\1")
-| eval Zone=replace(aZone,"^\S+zones\/(\S+)","\1")
-| eval ProjectID= replace(mProjectID,"^\S+projects\/(\S+)\/zones\S*","\1")
+      | mstats $selected_cpu_aggregator$(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/*" AND index="gcp_metrics" AND instance_id=$selected_instance$  earliest=$time.earliest$ latest=$time.latest$ $secs_for_bin$ 
     </query>
   </search>
-  <label>GCP Instance Details old</label>
-  <fieldset submitButton="false" autoRun="true">
-    <input type="multiselect" token="project_id_tok" searchWhenChanged="true">
-      <label>Project ID</label>
-      <choice value="*">ALL</choice>
-      <default>*</default>
-      <initialValue>*</initialValue>
-      <delimiter> ,</delimiter>
-      <fieldForLabel>ProjectID</fieldForLabel>
-      <fieldForValue>ProjectID</fieldForValue>
-      <search base="baseInfo">
-        <query>dedup ProjectID</query>
-      </search>
-    </input>
-    <input type="multiselect" token="zone_tok" searchWhenChanged="true">
-      <label>Zones</label>
-      <choice value="*">ALL</choice>
-      <default>*</default>
-      <initialValue>*</initialValue>
-      <fieldForLabel>Zone</fieldForLabel>
-      <fieldForValue>Zone</fieldForValue>
-      <search base="baseInfo">
-        <query>search ProjectID IN ($project_id_tok$)|dedup Zone</query>
-      </search>
-      <delimiter>,</delimiter>
-    </input>
-    <input type="multiselect" token="instance_tok">
-      <label>Instance</label>
-      <choice value="*">ALL</choice>
-      <default>*</default>
-      <initialValue>*</initialValue>
-      <fieldForLabel>Name</fieldForLabel>
-      <fieldForValue>Name</fieldForValue>
-      <search base="baseInfo">
-        <query>
-          search ProjectID IN ($project_id_tok$) AND Zone IN ($zone_tok$)|dedup Name
-        </query>
-        <earliest>-24h@h</earliest>
-        <latest>now</latest>
-      </search>
-      <delimiter>,</delimiter>
-    </input>
-    <input type="time" token="time_tok">
-      <label>Time Range</label>
+  <fieldset submitButton="false">
+    <input type="time" token="time" searchWhenChanged="true">
+      <label>Select Timerange</label>
       <default>
         <earliest>-24h@h</earliest>
         <latest>now</latest>
       </default>
-    </input>
-    <input type="dropdown">
-      <label>Time Span</label>
-      <choice value="auto">auto</choice>
-      <choice value="5s">5s</choice>
-      <choice value="10s">10s</choice>
-      <choice value="30s">30s</choice>
-      <choice value="1m">1m</choice>
-      <choice value="5m">5m</choice>
-      <choice value="10m">10m</choice>
-      <choice value="30m">30m</choice>
-      <choice value="1h">1h</choice>
-      <default>auto</default>
       <change>
-        <eval token="timechart_span">if($value$ == "auto", "", "span=".$value$)</eval>
-        <eval token="mstats_span">"span=".$value$</eval>
+        <eval token="form.secs_for_bin">if(isnull($time.latest$),$minspan$, if((round(relative_time(now(), $time.latest$)-relative_time(now(), $time.earliest$))/$time_resolution$)&lt;$minspan$,$minspan$,round(((relative_time(now(), $time.latest$)-relative_time(now(), $time.earliest$))/$time_resolution$)/$minspan$)*$minspan$))</eval>
+      </change>
+    </input>
+    <input type="text" token="selected_instance" searchWhenChanged="true">
+      <label>Enter instance ID</label>
+      <change>
+        <condition match="isnotnull($selected_instance$)">
+          <eval token="selected_instance">if(selected_instance="", NULL, $selected_instance$)</eval>
+        </condition>
+      </change>
+    </input>
+    <input type="text" token="secs_for_bin" depends="$never$">
+      <label>secs_for_bin</label>
+      <default>60</default>
+      <prefix>span=</prefix>
+      <suffix>s</suffix>
+    </input>
+    <input type="dropdown" token="time_resolution" searchWhenChanged="true">
+      <label>Chart resolution</label>
+      <choice value="100">Crude</choice>
+      <choice value="250">Low</choice>
+      <choice value="500">Medium</choice>
+      <choice value="750">High</choice>
+      <choice value="999">Ultra</choice>
+      <default>500</default>
+      <initialValue>500</initialValue>
+      <change>
+        <eval token="form.secs_for_bin">if(isnull($time.latest$),$minspan$, if((round(relative_time(now(), $time.latest$)-relative_time(now(), $time.earliest$))/$time_resolution$)&lt;$minspan$,$minspan$,round(((relative_time(now(), $time.latest$)-relative_time(now(), $time.earliest$))/$time_resolution$)/$minspan$)*$minspan$))</eval>
       </change>
     </input>
   </fieldset>
-  <row>
+  <row rejects="$selected_instance$">
     <panel>
-      <title>Instance Details $time_tok.earliest$</title>
+      <html>
+        <h1>PLEASE ENTER INSTANCE ID</h1>
+      </html>
+    </panel>
+  </row>
+  <row depends="$selected_instance$">
+    <panel>
+      <title>Instance Details</title>
+      <html>
+        <div>
+<table style="height: 196px; width: 458px; border-color: #000000;" border="2">
+<tbody>
+<tr>
+<td style="width: 168px;">
+                  <strong>Project ID</strong>
+                </td>
+<td style="width: 276px;">$ProjectID$</td>
+</tr>
+<tr>
+<td style="width: 168px; background-color: #ebebeb;">
+                  <strong>Instance Name</strong>
+                </td>
+<td style="width: 276px; background-color: #ebebeb;">$name$</td>
+</tr>
+<tr>
+<td style="width: 168px;">
+                  <strong>Instance ID</strong>
+                </td>
+<td style="width: 276px;">$id$</td>
+</tr>
+<tr>
+<td style="width: 168px; background-color: #ebebeb;">
+                  <strong>Zone</strong>
+                </td>
+<td style="width: 276px; background-color: #ebebeb;">$zone$</td>
+</tr>
+<tr>
+<td style="width: 168px; ">
+                  <strong>Status</strong>
+                </td>
+<td style="width: 276px;">$status$</td>
+</tr>
+<tr>
+<td style="width: 168px;background-color: #ebebeb; ">
+                  <strong>OS</strong>
+                </td>
+<td style="width: 276px;background-color: #ebebeb;">$OS$</td>
+</tr>
+<tr>
+<td style="width: 168px;">
+                  <strong>Machine Type</strong>
+                </td>
+<td style="width: 276px; ">$machineType$</td>
+</tr>
+<tr>
+<td style="width: 168px;background-color: #ebebeb;">
+                  <strong>CPU Platform</strong>
+                </td>
+<td style="width: 276px;background-color: #ebebeb;">$cpuPlatform$</td>
+</tr>
+<tr>
+<td style="width: 168px; ">
+                  <strong>Deletion Protection</strong>
+                </td>
+<td style="width: 276px; ">$deletion$</td>
+</tr>
+</tbody>
+</table>
+</div>
+      </html>
+    </panel>
+    <panel>
+      <title>Attached Entities</title>
       <table>
-        <search base="baseInfo">
-          <query>search ProjectID IN ($project_id_tok$) AND Zone IN ($zone_tok$) AND Name IN ($instance_tok$)
-          |table ID, Name , Zone ,Type, cpuPlatform, PublicIP, Status, InternalIP, SubNet</query>
+        <title>Disk</title>
+        <search>
+          <query>index=* 
+    sourcetype="google:gcp:assets" 
+    asset_type="compute.googleapis.com/Instance"
+    resource.data.id=$selected_instance$
+| spath output=disks path=resource.data.disk{}
+|rename resource.data.sourceImage as sourceImage
+|head 1
+| rex max_match=20 field=disks "\{\"autoDelete\":(?&lt;autoDelete&gt;\S*),\"boot\":(?&lt;boot&gt;\S*),\"deviceName\":\"(?&lt;deviceName&gt;\S*)\",\"diskSizeGb\":\"(?&lt;size&gt;\d+)\"\S+\"index\":(?&lt;diskNumber&gt;\d+),\"interface\":\"(?&lt;interface&gt;\S*)\",\S*\"mode\":\"(?&lt;mode&gt;\S+)\",\"source\S*\"type\":\"(?&lt;type&gt;\S+)\"\}"
+|table diskNumber,deviceName,boot,size,autoDelete,interface,mode,type</query>
+          <earliest>-7h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+      <table>
+        <title>Network</title>
+        <search>
+          <query>index=* 
+    sourcetype="google:gcp:assets" 
+    asset_type="compute.googleapis.com/Instance"
+    resource.data.id=$selected_instance$
+|head 1
+| spath output=networkInterface path=resource.data.networkInterface{}
+| rex max_match=4 field=networkInterface "\S*\"externalIp\":\"(?&lt;externalIP&gt;\d+.\d+.\d+.\d+)\",.*\"ipAddress\":\"(?&lt;internalIP&gt;\d+.\d+.\d+.\d+)\",\"name\":\"(?&lt;NICname&gt;\S+)\",\"network"
+| rename NICname as "NIC Name", externalIP as "External IP", internalIP as "Internal IP"
+| table "NIC Name", "External IP", "Internal IP"</query>
+          <earliest>-7h</earliest>
+          <latest>now</latest>
         </search>
         <option name="drilldown">none</option>
       </table>
     </panel>
   </row>
-  <row>
+  <row depends="$selected_instance$">
     <panel>
       <title>CPU Utilization</title>
-      <single>
-        <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/cpu/utilization" AND index="gcp_metrics" AND instance_name IN ($instance_tok$) span=1h earliest=$time_tok.earliest$ latest=$time_tok.latest$ BY instance_name
-| timechart avg(_value) AS Avg span=1h</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
-        </search>
-        <option name="drilldown">none</option>
-        <option name="numberPrecision">0.00</option>
-        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
-        <option name="trendDisplayMode">absolute</option>
-      </single>
-    </panel>
-    <panel>
-      <title>Network: Received</title>
-      <single>
-        <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/network/received_bytes_count" AND index="gcp_metrics" AND instance_name IN ($instance_tok$) span=1h earliest=$time_tok.earliest$ latest=$time_tok.latest$ BY instance_name
-| timechart eval(avg(_value)/1024/1024) AS Avg span=1h
-| fields - _span*</query>
-        </search>
-        <option name="drilldown">none</option>
-        <option name="numberPrecision">0.00</option>
-        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
-        <option name="refresh.display">progressbar</option>
-        <option name="unit">MB</option>
-      </single>
-    </panel>
-    <panel>
-      <title>Network: Sent</title>
-      <single>
-        <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/network/sent_bytes_count" AND index="gcp_metrics" AND instance_name IN ($instance_tok$) span=1h earliest=$time_tok.earliest$ latest=$time_tok.latest$ BY instance_name
-| timechart eval(avg(_value)/1024/1024) AS Avg span=1h BY instance_name
-| fields - _span*</query>
-        </search>
-        <option name="drilldown">none</option>
-        <option name="numberPrecision">0.00</option>
-        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
-        <option name="refresh.display">progressbar</option>
-        <option name="unit">MB</option>
-      </single>
-    </panel>
-  </row>
-  <row>
-    <panel>
-      <title>CPU Utilization</title>
+      <input type="dropdown" token="selected_cpu_aggregator">
+        <label>Select aggregation function</label>
+        <choice value="avg">average</choice>
+        <choice value="stdev">standard dev</choice>
+        <choice value="p90">p90</choice>
+        <choice value="p95">p95</choice>
+        <choice value="p99">p99</choice>
+        <choice value="max">max</choice>
+        <choice value="min">min</choice>
+        <choice value="sum">sum</choice>
+        <default>avg</default>
+      </input>
       <chart>
-        <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/cpu/utilization" AND index="gcp_metrics" AND instance_name IN ($instance_tok$) $mstats_span$ earliest=$time_tok.earliest$ latest=$time_tok.latest$ BY instance_name
-| timechart avg(_value) AS Avg $timechart_span$ BY instance_name
+        <search base="mstatsBase">
+          <query>| search metric_name="compute.googleapis.com/instance/cpu/utilization" 
+| timechart $selected_cpu_aggregator$(_value) AS Avg $secs_for_bin$
 | fields - _span*</query>
-          <earliest>$time_tok.earliest$</earliest>
-          <latest>$time_tok.latest$</latest>
         </search>
+        <search base="annotations" type="annotation"></search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
         <option name="charting.axisTitleX.visibility">visible</option>
@@ -164,7 +270,7 @@
         <option name="charting.chart.bubbleMaximumSize">50</option>
         <option name="charting.chart.bubbleMinimumSize">10</option>
         <option name="charting.chart.bubbleSizeBy">area</option>
-        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
         <option name="charting.chart.showDataLabels">none</option>
         <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
         <option name="charting.chart.stackMode">default</option>
@@ -186,14 +292,86 @@
   </row>
   <row>
     <panel>
-      <title>Network - Received MB</title>
+      <title>Disk - MBytes (Read/Write)</title>
+      <input type="dropdown" token="selected_netsent_aggregator">
+        <label>Select aggregation function</label>
+        <choice value="avg">average</choice>
+        <choice value="stdev">standard dev</choice>
+        <choice value="p90">p90</choice>
+        <choice value="p95">p95</choice>
+        <choice value="p99">p99</choice>
+        <choice value="max">max</choice>
+        <choice value="min">min</choice>
+        <choice value="sum">sum</choice>
+        <default>avg</default>
+      </input>
       <chart>
-        <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/network/received_bytes_count" AND index="gcp_metrics"  AND instance_name IN ($instance_tok$) $mstats_span$ earliest=$time_tok.earliest$ latest=$time_tok.latest$ BY instance_name
-| timechart eval(avg(_value)/1024/1024) AS Avg $timechart_span$ BY instance_name
+        <search base="mstatsBase">
+          <query>| search metric_name="compute.googleapis.com/instance/disk/*bytes_count" 
+          |eval metric=substr(metric_name,38)
+| timechart eval($selected_netrec_aggregator$(_value)/1024/1024) AS Avg $secs_for_bin$ by metric
 | fields - _span*</query>
-          <earliest>$time_tok.earliest$</earliest>
-          <latest>$time_tok.latest$</latest>
+        </search>
+        <search base="disk_annotations" type="annotation"></search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.includeZero">1</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.gridLinesX.showMajorLines">1</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">seriesCompare</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row depends="$selected_instance$">
+    <panel>
+      <title>Disk - Disk Ops Count (Read/Write)</title>
+      <input type="dropdown" token="selected_netsent_aggregator">
+        <label>Select aggregation function</label>
+        <choice value="avg">average</choice>
+        <choice value="stdev">standard dev</choice>
+        <choice value="p90">p90</choice>
+        <choice value="p95">p95</choice>
+        <choice value="p99">p99</choice>
+        <choice value="max">max</choice>
+        <choice value="min">min</choice>
+        <choice value="sum">sum</choice>
+        <default>avg</default>
+      </input>
+      <chart>
+        <search base="disk_annotations" type="annotation"></search>
+        <search base="mstatsBase">
+          <query>| search metric_name="compute.googleapis.com/instance/disk/*ops_count" 
+|eval metric=substr(metric_name,38)
+| timechart $selected_netsent_aggregator$(_value) AS Avg $secs_for_bin$ by metric
+| fields - _span*</query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -212,7 +390,7 @@
         <option name="charting.chart.bubbleMaximumSize">50</option>
         <option name="charting.chart.bubbleMinimumSize">10</option>
         <option name="charting.chart.bubbleSizeBy">area</option>
-        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
         <option name="charting.chart.showDataLabels">none</option>
         <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
         <option name="charting.chart.stackMode">default</option>
@@ -234,14 +412,25 @@
   </row>
   <row>
     <panel>
-      <title>Network - Sent MB</title>
+      <title>Network - Packets Count (Read/Write)</title>
+      <input type="dropdown" token="selected_netsent_aggregator">
+        <label>Select aggregation function</label>
+        <choice value="avg">average</choice>
+        <choice value="stdev">standard dev</choice>
+        <choice value="p90">p90</choice>
+        <choice value="p95">p95</choice>
+        <choice value="p99">p99</choice>
+        <choice value="max">max</choice>
+        <choice value="min">min</choice>
+        <choice value="sum">sum</choice>
+        <default>avg</default>
+      </input>
       <chart>
-        <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/network/sent_bytes_count" AND index="gcp_metrics" AND instance_name IN ($instance_tok$) $mstats_span$ earliest=$time_tok.earliest$ latest=$time_tok.latest$ BY instance_name
-| timechart eval(avg(_value)/1024/1024) AS Avg $timechart_span$ BY instance_name
+        <search base="mstatsBase">
+          <query>|search metric_name="compute.googleapis.com/instance/network/*packets_count" 
+|eval metric=substr(metric_name,41)
+| timechart $selected_netsent_aggregator$(_value) AS Avg $secs_for_bin$ by metric
 | fields - _span*</query>
-          <earliest>$time_tok.earliest$</earliest>
-          <latest>$time_tok.latest$</latest>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -260,7 +449,7 @@
         <option name="charting.chart.bubbleMaximumSize">50</option>
         <option name="charting.chart.bubbleMinimumSize">10</option>
         <option name="charting.chart.bubbleSizeBy">area</option>
-        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
         <option name="charting.chart.showDataLabels">none</option>
         <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
         <option name="charting.chart.stackMode">default</option>
@@ -278,6 +467,114 @@
         <option name="trellis.scales.shared">1</option>
         <option name="trellis.size">medium</option>
       </chart>
+    </panel>
+  </row>
+  <row depends="$selected_instance$">
+    <panel>
+      <title>Network - Sent / Received (MB)</title>
+      <input type="dropdown" token="selected_netrec_aggregator">
+        <label>Select aggregation function</label>
+        <choice value="avg">average</choice>
+        <choice value="stdev">standard dev</choice>
+        <choice value="p90">p90</choice>
+        <choice value="p95">p95</choice>
+        <choice value="p99">p99</choice>
+        <choice value="max">max</choice>
+        <choice value="min">min</choice>
+        <choice value="sum">sum</choice>
+        <default>avg</default>
+      </input>
+      <chart>
+        <search base="mstatsBase">
+          <query>| search metric_name="compute.googleapis.com/instance/network/*_bytes_count" 
+|eval metric=substr(metric_name,41)
+| timechart eval($selected_netrec_aggregator$(_value)/1024/1024) AS Avg $secs_for_bin$ by metric
+| fields - _span*</query>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.includeZero">1</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.gridLinesX.showMajorLines">1</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">seriesCompare</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row depends="$selected_instance$">
+    <panel depends="$hide$">
+      <table>
+        <search id="eventBase">
+          <query>|tstats fillnull_value="null" count as ev where index=* sourcetype=google:gcp:pubsub:message (data.resource.labels.instance_id
+=$selected_instance$) OR data.resource.labels.disk_id IN ($diskids$)  
+by _time, data.resource.type data.protoPayload.methodName data.severity data.jsonPayload.info{}.detail_message data.jsonPayload.event_subtype, data.jsonPayload.MESSAGE, data.jsonPayload._EXE, data.jsonPayload.SYSLOG_IDENTIFIER, data.jsonPayload._SYSTEMD_UNIT, data.jsonPayload.message, data.resource.labels.disk_id
+
+span=1s
+|table _time, data.*</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row depends="$hide$">
+    <panel>
+      <table>
+        <search base="eventBase" id="annotations">
+          <query>eval annotation_label='data.severity'
+|eval annotation_category=if(annotation_category="null","",annotation_category)
+|eval annotation_category=if('data.protoPayload.methodName'="null",'data.jsonPayload.event_subtype','data.protoPayload.methodName')
+|eval annotation_category=if('data.jsonPayload.info{}.detail_message'!="null",annotation_category+", "+'data.jsonPayload.info{}.detail_message',annotation_category)
+|eval annotation_category=if('data.jsonPayload.message'!="null", annotation_category+'data.jsonPayload.message',annotation_category)
+|top limit=1000 _time, annotation_label,annotation_category
+|table _time, annotation*</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <search base="eventBase" id="disk_annotations">
+          <query>search data.resource.type=gce_disk
+          |eval annotation_label='data.severity'
+          |eval annotation_category=if('data.protoPayload.methodName'="null",'data.jsonPayload.event_subtype','data.protoPayload.methodName')
+          |eval annotation_category=if('data.jsonPayload.info{}.detail_message'!="null",annotation_category+", "+'data.jsonPayload.info{}.detail_message',annotation_category)
+          |top limit=1000 _time, annotation_label,annotation_category 
+          |table _time, annotation*</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
     </panel>
   </row>
 </form>

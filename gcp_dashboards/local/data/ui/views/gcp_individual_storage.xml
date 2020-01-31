@@ -12,6 +12,7 @@
     </query>
   </search>
   <label>GCP Individual Storage</label>
+  <description>v1.0</description>
   <fieldset submitButton="false">
     <input type="multiselect" token="project_id_tok" searchWhenChanged="true">
       <label>Project ID</label>

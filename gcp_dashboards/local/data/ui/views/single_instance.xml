@@ -1,5 +1,6 @@
 <form>
   <label>GCP Single Instance Details</label>
+  <description>v1.0</description>
   <init>
     <set token="minspan">60</set>
   </init>
@@ -246,12 +247,12 @@
         <default>avg</default>
       </input>
       <chart>
-        <search base="annotations" type="annotation"></search>
         <search base="mstatsBase">
           <query>| search metric_name="compute.googleapis.com/instance/cpu/utilization" 
 | timechart $selected_cpu_aggregator$(_value) AS Avg $secs_for_bin$
 | fields - _span*</query>
         </search>
+        <search base="annotations" type="annotation"></search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
         <option name="charting.axisTitleX.visibility">visible</option>
@@ -305,13 +306,13 @@
         <default>avg</default>
       </input>
       <chart>
-        <search base="disk_annotations" type="annotation"></search>
         <search base="mstatsBase">
           <query>| search metric_name="compute.googleapis.com/instance/disk/*bytes_count" 
           |eval metric=substr(metric_name,38)
 | timechart eval($selected_netrec_aggregator$(_value)/1024/1024) AS Avg $secs_for_bin$ by metric
 | fields - _span*</query>
         </search>
+        <search base="disk_annotations" type="annotation"></search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
         <option name="charting.axisTitleX.visibility">visible</option>
@@ -365,13 +366,13 @@
         <default>avg</default>
       </input>
       <chart>
+        <search base="disk_annotations" type="annotation"></search>
         <search base="mstatsBase">
           <query>| search metric_name="compute.googleapis.com/instance/disk/*ops_count" 
 |eval metric=substr(metric_name,38)
 | timechart $selected_netsent_aggregator$(_value) AS Avg $secs_for_bin$ by metric
 | fields - _span*</query>
         </search>
-        <search base="disk_annotations" type="annotation"></search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
         <option name="charting.axisTitleX.visibility">visible</option>

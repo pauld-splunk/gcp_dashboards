@@ -1,12 +1,13 @@
 <form>
   <label>GCP Audit Investigation</label>
+  <description>v1.0</description>
   <init>
     <set token="minspan">1</set>
     <set token="show_annotations">*</set>
   </init>
   <search id="audit_selection_base">
     <query>
-       |tstats fillnull_value="null" count where index=* sourcetype=google:gcp:pubsub:message "data.logName"="*activity" OR "data.logName"="*data_access" OR "data.logName"="*system_event" $search_text_tok$
+       |tstats fillnull_value="null" count where index=* sourcetype=google:gcp:pubsub:message $search_text_tok$ "data.logName"="*activity" OR "data.logName"="*data_access" OR "data.logName"="*system_event" 
        by _time, data.resource.labels.project_id,data.logName,data.protoPayload.resourceName, data.resource.type, "data.protoPayload.authenticationInfo.principalEmail",data.protoPayload.serviceName, data.protoPayload.methodName, data.protoPayload.requestMetadata.callerIp, data.protoPayload.requestMetadata.callerSuppliedUserAgent span=$secs_for_bin$s
        | rename data.resource.labels.project_id as ProjectID, data.logName as LogName, data.protoPayload.authenticationInfo.principalEmail as Email,data.protoPayload.serviceName as ServiceName, data.protoPayload.resourceName as ResourceName, data.resource.type as ResourceType, data.protoPayload.methodName as MethodName, data.protoPayload.requestMetadata.callerIp as CallerIP, data.protoPayload.requestMetadata.callerSuppliedUserAgent as UserAgent
     </query>
@@ -177,10 +178,10 @@
         <delimiter> </delimiter>
       </input>
       <chart>
+        <search base="annotations" type="annotation"></search>
         <search base="audit_selection_base">
           <query>search ProjectID IN ($project_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) | timechart span=$secs_for_bin$s sum(count) by $by_token$ limit=100</query>
         </search>
-        <search base="annotations" type="annotation"></search>
         <selection>
           <set token="selection.earliest">$start$</set>
           <set token="selection.latest">$end$</set>

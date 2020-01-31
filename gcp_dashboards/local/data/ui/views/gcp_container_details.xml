@@ -3,8 +3,8 @@
     <query>
     |tstats dc(name) where index=* sourcetype="google:gcp:assets" asset_type="k8s.io/Node" by name,resource.data.metadata.name, resource.data.metadata.annotations.container.googleapis.com/instance_id,resource.data.metadata.labels.beta.kubernetes.io/instance-type, resource.data.metadata.labels.kubernetes.io/hostname, resource.data.metadata.labels.cloud.google.com/gke-nodepool, resource.data.status.nodeInfo.containerRuntimeVersion 
 | rename name as Name,resource.data.metadata.name as NodeName, resource.data.metadata.annotations.container.googleapis.com/instance_id as Instance_ID, resource.data.metadata.labels.beta.kubernetes.io/instance-type as InstanceType, resource.data.metadata.labels.kubernetes.io/hostname as HostName, resource.data.metadata.labels.cloud.google.com/gke-nodepool as NodePool, resource.data.status.nodeInfo.containerRuntimeVersion as containerRuntimeVersion
-| eval ProjectID=replace(Name,"^\S+projects\/(\S+)\/zones\S*","\1")
-| eval Zone=replace(Name,"^\S+zones\/(\S+)\/clusters\S*","\1")
+| eval ProjectID=replace(Name,"^\S+projects\/(\S+)\/(zones|locations)\S*","\1")
+| eval Zone=replace(Name,"^\S+(zones|locations)\/(\S+)\/clusters\S*","\2")
 | eval ClusterName=replace(Name,"^\S+clusters\/(\S+)\/k8s\S*","\1")
     </query>
   </search>
@@ -13,6 +13,7 @@
     <set token="minspan">60</set>
     <set token="show_annotations">*</set>
   </init>
+  <description>v1.0</description>
   <fieldset submitButton="false">
     <input type="time" searchWhenChanged="true" token="time">
       <label>Time Range</label>
@@ -97,7 +98,6 @@
     <panel>
       <title>container.googleapis.com/container/cpu/utilization</title>
       <chart>
-        <search base="annotations" type="annotation"></search>
         <search>
           <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/cpu/utilization" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
 | timechart avg(_value) as Avg span=$secs_for_bin$s $multiline$ $dims_tok$
@@ -105,6 +105,7 @@
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
+        <search base="annotations" type="annotation"></search>
         <option name="charting.axisY.abbreviation">auto</option>
         <option name="charting.axisY.includeZero">1</option>
         <option name="charting.chart">line</option>

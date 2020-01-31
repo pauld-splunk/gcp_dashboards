@@ -1,11 +1,12 @@
-# GCP Dashboards
-Splunk Dashboards for GCP
+# GCP Dashboards v1.0
+
+# Splunk Dashboard Templae for GCP
 
 
 This Splunk app contains a few SimpleXML dashboards for use with the Splunk Add-on for GCP or Cloud Functions.
 You will need assets information via Cloud Functions - see github.com/splunk/gcp_functions 
 
-The App requires the events to be extracted/indexed json.
+The App requires the events to have the json indexed extracted, so use the sourcetypes defined below.
 
 Perform the following updates to config files to accomodate this:
 

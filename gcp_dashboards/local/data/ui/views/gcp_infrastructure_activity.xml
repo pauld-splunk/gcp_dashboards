@@ -1,90 +1,166 @@
 <form>
+  <init>
+    <set token="minspan">1</set>
+  </init>
+  <search id="projects">
+    <query>|tstats count where index=* sourcetype="google:gcp:assets" by name, resource.parent
+|rex max_match=1 field=name "\S+\/projects\/(?&lt;projectid&gt;\S+)\/(zones|regions|global|topics|subscriptions|serviceAccounts)\/\S*"
+|rename resource.parent as parent
+|rex max_match=1 field=parent "\S*\/projects\/(?&lt;id&gt;\d*)"
+|stats count by projectid, id
+|search id&gt;0
+|table  projectid, id</query>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
+  </search>
+  <search id="projnum" base="projects">
+    <query>search projectid=$project_id_tok$</query>
+    <done>
+      <eval token="projectNumber">if($project_id_tok$="*","",$result.id$)</eval>
+    </done>
+  </search>
+  <search id="topLevelAssets">
+    <query>|tstats dc(name) where index=* sourcetype="google:gcp:assets"  by ancestors{}, asset_type | rename ancestors{} as ancestors</query>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
+  </search>
+  <search id="instances" base="topLevelAssets">
+    <query>
+      |search asset_type=*Instance ancestors=*$projectNumber$ | rename dc(name) as number
+    </query>
+    <done>
+      <eval token="Instance_count">if(isnull($result.number$),0,$result.number$)</eval>
+    </done>
+  </search>
+  <search id="buckets" base="topLevelAssets">
+    <query>
+      |search asset_type=*Bucket ancestors=*$projectNumber$ | rename dc(name) as number
+    </query>
+    <done>
+      <eval token="Bucket_count">if(isnull($result.number$),0,$result.number$)</eval>
+    </done>
+  </search>
+  <search id="functions">
+    <query>|tstats dc(data.resource.labels.function_name) as number where index=* sourcetype="google:gcp:pubsub:message" "data.logName"="*cloud-functions" data.resource.labels.project_id=$project_id_tok$
+    </query>
+    <done>
+      <eval token="Function_count">if(isnull($result.number$),0,$result.number$)</eval>
+    </done>
+  </search>
   <search id="CreateCount">
     <query>
-       |tstats count where index=* sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  create data.resource.labels.project_id IN ($project_id_tok$) AND data.protoPayload.authorizationInfo{}.resourceAttributes.type IN($resource_type_tok$)
+       |tstats count where index=* sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  data.protoPayload.methodName IN (*create*, *insert*) data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$)
     </query>
-    <earliest>$field1.earliest$</earliest>
-    <latest>$field1.latest$</latest>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
     <done>
       <set token="creates_tok">$result.count$</set>
     </done>
   </search>
+  <search id="UpdateCount">
+    <query>
+       |tstats count where index=* sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  data.protoPayload.methodName IN (*update*, *patch*) data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$)
+    </query>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
+    <done>
+      <set token="updates_tok">$result.count$</set>
+    </done>
+  </search>
   <search id="DeleteCount">
     <query>
-       |tstats count where index=* sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  delete data.resource.labels.project_id IN ($project_id_tok$) AND data.protoPayload.authorizationInfo{}.resourceAttributes.type IN($resource_type_tok$)
+       |tstats count where index=* sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  data.protoPayload.methodName IN (*delete*) data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$)
     </query>
-    <earliest>$field1.earliest$</earliest>
-    <latest>$field1.latest$</latest>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
     <done>
       <set token="deletes_tok">$result.count$</set>
     </done>
   </search>
-  <search id="TimeChartSlots">
-    <query>
-      |makeresults  |addinfo |eval secs=(info_max_time-info_min_time)
-       |eval slotcount=100
-       |eval rounder=3
-       |eval easy=floor(secs/slotcount)
-       |eval num_field = tostring(easy)
-       |eval divider=pow(10,len(num_field)-1)
-       |eval divider=if(easy&lt;10, 10, pow(10,len(num_field)-1))
-       |eval spn=round(easy/divider,0)*divider
-       |eval spn=if(spn=0,1,spn)
-       |eval spn=printf("%*d", 0, spn)
-       |eval infinity=if(info_max_time="+Infinity","auto",0)
-       |eval spn=if(infinity=0,spn,infinity)
-       |eval spn2=if(spn="auto","","span="+spn)
-    </query>
-    <earliest>$field1.earliest$</earliest>
-    <latest>$field1.latest$</latest>
-    <done>
-      <set token="spanning_tok">$result.spn$</set>
-      <set token="spanning_tok2">$result.spn2$</set>
-    </done>
-  </search>
   <label>GCP Infrastructure Activity</label>
+  <description>v1.0</description>
   <fieldset submitButton="false"></fieldset>
   <row>
     <panel>
-      <input type="time" token="field1">
+      <input type="time" token="time">
         <label></label>
         <default>
           <earliest>-24h@h</earliest>
           <latest>now</latest>
         </default>
+        <change>
+          <eval token="form.secs_for_bin">if(isnull($time.latest$),$minspan$, if((round(relative_time(now(), $time.latest$)-relative_time(now(), $time.earliest$))/$time_resolution$)&lt;$minspan$,$minspan$,round(((relative_time(now(), $time.latest$)-relative_time(now(), $time.earliest$))/$time_resolution$)/$minspan$)*$minspan$))</eval>
+          <eval token="time_str">strftime($selection.earliest$,"%m/%d/%y %H:%M:%S")</eval>
+          <eval token="time_end">strftime($selection.latest$,"%m/%d/%y %H:%M:%S")</eval>
+        </change>
       </input>
-      <input type="multiselect" token="project_id_tok" searchWhenChanged="true">
+      <input type="dropdown" token="project_id_tok" searchWhenChanged="true">
         <label>Project ID</label>
         <fieldForLabel>Project_ID</fieldForLabel>
         <fieldForValue>Project_ID</fieldForValue>
-        <search>
-          <query>|tstats count where index=* sourcetype=google:gcp:pubsub:message by data.resource.labels.project_id| fields data.resource.labels.project_id | rename data.resource.labels.project_id as Project_ID</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
+        <search base="projects">
+          <query>rename projectid as Project_ID</query>
         </search>
         <choice value="*">ALL</choice>
         <default>*</default>
         <initialValue>*</initialValue>
-        <delimiter> </delimiter>
       </input>
       <input type="dropdown" token="resource_type_tok" searchWhenChanged="true">
         <label>Resource Type</label>
         <fieldForLabel>resourceType</fieldForLabel>
         <fieldForValue>resourceType</fieldForValue>
         <search>
-          <query>|tstats dc(data.protoPayload.authorizationInfo{}.resourceAttributes.type) where index=* sourcetype=google:gcp:pubsub:message data.resource.labels.project_id IN ($project_id_tok$) by data.resource.labels.project_id, "data.protoPayload.authorizationInfo{}.resourceAttributes.type"| rename "data.protoPayload.authorizationInfo{}.resourceAttributes.type" as resourceType|dedup resourceType</query>
-          <earliest>$field1.earliest$</earliest>
-          <latest>$field1.latest$</latest>
+          <query>|tstats dc(data.protoPayload.authorizationInfo{}.resourceAttributes.type) where index=* sourcetype=google:gcp:pubsub:message data.resource.labels.project_id IN ($project_id_tok$) by data.resource.labels.project_id,  data.resource.type| rename  data.resource.type as resourceType|stats count by resourceType</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
         </search>
         <choice value="*">ALL</choice>
         <default>*</default>
         <initialValue>*</initialValue>
       </input>
+      <input type="dropdown" token="time_resolution" searchWhenChanged="true">
+        <label>Chart resolution</label>
+        <choice value="10">Crude</choice>
+        <choice value="50">Low</choice>
+        <choice value="70">Medium</choice>
+        <choice value="150">High</choice>
+        <choice value="600">Ultra</choice>
+        <change>
+          <eval token="form.secs_for_bin">if(isnull($time.latest$),$minspan$, if((round(relative_time(now(), $time.latest$)-relative_time(now(), $time.earliest$))/$time_resolution$)&lt;$minspan$,$minspan$,round(((relative_time(now(), $time.latest$)-relative_time(now(), $time.earliest$))/$time_resolution$)/$minspan$)*$minspan$))</eval>
+        </change>
+        <default>70</default>
+      </input>
+      <input type="text" token="secs_for_bin" depends="$never$">
+        <label>secs_for_bin</label>
+        <default>1200</default>
+      </input>
       <html>
-        <center>
-          <h1 style="background-color:MediumSeaGreen;">Creates: $creates_tok$</h1>
-          <h1 style="background-color:Tomato;"> Deletes: $deletes_tok$</h1>
-        </center>
+       <h1>Inventory Overview</h1>
+<table style="height: 89px; width: 881px;">
+<tbody>
+<tr>
+<td style="width: 137px; background-color: #ebebeb;">Compute</td>
+<td style="width: 249px; background-color: #ebebeb; ">$Instance_count$ Instances</td>
+<td style="width: 11px; "/>
+<td style="width: 260px;background-color: mediumseagreen;">Total Create Events</td>
+<td style="width: 192px; background-color: mediumseagreen; ">$creates_tok$</td>
+</tr>
+<tr>
+<td style="width: 137px; ">Storage</td>
+<td style="width: 249px; ">$Bucket_count$ Buckets</td>
+<td style="width: 11px; "/>
+<td style="width: 260px; background-color: #ffdd33; ">Total Update Events</td>
+<td style="width: 192px; background-color: #ffdd33; ">$updates_tok$</td>
+</tr>
+<tr>
+<td style="width: 137px; background-color: #ebebeb; ">Cloud Functions</td>
+<td style="width: 249px; background-color: #ebebeb; ">$Function_count$ Functions</td>
+<td style="width: 11px; "/>
+<td style="width: 260px; background-color: tomato; ">Total Delete Events</td>
+<td style="width: 192px; background-color: tomato; ">$deletes_tok$</td>
+</tr>
+</tbody>
+</table>
       </html>
     </panel>
   </row>
@@ -92,17 +168,17 @@
     <panel>
       <input type="checkbox" token="create_del_tok" searchWhenChanged="true">
         <label>Create/Delete</label>
-        <choice value="create">Create</choice>
-        <choice value="delete">Delete</choice>
-        <default>create,delete</default>
-        <initialValue>create,delete</initialValue>
-        <delimiter> OR </delimiter>
+        <choice value="*create*, *insert*">Create</choice>
+        <choice value="*update*, *patch*">Update</choice>
+        <choice value="*delete*">Delete</choice>
+        <delimiter>,</delimiter>
+        <default>"*create*, *insert*","*update*, *patch*",*delete*</default>
       </input>
       <chart>
         <search>
-          <query>|tstats count where index=* sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" data.resource.labels.project_id IN ($project_id_tok$) $create_del_tok$ AND data.protoPayload.authorizationInfo{}.resourceAttributes.type IN($resource_type_tok$) by _time, "data.protoPayload.methodName" span=$spanning_tok$ | timechart $spanning_tok2$ sum(count) by data.protoPayload.methodName </query>
-          <earliest>$field1.earliest$</earliest>
-          <latest>$field1.latest$</latest>
+          <query>|tstats count where index=* sourcetype="google:gcp:pubsub:message"  "data.logName"="*/logs/cloudaudit.googleapis.com%2Factivity" data.resource.labels.project_id IN ($project_id_tok$) "data.protoPayload.methodName" IN ($create_del_tok$) AND data.resource.type IN($resource_type_tok$) by _time, "data.protoPayload.methodName" span=$secs_for_bin$s | timechart span=$secs_for_bin$s sum(count) by data.protoPayload.methodName</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
         </search>
         <option name="charting.chart">column</option>
         <option name="charting.chart.stackMode">stacked</option>
@@ -116,14 +192,16 @@
       <title>Create</title>
       <table>
         <search>
-          <query>index=* sourcetype="google:gcp:pubsub:message" "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" data.resource.labels.project_id IN ($project_id_tok$) AND data.protoPayload.authorizationInfo{}.resourceAttributes.type IN($resource_type_tok$)
+          <query>|tstats fillnull_value="null" count where index=* sourcetype="google:gcp:pubsub:message" "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$) data.protoPayload.methodName IN (*create*) by 
+data.protoPayload.methodName, data.resource.type, attributes.logging.googleapis.com/timestamp, data.protoPayload.authenticationInfo.principalEmail, data.protoPayload.requestMetadata.callerIp, data.protoPayload.authorizationInfo{}.permission, data.protoPayload.authorizationInfo{}.resourceAttributes.name, data.protoPayload.authorizationInfo{}.resource
 | eval name1='data.protoPayload.authorizationInfo{}.resourceAttributes.name'
 | eval name2='data.protoPayload.authorizationInfo{}.resource'
-| eval Name=if(isnull(name1), name2,name1)
-| rename "data.protoPayload.methodName" as Method, "data.protoPayload.authorizationInfo{}.resourceAttributes.type" as "Resource Type", data.protoPayload.authorizationInfo{}.permission as Permission, "data.protoPayload.requestMetadata.requestAttributes.time" as Time, "data.protoPayload.authenticationInfo.principalEmail" as Email, data.protoPayload.requestMetadata.callerIp as "Caller IP"
+| eval Name=if(name1="null", name2,name1)
+|search Name!="null"
+| rename "data.protoPayload.methodName" as Method, data.resource.type as "Resource Type", data.protoPayload.authorizationInfo{}.permission as Permission, "attributes.logging.googleapis.com/timestamp" as Time, "data.protoPayload.authenticationInfo.principalEmail" as Email, data.protoPayload.requestMetadata.callerIp as "Caller IP"
 | table Method, "Resource Type",Permission, Name, Time, Email, "Caller IP"</query>
-          <earliest>$field1.earliest$</earliest>
-          <latest>$field1.latest$</latest>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
         <option name="count">10</option>
@@ -137,14 +215,16 @@
       <title>Delete</title>
       <table>
         <search>
-          <query>index=* sourcetype="google:gcp:pubsub:message"  "data.logName"="*.cloudaudit.googleapis.com%2Factivity"  delete data.resource.labels.project_id IN ($project_id_tok$) AND data.protoPayload.authorizationInfo{}.resourceAttributes.type IN($resource_type_tok$)
+          <query>|tstats fillnull_value="null" count where index=* sourcetype="google:gcp:pubsub:message" "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$) data.protoPayload.methodName IN (*delete*) by 
+data.protoPayload.methodName, data.resource.type, attributes.logging.googleapis.com/timestamp, data.protoPayload.authenticationInfo.principalEmail, data.protoPayload.requestMetadata.callerIp, data.protoPayload.authorizationInfo{}.permission, data.protoPayload.authorizationInfo{}.resourceAttributes.name, data.protoPayload.authorizationInfo{}.resource
 | eval name1='data.protoPayload.authorizationInfo{}.resourceAttributes.name'
 | eval name2='data.protoPayload.authorizationInfo{}.resource'
-| eval Name=if(isnull(name1), name2,name1)
-| table "data.protoPayload.methodName", "data.protoPayload.authorizationInfo{}.resourceAttributes.type",data.protoPayload.authorizationInfo{}.permission, Name, "data.protoPayload.requestMetadata.requestAttributes.time", data.protoPayload.authenticationInfo.principalEmail, data.protoPayload.requestMetadata.callerIp 
-| rename "data.protoPayload.methodName" as Method, "data.protoPayload.authorizationInfo{}.resourceAttributes.type" as "Resource Type", data.protoPayload.authorizationInfo{}.permission as Permission, "data.protoPayload.requestMetadata.requestAttributes.time" as Time, "data.protoPayload.authenticationInfo.principalEmail" as Email, data.protoPayload.requestMetadata.callerIp as "Caller IP"</query>
-          <earliest>$field1.earliest$</earliest>
-          <latest>$field1.latest$</latest>
+| eval Name=if(name1="null", name2,name1)
+|search Name!="null"
+| rename "data.protoPayload.methodName" as Method, data.resource.type as "Resource Type", data.protoPayload.authorizationInfo{}.permission as Permission, "attributes.logging.googleapis.com/timestamp" as Time, "data.protoPayload.authenticationInfo.principalEmail" as Email, data.protoPayload.requestMetadata.callerIp as "Caller IP"
+| table Method, "Resource Type",Permission, Name, Time, Email, "Caller IP"</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
         </search>
         <option name="drilldown">none</option>
         <option name="refresh.display">progressbar</option>

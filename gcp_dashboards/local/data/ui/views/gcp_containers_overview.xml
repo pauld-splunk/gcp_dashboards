@@ -3,14 +3,15 @@
     <query>
     |tstats dc(name) where index=* sourcetype="google:gcp:assets" asset_type="k8s.io/Node" by name,resource.data.metadata.name, resource.data.metadata.annotations.container.googleapis.com/instance_id,resource.data.metadata.labels.beta.kubernetes.io/instance-type, resource.data.metadata.labels.kubernetes.io/hostname, resource.data.metadata.labels.cloud.google.com/gke-nodepool, resource.data.status.nodeInfo.containerRuntimeVersion 
 | rename name as Name,resource.data.metadata.name as NodeName, resource.data.metadata.annotations.container.googleapis.com/instance_id as Instance_ID, resource.data.metadata.labels.beta.kubernetes.io/instance-type as InstanceType, resource.data.metadata.labels.kubernetes.io/hostname as HostName, resource.data.metadata.labels.cloud.google.com/gke-nodepool as NodePool, resource.data.status.nodeInfo.containerRuntimeVersion as containerRuntimeVersion
-| eval ProjectID=replace(Name,"^\S+projects\/(\S+)\/zones\S*","\1")
-| eval Zone=replace(Name,"^\S+zones\/(\S+)\/clusters\S*","\1")
+| eval ProjectID=replace(Name,"^\S+projects\/(\S+)\/(zones|locations)\S*","\1")
+| eval Zone=replace(Name,"^\S+(zones|locations)\/(\S+)\/clusters\S*","\2")
 | eval ClusterName=replace(Name,"^\S+clusters\/(\S+)\/k8s\S*","\1")
     </query>
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
   </search>
   <label>Containers Overview</label>
+  <description>v1.0</description>
   <fieldset submitButton="false">
     <input type="time" token="time">
       <label>Time</label>
