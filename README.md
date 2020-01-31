@@ -7,6 +7,7 @@ This Splunk app contains a few SimpleXML dashboards for use with the Splunk Add-
 You will need assets information via Cloud Functions - see github.com/splunk/gcp_functions 
 
 The App requires the events to have the json indexed extracted, so use the sourcetypes defined below.
+If you are using the functions linked above, ensure that all metrics collected are put into a metrics index. The searches in the template expects this index to be called "gcp_metrics"; if you have a different index name, please update in your dashboard searches.
 
 Perform the following updates to config files to accomodate this:
 
