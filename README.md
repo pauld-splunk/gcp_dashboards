@@ -1,6 +1,6 @@
 # GCP Dashboards v1.0
 
-# Splunk Dashboard Templae for GCP
+# Splunk Dashboard Template for GCP
 
 
 This Splunk app contains a few SimpleXML dashboards for use with the Splunk Add-on for GCP or Cloud Functions.
