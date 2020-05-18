@@ -1,0 +1,18 @@
+<% if(optimalRI!=="N/A") { %>
+<div>
+    <strong>Optimal RIs:</strong>
+    <br>
+    Optimal reserved instance<%= (optimalRI > 0 ? "s are" : "is") %> <%= optimalRI %> in <%= (appliedFlexibility ? "unit" : "count") %> without considering existing ones.
+    <% if(appliedFlexibility) {%>
+    <br>
+    With instance size flexibility, any combination of instance type from the <%= family %> family can get your RI benefit.
+        <% if(optimalRI > 0) { %>
+            For example:
+            <br>
+            <ul>
+                <%= recommendedRIInfo %>
+            </ul>
+        <%}
+     }%>
+</div>
+<%}%>

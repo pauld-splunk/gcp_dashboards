@@ -1,0 +1,167 @@
+@import "../util.pcss";
+@import "../common.pcss";
+
+.main-section-body {
+  background-color: white;
+  background-image: none;
+}
+
+.app-page {
+  width: 960px;
+  margin: 0 auto;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+div.section {
+  margin-top: 30px;
+}
+
+div.section-close {
+  margin-top: 20px;
+}
+
+div.section:first-child {
+  margin-top: 0;
+}
+
+div.section-close:first-child {
+  margin-top: 0;
+}
+
+div.section-right {
+  text-align: right;
+}
+
+div.section p.title {
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+div.collapsable-section p.title {
+  cursor: pointer;
+}
+
+.app-page-error {
+  .msg.msg-none {
+    display: none;
+  }
+
+  .msg.msg-error {
+    background-color: #faeae6;
+    border: 1px solid #d85d3c;
+    color: #d85d3c;
+  }
+
+  .msg.msg-warning {
+    background-color: #fef5da;
+    border: 1px solid #deaa05;
+    color: black;
+
+    i.icon {
+      color: #fac51c;
+    }
+
+    .msg-text {
+      opacity: 0.5;
+    }
+
+    a {
+      opacity: 1;
+    }
+  }
+
+  .msg {
+    padding: 8px;
+    margin-bottom: 20px;
+
+    i.icon {
+      display: block;
+      float: left;
+      font-size: 24px;
+      line-height: 24px;
+      width: 18px;
+      margin-right: 8px;
+    }
+
+    div.msg-text {
+      display: block;
+      float: left;
+      width: 888px;
+      margin-top: 4px;
+    }
+
+    @mixin clearfix;
+  }
+}
+
+.custom-waiting-panel.hide {
+  display: none;
+}
+
+.custom-waiting-panel .msg {
+  position: fixed;
+  top: 50%;
+  text-align: center;
+  width: 100%;
+  font-size: 16px;
+  z-index: 1041;
+
+  .img {
+    width: 48px;
+    height: 48px;
+    margin-right: 10px;
+  }
+}
+
+.model-white {
+  background-color: $white;
+}
+
+#placeholder {
+  padding-top: 100px;
+  min-height: 400px;
+  text-align: center;
+}
+
+.inline-loading-message-img {
+  background-image: url("../../../img/loading-24.gif");
+  background-repeat: no-repeat;
+  padding-left: 28px;
+  line-height: 24px;
+}
+
+.inline-loading-message {
+  line-height: 24px;
+}
+
+.control-wrapper-label .tooltip-link {
+    top: -0.5em;
+    position: relative;
+    font-size: 75%;
+    line-height: 0;
+    vertical-align: baseline;
+    padding: 2px;
+    cursor: default;
+    font-weight: normal;
+    color: #1e93c6;
+    text-decoration: none;
+}
+
+a.disabled {
+  cursor: not-allowed;
+  text-decoration: none;
+  color: black;
+}
+
+.slidenavList.scroll-group{
+    max-height:350px;
+}
+
+.select2-drop {
+  margin: 0px;
+  z-index: 9999;
+  .select2-input {
+    margin-top: 5px;
+  }
+}

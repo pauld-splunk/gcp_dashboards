@@ -1,0 +1,98 @@
+.topology-recomm:before {
+    content: '';
+    display: block;
+    height: 1px;
+    border-top: 1px solid #cccccc;
+    position: relative;
+    top: -11px;
+    left: -21px;
+    width: 244px;
+}
+
+.topology-recomm {
+    display: none;
+    background-color: #f5f5f5;
+    width: 280px;
+    padding: 10px 20px;
+    box-sizing: border-box;
+    height: calc(100% - $(chart-title-height));
+    border-left: 1px solid #cccccc;
+    position: absolute;
+    top: $chart-title-height;
+    right: 0;
+    z-index: 99;
+}
+
+#recomm-header > h3 {
+    float: left;
+}
+
+#recomm-ignore-all {
+    margin-top: 4px;
+    float: right;
+}
+
+#recomm-ignore:after {
+    clear: both;
+}
+
+
+#recomm-autocomplete {
+    width: 80%;
+    height: 20px;
+    line-height: 20px;
+    border-radius: 20px;
+    margin-top: 10px;
+    background-image: url("../../../img/search.png");
+    background-repeat: no-repeat;
+    background-position: 5px center;
+    padding-left: 25px;
+}
+
+#recomm-list {
+    overflow-y: auto;
+    height: 80%;
+    
+    .recomm-item {
+        line-height: 26px;
+        cursor: pointer;
+        .recomm-item-action {
+            margin-left: 5px;
+            text-transform: capitalize;
+            clear: both;
+        }
+    }
+    .recomm-item.active, .recomm-item:hover {
+        background-color: #ddd;
+        border-radius: 10px;
+    }
+    .read {
+        font-weight: normal;
+        margin-left: 17px;
+    }
+    .unread::before {
+        content: "•";
+        font-size: 28px;
+        color: orange;
+        float: left;
+        margin-left: 7px;
+    }
+    .unread {
+        font-weight: bold;
+    }
+    .action {
+        color: green;
+    }
+    .action::before {
+        content: "\2713";
+        font-family: "Splunk Icons";
+        font-style: normal;
+        font-weight: normal;
+        color: green;
+        margin-left: 8px;
+    }
+    .ignore {
+        text-decoration: line-through;
+        margin-left: 17px;
+    }
+}

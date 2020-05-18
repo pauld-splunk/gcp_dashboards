@@ -1,0 +1,105 @@
+<dashboard>
+  <label>Stackdriver Audit Logging Overview</label>
+  <row>
+    <panel>
+      <title>GCP - Activity Changes by Type</title>
+      <chart>
+        <search>
+          <query>sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName != ""  data.resource.type != "" | timechart count by data.resource.type</query>
+          <earliest>-7d@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>GCP - # of Activity Events by Source</title>
+      <chart>
+        <search>
+          <query>sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName!="" | stats count by source</query>
+          <earliest>-7d@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>GCP - Count of Activities by Users</title>
+      <chart>
+        <search>
+          <query>sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName!="" data.resource.type!="" | spath output=service_name path="data.protoPayload.serviceName" | eval "Service Name"=service_name | spath output=username path="data.protoPayload.authenticationInfo.principalEmail" | timechart count by username</query>
+          <earliest>-7d@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>GCP - Count of Events by User and Severity</title>
+      <table>
+        <search>
+          <query>sourcetype=google:gcp:pubsub:message "data.logName"="*logs/cloudaudit.googleapis.com%2Factivity*""data.logName"="*logs/cloudaudit.googleapis.com%2Factivity*" | spath output=severity "data.severity" | spath output=username path="data.protoPayload.authenticationInfo.principalEmail" | eval "User Name"=username | chart count by "User Name", severity | sort -count</query>
+          <earliest>-7d@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+    <panel>
+      <title>GCP - Operation Count by User</title>
+      <table>
+        <search>
+          <query>sourcetype=google:gcp:pubsub:message "data.logName"="*logs/cloudaudit.googleapis.com%2Factivity*" | rename data.protoPayload.authenticationInfo.principalEmail as Username | eval Username=if(Username=="", "Unknown", Username) | stats count by Username, data.protoPayload.request.@type | rename data.protoPayload.request.@type as "Event Type" | sort -count | rename count as Count | table Username, "Event Type", Count</query>
+          <earliest>-7d@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>GCP - ERROR Logs Count</title>
+      <chart>
+        <search>
+          <query>sourcetype=google:gcp:pubsub:message data.severity=*ERROR* | stats count by data.protoPayload.serviceName</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+</dashboard>

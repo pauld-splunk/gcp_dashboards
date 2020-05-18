@@ -1,0 +1,28 @@
+<div>Summary</div>
+<table>
+        <tr>
+          <td>Account ID:</td>
+          <td><strong><%= accountId %></strong></td>
+        </tr>
+        <tr>
+            <td>Region:</td>
+            <td><strong><%= region %></strong></td>
+        </tr>
+          <td>Platform:</td>
+          <td><strong><%= platform %></strong></td>
+        </tr>
+        <tr>
+          <td>Tenancy:</td>
+          <td><strong><%= tenancy %></strong></td>
+        </tr>
+        <tr>
+            <% if (applyFlexibility) {%>
+          <td>Family:</td>
+          <td><strong><%= family %></strong></td>
+            <% }else { %>
+            <td>Instance type:</td>
+          <td><strong><%= type %></strong></td>
+            <% } %>
+        </tr>
+        <tr>
+</table>

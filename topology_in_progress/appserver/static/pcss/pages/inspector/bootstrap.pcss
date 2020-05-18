@@ -1,0 +1,25 @@
+#selectRun {
+  width: 420px;
+
+  .select2-container { min-width: 400px; }
+}
+
+#select_severity {
+  width: 330px;
+
+  .select2-container { min-width: 310px; }
+}
+
+#findings_table table {
+  thead > tr {
+    th:nth-last-child(1), th:nth-last-child(2), th:nth-last-child(3) {
+        display: none;
+    }
+  }
+
+  tbody > tr {
+    td[data-cell-index]:nth-last-child(1), td[data-cell-index]:nth-last-child(2), td[data-cell-index]:nth-last-child(3) {
+        display: none;
+    }
+  }
+}

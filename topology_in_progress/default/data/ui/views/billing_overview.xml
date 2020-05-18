@@ -1,0 +1,23 @@
+<dashboard>
+  <label>Billing Overview</label>
+  <row>
+    <panel>
+      <title>GCP - Detail Cost - Last 30 Days</title>
+      <table>
+        <search>
+          <query>sourcetype = google:gcp:billing:report earliest = -30d | stats sum(cost.amount) as total_cost by projectName, lineItemId | sort -total_cost</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</dashboard>

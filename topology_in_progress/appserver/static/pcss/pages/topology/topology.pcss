@@ -1,0 +1,521 @@
+@font-face {
+  font-family: Bebas;
+  src: url("../../../font/Bebas.ttf");
+}
+
+.panel-body.html {
+  padding-bottom: 0px !important;
+}
+
+#topology {
+  margin: -10px -10px 0px -10px;
+}
+
+#topology {
+  height: $topology-height;
+  min-height: $topology-height;
+}
+
+.topology-list {
+  width: 280px;
+  float: left;
+  padding: 10px 20px;
+  box-sizing: border-box;
+  height: 100%;
+  border-right: 1px solid #cccccc;
+  background: $panel-background;
+}
+.accordion {
+  background: $panel-background !important;
+}
+.topology-chart {
+  height: 100%;
+  float: left;
+  background: white;
+}
+
+#topology-accordion {
+  height: 90%;
+}
+
+.topology-accordion-toggle, .topology-sub-accordion-toggle {
+  font-size: 13px;
+  line-height: 35px;
+  position: relative;
+  cursor: pointer;
+  background-image: url("../../../img/accordion-arrowdown.png");
+  background-repeat: no-repeat;
+  background-position: 5px center;
+  padding-left: 25px;
+}
+.topology-sub-accordion-toggle{
+  margin-left:25px;
+}
+.topology-accordion-toggle.collapsed, .topology-sub-accordion-toggle.collapsed {
+  background-image: url("../../../img/accordion-arrowleft.png");
+}
+.topology-accordion-toggle.disabled, .topology-sub-accordion-toggle.disabled {
+  opacity: 0.7;
+  background-image: none;
+}
+#topology-accordion .accordion-body {
+  background: $panel-background;
+}
+.topology-accordion-inner {
+  margin-left: 20px;
+}
+.topology-resource-list {
+  list-style-type: none;
+  margin: 0;
+}
+.topology-resource-list > li {
+  line-height: 24px;
+  margin-left: 33px;
+  padding-left: 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.topology-resource-list > li:hover {
+  cursor: pointer;
+  background-color: #ddd;
+}
+.topology-resource-list > li.active {
+  background-color: #ddd;
+}
+
+.chart-title {
+  background-color: $panel-background;
+  height: $chart-title-height;
+}
+
+#recomm-dependency {
+  display: none;
+  position: fixed;
+  top: 50px;
+  right: 15px;
+  background-color: white;
+  border: 1px solid #cccccc;
+  width: 280px;
+  padding: 10px;
+  border-radius: 5px;
+
+  h3 {
+    margin-top: 0px;
+  }
+
+  .close {
+    margin-top: -5px;
+  }
+}
+
+#recomm-dependency:after, #recomm-dependency:before {
+  top: 100%;
+  border: solid transparent;
+  content: " ";
+  height: 0;
+  width: 0;
+  position: absolute;
+  pointer-events: none;
+}
+
+#recomm-dependency:after {
+  border-color: rgba(255, 255, 255, 0);
+  border-top-color: #ffffff;
+  border-width: 10px;
+  margin-left: -10px;
+  right: 9px;
+}
+#recomm-dependency:before {
+  border-color: rgba(204, 204, 204, 0);
+  border-top-color: #cccccc;
+  border-width: 11px;
+  margin-left: -11px;
+  right: 8px;
+}
+
+#zoom-in,
+#cameraBtn,
+#zoom-out,
+#fitBtn,
+#layerBtn,
+#playbackBtn,
+#overviewBtn,
+#legendBtn,
+.recommZone {
+  width: $chart-title-height;
+  height: $chart-title-height;
+  cursor: pointer;
+  float: right;
+  padding-top: 10px;
+  color: #666;
+  display: inline-block;
+  background-repeat: no-repeat;
+  background-position: center center;
+  box-sizing: border-box;
+
+  &.disabled{
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+}
+
+#zoom-in {
+  background-image: url("../../../img/zoom-in.svg");
+}
+
+#zoom-out {
+  background-image: url("../../../img/zoom-out.svg");
+}
+
+#cameraBtn {
+  background-image: url("../../../img/camera.svg");
+}
+
+#fitBtn.fit-screen{
+  background-image: url("../../../img/expand.svg");
+}
+
+#fitBtn.fit-area{
+  background-image: url("../../../img/minimize.svg");
+}
+
+#layerBtn {
+  background-image: url("../../../img/layers.svg");
+}
+
+#playbackBtn {
+  background-image: url("../../../img/playback.svg");
+}
+
+#recommBtn {
+  width: $chart-title-height;
+  height: $chart-title-height;
+  margin-top: -10px;
+  background-image: url("../../../img/recommendation-bulb.svg");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: 20px 20px;
+
+  &.disabled{
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  &.enabled {
+    background-image: url("../../../img/recommendation-bulb-enabled.svg");
+    border-left: 1px solid #cccccc;
+  }
+}
+
+#overviewBtn {
+  background-image: url("../../../img/overview.svg");
+
+  &.enabled {
+    background-image: url("../../../img/overview-enabled.svg");
+  }
+}
+
+#legendBtn {
+  background-image: url("../../../img/legend.svg");
+
+  &.enabled {
+    background-image: url("../../../img/legend-enabled.svg");
+  }
+}
+
+#recommBadge {
+  height: 20px;
+  width: 20px;
+  position: absolute;
+  top: 2px;
+  right: 0;
+  background-color: orange;
+  border-radius: 10px;
+  opacity: 0.9;
+  color: white;
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
+  display: none;
+}
+
+#layers-dropdown-area{
+  position: absolute;
+  display: none;
+  top: 0px;
+  z-index: 9999;
+  background: $panel-background;
+  border: 1px solid #cccccc;
+  color: #999999;
+  padding: 5px;
+  border-top: none;
+  min-width: 180px;
+
+  label {
+    display: inline;
+    cursor: pointer;
+  }
+}
+
+.layer-set-item {
+  line-height:30px;
+}
+
+.collapse-chart {
+  cursor: pointer;
+  margin-right: 5px;
+}
+#accordion-autocomplete {
+  width: 75%;
+  height: 20px;
+  line-height: 20px;
+  border-radius: 20px;
+  margin-top: 10px;
+  background-image: url("../../../img/search.png");
+  background-repeat: no-repeat;
+  background-position: 5px center;
+  padding-left: 25px;
+}
+#accordion-hint {
+  color: red;
+  visibility: hidden;
+}
+.accordion-check {
+  float: right;
+  width: 16px;
+  height: 35px;
+  cursor: pointer;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.accordion-check.checked {
+  background-image: url("../../../img/checked.svg");
+}
+.accordion-check.checked:hover {
+  background-image: url("../../../img/checked-hover.svg");
+}
+.accordion-check.unchecked {
+  background-image: url("../../../img/unchecked.svg");
+}
+.accordion-check.unchecked:hover {
+  background-image: url("../../../img/unchecked-hover.svg");
+}
+
+
+.topology-list.topology-list-folded {
+  width: 60px;
+  padding: 10px 0;
+}
+
+.topology-list-folded {
+  #topology-accordion {
+    display: none;
+  }
+
+  #topology-accordion-lite {
+    display: block;
+  }
+}
+
+#topology-accordion .accordion-group {
+  height: 80%;
+  overflow-y: auto;
+  padding-right: 12px;
+}
+#topology-accordion-lite {
+  width: 60px;
+  height: 90%;
+  display: none;
+
+  .topology-accordion-lite-item {
+    margin-bottom: 10px;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .topology-accordion-lite-item.disabled {
+    opacity: 0.3;
+  }
+}
+
+#topology-accordion-control {
+  margin-top: 35px;
+  height: 20px;
+  opacity: 0.5;
+  text-align: center;
+  width: 100%;
+  cursor: pointer;
+}
+
+.accordion-title {
+  float: left;
+  width: 168px;
+  overflow: hidden;
+  white-space: nowrap;
+
+  img {
+    width: 25px;
+    height: 25px;
+    margin-left: 5px;
+    margin-right: 5px;
+  }
+}
+
+#chart-overview {
+  min-width: 220px;
+  width: 15%;
+  position: absolute;
+  top: 36px;
+  right: -1px;
+  border: 1px solid #CCC;
+  background: $panel-background;
+  padding: 0px;
+  z-index: 98;
+  display: none;
+  overflow: hidden;
+}
+
+.layer-set-item > input {
+  height: 20px;
+  width: 20px;
+  margin-right: 5px;
+}
+#overview-position {
+  background: #fd9805;
+  position: absolute;
+  opacity: 0.3;
+  cursor: move;
+}
+#timerange {
+  display: none;
+  vertical-align: top;
+}
+#timepicker {
+  width: 80px;
+  float: left;
+  padding-right: 26px;
+  background-image: url("../../../img/calendar.svg");
+  background-repeat: no-repeat;
+  background-position: 87px center;
+}
+#loadingLayer {
+  background-color: white;
+  position: absolute;
+  z-index: 999;
+  display: none;
+  opacity: 0.6;
+}
+.loadingArea {
+  width: 140px;
+  height: 56px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 200px;
+  line-height: 56px;
+  color: white;
+  padding-left: 60px;
+  font-size: 15px;
+  background: #000000 url("../../../img/loadingTopology.gif") no-repeat 10px 50%;
+  border-radius: 20px;
+}
+#topologyContainer {
+  border: 1px solid #CCC;
+}
+.fieldset .input:not(#tags) {
+  width: 200px !important;
+}
+.ui-datepicker-unselectable > span {
+  display: block;
+  padding: 0.2em;
+  text-align: right;
+}
+.ui-datepicker-title,
+.ui-datepicker-calendar th span,
+.ui-datepicker-calendar td a,
+.ui-datepicker-calendar td span {
+  color: #333 !important;
+}
+.ui-datepicker-header {
+  border: none !important;
+}
+.ui-datepicker-calendar .ui-state-highlight {
+  color: #fff !important;
+  background: #03a2d6 !important;
+}
+#export_canvas {
+  display: none;
+}
+.dashboard-panel {
+  border: none !important;
+}
+#exporting {
+  width: 100%;
+  height: 100%;
+  background: #ffffff url("../../../img/loading.gif") no-repeat 45% 200px;
+}
+.svg-container{
+  overflow: hidden;
+  image{
+    cursor:pointer;
+  }
+}
+.select2-container-multi .select2-choices {
+    min-height: 26px !important;
+    max-height: 60px !important;
+    overflow: auto;
+}
+
+.sourcetype-checker.alert{
+  margin-bottom: 0px;
+}
+
+#legend-group{
+  width: 510px;
+  height: 115px;
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  background: #f5f5f5;
+  opacity: 0.8;
+  border-left: 1px solid #ccc;
+  border-top: 1px solid #ccc;
+  padding: 15px;
+  display: none;
+
+  > p{
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #333;
+  }
+
+  .legend-item{
+    width: auto;
+    height: 90px;
+    float: left;
+    margin-right: 15px;
+    position: relative;
+
+    > p{
+      color: #333;
+    }
+
+    .severity-legend-icon{
+      margin-right: 13px;
+    }
+
+    .legend-serious-label{
+      text-align:center;
+      width: 42px;
+      position: absolute;
+      top: 37px;
+
+      &.inspector-legend{
+        right: 8px;
+      }
+
+      &.config-rule-legend{
+        right: 9px;
+      }
+    }
+  }
+}

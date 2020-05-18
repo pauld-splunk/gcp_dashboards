@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="54px" height="54px" viewBox="0 0 54 54" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+    <!-- Generator: Sketch 3.2.2 (9983) - http://www.bohemiancoding.com/sketch -->
+    <title>eni-hover 2</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <rect id="Network-2" fill="#FF9947" fill-opacity="0.3" transform="translate(26.870058, 26.870058) rotate(-45.000000) translate(-26.870058, -26.870058) " x="7.87005769" y="7.87005769" width="38" height="38" rx="4"></rect>
+        <rect id="Network" fill="#FF9947" transform="translate(27.213203, 27.213203) rotate(-45.000000) translate(-27.213203, -27.213203) " x="12.2132034" y="12.2132034" width="30" height="30" rx="4"></rect>
+        <path d="M30.0057176,22 L28.004574,22 L28.004574,26 L30.0057176,26 L30.0057176,22 L30.0057176,22 Z M26.0034305,22 L24.002287,22 L24.002287,26 L26.0034305,26 L26.0034305,22 L26.0034305,22 Z M32.0068611,29 L29.0051458,29 L29.0051458,31 L24.9988565,31 L24.9988565,29 L22.0011435,29 L22.0011435,22 L20,22 L20,31 L23.0017153,31 L23.0017153,33 L31.002287,33 L31.002287,31 L34,31 L34,22 L32.0068611,22 L32.0068611,29 L32.0068611,29 Z" id="Network-Interface" fill="#FFFFFF"></path>
+    </g>
+</svg>

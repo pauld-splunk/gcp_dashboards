@@ -1,0 +1,40 @@
+<a class="openInLink" href="#">Open in Search</a>
+<div class="shared-alertcontrols-editmenu">
+    <a class="dropdown-toggle" href="#">Edit<span class="caret"></span></a>
+    <div class="dropdown-menu dropdown-menu-narrow">
+        <div class="arrow"></div>
+        <ul class="second-group">
+            <li>
+                <a class="edit-job" href="#">Edit Job</a>
+            </li>
+            <li>
+                <% if(isEnable) {%>
+                <a class="disable-job" href="#">Disable Job</a>
+                <%} else {%>
+                <a class="enable-job" href="#">Enable Job</a>
+                <%}%>
+            </li>
+            <li>
+                <a class="delete-job" href="#">Delete Job</a>
+            </li>
+        </ul>
+        <ul class="third-group">
+            <li>
+                <% if(hasAlert) {%>
+                <a class="edit-alert" href="#">Edit Alert</a>
+                <%} else {%>
+                <a class="create-alert" href="#">Create Alert</a>
+                <%}%>
+            </li>
+            <% if(hasAlert) {%>
+            <li>
+                <a class="delete-alert" href="#">Delete Alert</a>
+            </li>
+            <%}%>
+        </ul>
+    </div>
+</div>
+<% if(isScheduleError) {%>
+    <span data-html="true" data-toogle="tooltip" data-placement="top" class="icon-warning-sign schedule-tooltip"
+    data-original-title="<%= tooltipContent %>"></span><%= linkNode %>
+<% } %>

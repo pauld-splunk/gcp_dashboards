@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="25px" height="19px" viewBox="0 0 25 19" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+    <!-- Generator: Sketch 3.3.2 (12043) - http://www.bohemiancoding.com/sketch -->
+    <title>Icon/SecurityGroup</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Visual-Designs" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <g id="4.0-Icons" sketch:type="MSArtboardGroup" transform="translate(-448.000000, -242.000000)" fill="#252525">
+            <g id="Icons" sketch:type="MSLayerGroup" transform="translate(400.000000, 145.000000)">
+                <g id="Icon/SecurityGroup" transform="translate(52.000000, 97.000000)" sketch:type="MSShapeGroup">
+                    <path d="M9,11.969 L7,11.969 L7,14.969 L9,14.969 L9,11.969 Z M14,17 L2,17 L2,10 L14,10 L14,17 Z M6.00285878,3.96691312 C6.00285878,2.86349617 6.89109599,1.969 8.00400229,1.969 C9.10920333,1.969 10.0051458,2.86726062 10.0051458,3.96691312 L10.0051458,7.969 L6.00285878,7.969 L6.00285878,3.96691312 Z M11.995996,7.69145966 L11.995996,3.86570263 C11.995996,1.73441191 10.2008675,0 7.99199199,0 C5.78445112,0 3.98798799,1.73441191 3.98798799,3.86570263 L3.98798799,7.69145966 L2.65331999,7.69145966 C1.18118118,7.69145966 0,8.84601618 0,10.2685947 L0,16.4228649 C0,17.8454435 1.18118118,19 2.65331999,19 L13.330664,19 C14.8028028,19 16,17.8454435 16,16.4228649 L16,10.2685947 C16,8.84601618 14.8028028,7.69145966 13.330664,7.69145966 L11.995996,7.69145966 Z" id="Fill-138-Copy-5"></path>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

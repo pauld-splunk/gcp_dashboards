@@ -1,0 +1,20 @@
+<% if(existingRIs!=="N/A") { %>
+<div>
+    <strong>Existing RIs:</strong>
+    <br>
+    You already had <%= existingRIs %> reserved instance<%= (existingRIs > 0 ? "s" : "") %> in this category, converting to unit :
+    <% if(appliedFlexibility) {%>
+        <%= existingRIsUnits %><%= existingRIsUnits> 0 ? (" = "+unitEquation) : "" %>.
+    <%}else{%>
+        0.
+        <br>
+        Instance size flexibility is only supported for <strong>Linux</strong> platform with <strong>default</strong> tenancy that are assigned to a <strong>region</strong> scope.
+    <%}%>
+    <br>
+    <% if(existingRIs > 0) { %>
+    <ul>
+    <%= existingRIInfo %>
+    </ul>
+    <%}%>
+</div>
+<%}%>

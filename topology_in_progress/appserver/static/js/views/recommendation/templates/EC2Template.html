@@ -1,0 +1,12 @@
+<div class="recomm-body">
+    <p>Instance <span class="resource-id"><%-id%></span> is <%-utilized%>. Consider <%-actioning%> this instance to <%-reason%>.
+    <p>To <%-action%> this instance using the CLI tool, follow the steps below. You can also  <%-action%> this instance using the AWS Management Console. <%=learnMore%></p>
+</div>
+<div id="resource-recommend-action" class="recomm-command">
+    <h4><b>1.</b> Stop your instance.</h4>
+    <p><pre>aws ec2 stop-instances --instance-ids <%-id%> --region <%-region%></pre></p>
+    <h4><b>2.</b> Modify your instance type. In the command below, replace INSTANCE TYPE with the value of the instance type that you want to downgrade to.</h4>
+    <p><pre>aws ec2 modify-instance-attribute --instance-id <%-id%> --region <%-region%> --instance-type {"Value": "<span class="label label-info">INSTANCE TYPE</span>"}</pre></p>
+    <h4><b>3.</b> Start your instance.</h4>
+    <p><pre>aws ec2 start-instances --instance-ids <%-id%> --region <%-region%></pre></p>
+</div>

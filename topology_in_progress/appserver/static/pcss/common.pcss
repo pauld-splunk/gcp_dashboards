@@ -1,0 +1,25 @@
+/* Import all core styles. This will produce a replacement for bootstrap.min.css */
+@import "SplunkWebCore/search_mrsparkle/exposed/pcss/base/bootstrap.pcss";
+
+/* [SSO Only] Some static resources can"t be load in sso env. Ugly fix */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .spinner-small-gray {
+    background-image: url("~img/skins/default/loading_small_gray_2x.png");
+  }
+  .spinner-medium-green {
+    background-image: url("~img/skins/default/loading_medium_green_2x.png");
+  }
+}
+
+@font-face {
+  font-family: "Splunk Icons";
+  src: url("../../../font/splunkicons-regular-webfont.woff");
+  font-weight: normal;
+  font-style: normal;
+}
+
+header a[data-role|=sidenav-toggle]:hover, header a[data-role=logo]:hover, header div[data-role=sidenav-body] a:hover {
+  @if $productType == lite {
+    color: $white !important;
+  }
+}

@@ -1,0 +1,10 @@
+<div class="recomm-body">
+    <p>Security group <span class="resource-id"><%-id%></span> is not being used. Consider deleting this security group to keep your AWS environment more organized.</p>
+    <p>To delete this security group using the CLI tool, use the command below.</p>
+</div>
+<div id="resource-recommend-action" class="recomm-command">
+    <pre>aws ec2 delete-security-group --group-id <%-id%> --region <%-region%></pre>
+</div>
+<div class="recomm-body">
+    You can also delete this security group using the AWS Management Console. <%=learnMore%>
+</div>

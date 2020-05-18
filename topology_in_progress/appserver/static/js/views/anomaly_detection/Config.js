@@ -1,0 +1,42 @@
+define([], function () {
+    return {
+        MILLI_SEC_IN_SEC: 1000,
+        MILLI_SEC_IN_MIN: 60000,
+        MILLI_SEC_IN_HOUR: 3600000,
+        MILLI_SEC_IN_DAY: 86400000,
+        DAY_IN_WEEK: 7,
+        DAY_IN_MONTH: 30,
+        OUTLIER_COLOR: '#ff0000',
+        NORMAL_COLORS: ['#d6563c', '#1e93c6', '#f2b827', '#6a5c9e', '#31a35f', '#3863a0', '#a2cc3e', '#ed8440',
+            '#cc5068', '#73427f', '#11a88b', '#99712b', '#314d5b'],
+        ENABLE_MODE: 1,
+        DETECT_MODE: 2,
+        DISPLAY_MODE: 4,
+        HIGHLIGHT_MODE: 8,
+        CREATE_MODE: 16,
+        EDIT_MODE: 32,
+        INDEX: 'summary',
+        SOURCE_TYPE: 'aws:anomaly',
+        JOB_ID: 'job_id',
+        JOB_NAME: 'job_name',
+        JOB_PRIORITY: 'job_priority',
+        JOB_MODE: 'job_mode',
+        JOB_SCHEDULE: 'job_schedule',
+        JOB_SEARCH: 'job_search',
+        JOB_TRAIN: 'job_train',
+        JOB_TAGS: 'job_tags',
+        JOB_ALERT_ID: 'job_alert_id',
+        JOB_DESCRIPTION: 'job_description',
+        INVALID_SEVERITY_COLOR: '#333',
+        SEVERITY_COLOR_MAP: {
+            '1': '#FCE9E5',
+            '2': '#fed1c8',
+            '3': '#fa8e81',
+            '4': '#F14E3B'
+        },
+        UPDATE_SCHEDULE_CHECKER_JOB_SPL: '| inputlookup anomaly_schedule_checker | where job_id!="<%= jobId %>" | outputlookup anomaly_schedule_checker',
+        UPDATE_SCHEDULE_CHECKER_ALERT_SPL: '| inputlookup anomaly_schedule_checker | where job_id!="<%= jobId %>" OR is_alert!="1" | outputlookup anomaly_schedule_checker',
+        DAILY_TIME_FORMAT: 'YYYY-MM-DD',
+        HOURLY_TIME_FORMAT: 'YYYY-MM-DD HH:mm:ss'
+    }
+});

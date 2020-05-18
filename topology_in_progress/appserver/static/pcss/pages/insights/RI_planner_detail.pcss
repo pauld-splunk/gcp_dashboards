@@ -1,0 +1,99 @@
+.dashboard-row .dashboard-panel .panel-body.html, #headerContainer {
+    background-color: #eee;
+    padding: 0px;
+}
+.icon-info-circle {
+    font-size: 12px;
+    cursor: pointer;
+}
+.tooltip.in {
+    opacity: 0.9;
+    filter: alpha(opacity=90);
+}
+.hidden {
+    display: none;
+}
+#headerContainer, #ri {
+    .tooltip-inner {
+        min-width: 300px;
+    }
+}
+#infoContainer {
+    border-right: 1px solid #ddd;
+    padding-bottom: 10px;
+    float:left;
+    tr>td:first-child {
+        text-align: right;
+    }
+    tr>td:last-child {
+        padding-left: 20px;
+        padding-right: 25px;
+    }
+}
+#filterContainer {
+    display: inline;
+    .filter-input {
+        display: inline-block;
+        margin-left: 20px;
+    }
+    #base-input {
+        width: 164.5px;
+    }
+    #payment-input {
+        width: 287px;
+    }
+}
+#riCost {
+    .tooltip-inner {
+        min-width: 400px;
+    }
+    .riCostSpan {
+        background-color:#4a90e2;
+        padding: 1px 2px 1px 2px;
+        display: inline;
+    }
+    .onDemandCostSpan {
+        background-color:#f07a35;
+        padding: 1px 2px 1px 2px;
+        display: inline;
+    }
+    .formulaNum {
+        font-size: 20px;
+    }
+    #riCostContainer th {
+        height: 35px;
+        text-align: left;
+        valign: center;
+        border-bottom: 1px solid #9b9b9b;
+    }
+    #riCostContainer td {
+        width: 4.5%;
+        text-align: center;
+    }
+    #riCostContainer td:first-child {
+        width: 29%;
+        text-align: right;
+    }
+    #riCostContainer td:nth-child(5) {
+        width: 15%;
+    }
+    #riCostContainer td:nth-child(9) {
+        width: 20%;
+    }
+    .formulaConst {
+        font-size:10px;
+        color: #9b9b9b;
+    }
+}
+#chartContainer {
+    .chart-button {
+        float:right;
+        position:relative;
+        top:-290px;
+        right: 10px;
+        z-index:2;
+    }
+}
+#message-view {
+    background-color: #eee;
+}

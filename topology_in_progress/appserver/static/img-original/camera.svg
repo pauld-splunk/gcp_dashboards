@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="18px" height="16px" viewBox="0 0 53 40" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+    <!-- Generator: Sketch 3.2.2 (9983) - http://www.bohemiancoding.com/sketch -->
+    <title>Slice 1</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <g id="camera" sketch:type="MSLayerGroup" transform="translate(2.000000, 2.000000)">
+            <g id="Page-1" sketch:type="MSShapeGroup">
+                <g id="camera">
+                    <path d="M35.6000008,26.203125 L35.6000008,35.5 L0.400000095,35.5 L0.400000095,0.5 L35.6000008,0.5 L35.6000008,10.890625" id="Shape" stroke="#999999" stroke-width="5"></path>
+                    <path d="M4.69180328,27.2121212 L32.3852459,27.2121212 L30.2131148,16.9672727 L27.4983607,21.6412121 L23.9688525,8.43975758 L16.8081967,20.8004848 L10.6655738,17.798303 L4.69180328,27.2121212 L4.69180328,27.2121212 Z" id="Shape" fill="#999999"></path>
+                    <ellipse id="Oval" fill="#999999" cx="12.5655738" cy="10.416" rx="3.25819672" ry="3.85454545"></ellipse>
+                    <rect id="Rectangle-path" fill="#999999" x="32.3852459" y="15.7086061" width="14.447541" height="4.36654545"></rect>
+                    <path d="M48.4312043,15.220703 L50.7257438,17.8907126 L42.4073016,27.5703545 L40.1127621,24.9003449 L48.4312043,15.220703 L48.4312043,15.220703 Z" id="Rectangle-path" fill="#999999"></path>
+                    <path d="M40.1123593,10.883041 L42.4068988,8.21303137 L50.7253411,17.8926733 L48.4308016,20.5626829 L40.1123593,10.883041 L40.1123593,10.883041 Z" id="Rectangle-path" fill="#999999"></path>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

@@ -1,0 +1,10 @@
+<div class="recomm-body">
+    <p>Elastic Load Balancer <span class="resource-id"><%-id%></span> is not being used. Consider deleting it to keep your AWS environment more organized.</p>
+    <p>To delete this ELB using the CLI tool, use the command below.</p>
+</div>
+<div id="resource-recommend-action" class="recomm-command">
+    <pre>aws elb delete-load-balancer --load-balancer-name <%-name%> --region <%-region%></pre>
+</div>
+<div class="recomm-body">
+    You can also delete this ELB using the AWS Management Console. <%=learnMore%>
+</div>

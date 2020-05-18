@@ -1,0 +1,29 @@
+.select2-container .select2-arrow {
+    display: block !important;
+}
+
+.select2-results .select2-result-unselectable .select2-result-label{
+  cursor: not-allowed;
+}
+
+@define-mixin inline-single-input $width {
+	display: inline-block;
+	width: $width;
+	
+	.select2-container {
+		width: 100% !important;
+	}
+	
+	.select2-arrow {
+		display: block !important;
+	}
+}
+
+.mr10 {
+  margin-right: 10px;
+}
+
+.list-unstyled {
+  list-style-type: none;
+  margin: 0;
+}

@@ -1,0 +1,7 @@
+<nav search_view="search" color="#4285f4">
+  <view name="topology_standalone" default='true' />
+  <view name="metrics_overview" />
+  <view name="audit_log_overview" />
+  <view name="billing_overview" />
+  <view name="search"/>
+</nav>

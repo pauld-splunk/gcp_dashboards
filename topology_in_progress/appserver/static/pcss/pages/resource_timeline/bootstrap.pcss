@@ -1,0 +1,107 @@
+@import "timeline.css";
+
+$details_title_height: 36px;
+
+#timeline-chart {
+    width: 100%;
+    min-height: 600px;
+    display: none;
+    text-align: center;
+
+    #timeline-chart-panel {
+        height: 560px;
+    }
+
+    #timeline-chart-tips {
+        min-height: 25px;
+        overflow: auto;
+
+        .timeline-color-text {
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .timeline-color-block {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            margin-left: 5px;
+            display: inline-block;
+            position: relative;
+            top: 5px;
+        }
+    }
+}
+
+.panel-body.html {
+  padding: 0px !important;
+}
+
+/* Use "!important" to override the default style settings by timeline.css */
+.tl-timeline {
+    font-size: 1.2em;
+
+    .tl-text {
+        max-width: 90% !important;
+        width: 90% !important;
+    }
+
+    .tl-timemarker-text .tl-headline {
+        color: white !important;
+    }
+
+    .tl-timemarker-media-container>img {
+        width: 20px;
+        height: 20px;
+    }
+
+    .tl-timemarker-content-container {
+        min-height: 30px;
+        opacity: 0.6;
+
+        &.hover {
+            opacity: 1 !important;
+        }
+
+        &.blur {
+            opacity: 0.1 !important;
+        }
+    }
+
+    .tl-timemarker-active .tl-timemarker-content-container {
+        opacity: 1;
+    }
+}
+
+.timeline-content-table, .timeline-content-div {
+    float: left;
+    line-height: 32px;
+    width: 50%;
+
+    th {
+        width: 135px;
+        vertical-align: top;
+    }
+}
+
+.timeline-tooltip {
+    margin-top: 80px !important;
+    font-size: 1.2em !important;
+}
+
+/* do not show "Hide Filters" link in Ivory */
+.hide-global-filters {
+    display: none;
+}
+
+/* do not show "Dialog Footer" */
+.modal-footer {
+    display: none;
+}
+
+.timeline-longtext-cell {
+    max-height: 110px;
+    overflow: auto;
+    word-break: break-all;
+    border: 1px solid #eee;
+}

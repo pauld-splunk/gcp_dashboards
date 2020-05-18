@@ -1,0 +1,30 @@
+<form script="topology.js">
+  <label>Topology</label>
+  <search id="topologySearch">
+    <query>
+            <![CDATA[
+          index=topology_summary | table relationships resourceId resourceName resourceRegion vpcId resourceType resourceStatus instanceStatus  | dedup resourceId resourceRegion
+           ]]>
+        </query>
+    <earliest>$field1.earliest$</earliest>
+    <latest>$field1.latest$</latest>
+  </search>
+  <fieldset submitButton="false">
+    <input type="time" token="field1">
+      <label></label>
+      <default>
+        <earliest>0</earliest>
+        <latest></latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <html id="topologyContainer">
+                <div id="topology">
+                </div>
+                <canvas id="export_canvas"/>
+            </html>
+    </panel>
+  </row>
+</form>

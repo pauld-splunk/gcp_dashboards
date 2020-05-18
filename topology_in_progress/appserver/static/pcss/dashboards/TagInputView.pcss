@@ -1,0 +1,54 @@
+#awstags {
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.tag-autocomplete {
+    position: absolute;
+    z-index: 999;
+    border: 1px solid rgba(82, 168, 236, 0.8);
+    background-color: white;
+    margin-top: -9px;
+    width: 218px;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+
+
+
+    > ul {
+        list-style-type: none;
+        margin: 0;
+
+        > li {
+            border-top: 1px dotted #ccc;
+            color: #1e93c6;
+            padding-left: 5px;
+            line-height: 23px;
+            cursor: pointer;
+
+            &.active {
+                background-color: rgba(0, 0, 0, 0.05);
+            }
+
+            &:hover {
+                background-color: rgba(0, 0, 0, 0.05);
+            }
+
+            &.tag-loading {
+                cursor: default;
+                color: black;
+
+                > .loading-img {
+                    width: 16px;
+                    height: 16px;
+                    margin-top: 2px;
+                    margin-right: 5px;
+                    display: block;
+                    float: left;
+                    background-image: url("../../img/loading-16.gif");
+                }
+            }
+        }
+    }
+}

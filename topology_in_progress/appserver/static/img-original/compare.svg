@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="20px" height="20px" viewBox="0 0 126 99" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+    <!-- Generator: Sketch 3.2.2 (9983) - http://www.bohemiancoding.com/sketch -->
+    <title>Untitled</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <path d="M54,97 L54,3" id="Line" stroke="#999999" stroke-width="8" stroke-linecap="square" sketch:type="MSShapeGroup"></path>
+        <path d="M26.5,21 L82,21" id="Line" stroke="#999999" stroke-width="8" stroke-linecap="square" sketch:type="MSShapeGroup"></path>
+        <polygon id="Triangle-1" stroke="#999999" stroke-width="8" sketch:type="MSShapeGroup" points="26 24 48 75 4 75 "></polygon>
+        <polygon id="Triangle-2" stroke="#999999" stroke-width="8" sketch:type="MSShapeGroup" points="82 24 104 75 60 75 "></polygon>
+        <ellipse id="Oval-1" fill="#999999" sketch:type="MSShapeGroup" transform="translate(27.000000, 75.000000) scale(1, -1) translate(-27.000000, -75.000000) " cx="27" cy="75" rx="22" ry="10"></ellipse>
+        <ellipse id="Oval-2" fill="#999999" sketch:type="MSShapeGroup" transform="translate(83.000000, 75.000000) scale(1, -1) translate(-83.000000, -75.000000) " cx="83" cy="75" rx="22" ry="10"></ellipse>
+        <path d="M40.5,97 L70.5,97" id="Line" stroke="#999999" stroke-width="8" stroke-linecap="square" sketch:type="MSShapeGroup"></path>
+        <polygon id="Triangle-3" fill="#27ACF3" sketch:type="MSShapeGroup" transform="translate(91.500000, 16.000000) rotate(-34.000000) translate(-91.500000, -16.000000) " points="91.5 -2 113 34 70 34 "></polygon>
+    </g>
+</svg>

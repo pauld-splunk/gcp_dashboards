@@ -1,0 +1,58 @@
+<span data-html="true" class="icon-info-circle RI-formula-tooltip" data-toggle="tooltip" data-placement="bottom" data-original-title='
+<table>
+  <tr>
+    <th colspan="11">Recommened Cost =<div class="riCostSpan">RI Cost</div> + <div class="onDemandCostSpan">On Demand Cost</div></th>
+  </tr>
+  <tr>
+    <td><div class="riCostSpan">RI Cost</div></td>
+    <td>=</td>
+    <td class="formulaNum"><%=RI%></td>
+    <td>x</td>
+    <td class="formulaNum"><%=currencySign %><%=yearly%></td>
+    <td>+</td>
+    <td class="formulaNum"><%=RI%></td>
+    <td>x</td>
+    <td class="formulaNum"><%=currencySign %><%=monthly%></td>
+    <td>x</td>
+    <td class="formulaNum">12</td>
+  </tr>
+  <tr>
+    <td></td>
+    <td></td>
+    <td class="formulaConst">RI</td>
+    <td></td>
+    <td class="formulaConst">Reserved Yearly Cost</td>
+    <td></td>
+    <td class="formulaConst">RI</td>
+    <td></td>
+    <td class="formulaConst">Reserved Monthly Cost</td>
+    <td></td>
+    <td class="formulaConst">Months</td>
+  </tr>
+  <tr>
+    <td><div class="onDemandCostSpan">On Demand Cost</div></td>
+    <td>=</td>
+    <td class="formulaNum"><%=hours%></td>
+    <td>x</td>
+    <td class="formulaNum"><%=currencySign %><%=hourly%></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td></td>
+    <td class="formulaConst"><%= remainedDisplay %></td>
+    <td></td>
+    <td class="formulaConst">On-demand Hourly Cost</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+</table>'></span>

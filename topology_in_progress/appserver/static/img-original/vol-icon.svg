@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="25px" height="24px" viewBox="0 0 25 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+    <!-- Generator: Sketch 3.3.2 (12043) - http://www.bohemiancoding.com/sketch -->
+    <title>Icon/Volume</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Visual-Designs" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <g id="4.0-Icons" sketch:type="MSArtboardGroup" transform="translate(-446.000000, -340.000000)" fill="#333333">
+            <g id="Icons" sketch:type="MSLayerGroup" transform="translate(400.000000, 145.000000)">
+                <g id="Icon/Volume" transform="translate(49.000000, 195.000000)" sketch:type="MSShapeGroup">
+                    <path d="M15.5,2 L15.5,4 L10.5,4 L10.5,6 L15.5,6 L15.5,22 L3.5,22 L3.5,6 L8.5,6 L8.5,4 L3.5,4 L3.5,2 L15.5,2 L15.5,2 Z M3.5,24 L15.5,24 C16.603,24 17.5,23.103 17.5,22 L17.5,2 C17.5,0.897 16.603,0 15.5,0 L3.5,0 C2.398,0 1.5,0.897 1.5,2 L1.5,22 C1.5,23.103 2.398,24 3.5,24 L3.5,24 L3.5,24 Z" id="EBS-Volume"></path>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
