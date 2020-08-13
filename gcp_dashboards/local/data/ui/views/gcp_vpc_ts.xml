@@ -1,6 +1,6 @@
 <form>
   <label>GCP VPC Traffic Overview</label>
-  <description>v1.0</description>
+  <description>v1.1</description>
   <fieldset submitButton="false">
     <input type="time" token="field1">
       <label></label>
@@ -15,7 +15,7 @@
       <title>Number of VMs</title>
       <single>
         <search>
-          <query>|tstats fillnull_value=null count  where index=* sourcetype=google:gcp:pubsub:message  "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows" by "data.jsonPayload.src_instance.vm_name", "data.jsonPayload.dest_instance.vm_name" | rename "data.jsonPayload.src_instance.vm_name" as vmsrc | rename "data.jsonPayload.dest_instance.vm_name" as vmdest | eval allvms=if(vmsrc="null", vmdest, vmsrc)| stats dc(allvms) as vms</query>
+          <query>|tstats fillnull_value=null count  where `gcp_index` sourcetype=google:gcp:pubsub:message  "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows" by "data.jsonPayload.src_instance.vm_name", "data.jsonPayload.dest_instance.vm_name" | rename "data.jsonPayload.src_instance.vm_name" as vmsrc | rename "data.jsonPayload.dest_instance.vm_name" as vmdest | eval allvms=if(vmsrc="null", vmdest, vmsrc)| stats dc(allvms) as vms</query>
           <earliest>$field1.earliest$</earliest>
           <latest>$field1.latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -43,7 +43,7 @@
       <title>Protocols</title>
       <single>
         <search>
-          <query>|tstats dc("data.jsonPayload.connection.protocol") as Protocols where index=* sourcetype=google:gcp:pubsub:message "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows"</query>
+          <query>|tstats dc("data.jsonPayload.connection.protocol") as Protocols where `gcp_index` sourcetype=google:gcp:pubsub:message "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows"</query>
           <earliest>$field1.earliest$</earliest>
           <latest>$field1.latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -71,7 +71,7 @@
       <title>Total Traffic (GB)</title>
       <single>
         <search>
-          <query>|tstats sum("data.jsonPayload.bytes_sent") as total_bytes sum("data.jsonPayload.packets_sent") as total_packets_sent where index=* sourcetype=google:gcp:pubsub:message  "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows"  
+          <query>|tstats sum("data.jsonPayload.bytes_sent") as total_bytes sum("data.jsonPayload.packets_sent") as total_packets_sent where `gcp_index` sourcetype=google:gcp:pubsub:message  "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows"  
 | eval GB = round((((total_bytes / 1024) / 1024) / 1024),2)
 | fields + GB</query>
           <earliest>$field1.earliest$</earliest>
@@ -88,7 +88,7 @@
       <title>Total Packets</title>
       <single>
         <search>
-          <query>|tstats  sum("data.jsonPayload.packets_sent") as total_packets_sent where index=* sourcetype=google:gcp:pubsub:message "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows"</query>
+          <query>|tstats  sum("data.jsonPayload.packets_sent") as total_packets_sent where `gcp_index` sourcetype=google:gcp:pubsub:message "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows"</query>
           <earliest>$field1.earliest$</earliest>
           <latest>$field1.latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -103,7 +103,7 @@
       <title>Destinations</title>
       <single>
         <search>
-          <query>|tstats dc("data.jsonPayload.connection.dest_ip") as Dest where index=* sourcetype=google:gcp:pubsub:message  "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows"</query>
+          <query>|tstats dc("data.jsonPayload.connection.dest_ip") as Dest where `gcp_index` sourcetype=google:gcp:pubsub:message  "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows"</query>
           <earliest>$field1.earliest$</earliest>
           <latest>$field1.latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -131,7 +131,7 @@
       <title>Sources</title>
       <single>
         <search>
-          <query>|tstats dc(data.jsonPayload.connection.src_ip) as Sources where index=* sourcetype=google:gcp:pubsub:message  "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows"</query>
+          <query>|tstats dc(data.jsonPayload.connection.src_ip) as Sources where `gcp_index` sourcetype=google:gcp:pubsub:message  "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows"</query>
           <earliest>$field1.earliest$</earliest>
           <latest>$field1.latest$</latest>
           <sampleRatio>1</sampleRatio>

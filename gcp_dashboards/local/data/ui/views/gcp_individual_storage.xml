@@ -1,7 +1,7 @@
 <form>
   <search id="baseInfo">
     <query>
-      |tstats count where index=* sourcetype="google:gcp:assets" asset_type="compute.googleapis.com/Disk"  earliest=$time_tok.earliest$ latest=$time_tok.latest$  by resource.data.id ,name, resource.data.name, resource.data.sizeGb, resource.data.type, resource.data.sourceImage, resource.data.guestOsFeatures{}.type
+      |tstats count where `gcp_index` sourcetype="google:gcp:assets" asset_type="compute.googleapis.com/Disk"  earliest=$time_tok.earliest$ latest=$time_tok.latest$  by resource.data.id ,name, resource.data.name, resource.data.sizeGb, resource.data.type, resource.data.sourceImage, resource.data.guestOsFeatures{}.type
 |dedup resource.data.id  
 |eval ProjectID=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
 |eval Zone=replace(name,"^\S+zones\/(\S+)\/disks\/\S+","\1") 
@@ -12,7 +12,7 @@
     </query>
   </search>
   <label>GCP Individual Storage</label>
-  <description>v1.0</description>
+  <description>v1.1</description>
   <fieldset submitButton="false">
     <input type="multiselect" token="project_id_tok" searchWhenChanged="true">
       <label>Project ID</label>

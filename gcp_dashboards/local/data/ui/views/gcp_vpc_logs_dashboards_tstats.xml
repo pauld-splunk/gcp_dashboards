@@ -1,6 +1,6 @@
 <form>
   <label>GCP VPC Overview Dashboard</label>
-  <description>v1.0</description>
+  <description>v1.1</description>
   <fieldset submitButton="false" autoRun="true">
     <input type="time" token="TimeRangePicker">
       <label></label>
@@ -17,7 +17,7 @@
       <fieldForLabel>Project_ID</fieldForLabel>
       <fieldForValue>Project_ID</fieldForValue>
       <search>
-        <query>|tstats count where index=* sourcetype=google:gcp:pubsub:message by data.resource.labels.project_id| fields data.resource.labels.project_id | rename data.resource.labels.project_id as Project_ID</query>
+        <query>|tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message by data.resource.labels.project_id| fields data.resource.labels.project_id | rename data.resource.labels.project_id as Project_ID</query>
         <earliest>-7d@h</earliest>
         <latest>now</latest>
       </search>
@@ -31,7 +31,7 @@
       <fieldForLabel>location</fieldForLabel>
       <fieldForValue>location</fieldForValue>
       <search>
-        <query>|tstats count where index=* sourcetype=google:gcp:pubsub:message by data.resource.labels.project_id, data.resource.labels.location | search data.resource.labels.project_id IN ($projectid_tok$)| fields data.resource.labels.location | dedup data.resource.labels.location| rename data.resource.labels.location as location</query>
+        <query>|tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message by data.resource.labels.project_id, data.resource.labels.location | search data.resource.labels.project_id IN ($projectid_tok$)| fields data.resource.labels.location | dedup data.resource.labels.location| rename data.resource.labels.location as location</query>
         <earliest>-24h@h</earliest>
         <latest>now</latest>
       </search>
@@ -45,7 +45,7 @@
       <fieldForLabel>vpc</fieldForLabel>
       <fieldForValue>vpc</fieldForValue>
       <search>
-        <query>|tstats count where index=* "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" by data.resource.labels.project_id, data.resource.labels.location, data.jsonPayload.src_vpc.vpc_name | append [|tstats count where index=* "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" by data.resource.labels.project_id, data.resource.labels.location, data.jsonPayload.dest_vpc.vpc_name] |search  data.resource.labels.project_id IN ($projectid_tok$) AND data.resource.labels.location IN ($location_tok$)|rename data.jsonPayload.src_vpc.vpc_name as src_vpc, data.jsonPayload.dest_vpc.vpc_name as dest_vpc |eval vpc=coalesce(src_vpc,dest_vpc) | fields vpc | dedup vpc</query>
+        <query>|tstats count where `gcp_index` "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" by data.resource.labels.project_id, data.resource.labels.location, data.jsonPayload.src_vpc.vpc_name | append [|tstats count where `gcp_index` "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" by data.resource.labels.project_id, data.resource.labels.location, data.jsonPayload.dest_vpc.vpc_name] |search  data.resource.labels.project_id IN ($projectid_tok$) AND data.resource.labels.location IN ($location_tok$)|rename data.jsonPayload.src_vpc.vpc_name as src_vpc, data.jsonPayload.dest_vpc.vpc_name as dest_vpc |eval vpc=coalesce(src_vpc,dest_vpc) | fields vpc | dedup vpc</query>
         <earliest>-24h@h</earliest>
         <latest>now</latest>
       </search>
@@ -59,7 +59,7 @@
       <fieldForLabel>subnetwork_name</fieldForLabel>
       <fieldForValue>subnetwork_name</fieldForValue>
       <search>
-        <query>|tstats count where index=* "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" by data.resource.labels.project_id, data.resource.labels.location, data.jsonPayload.src_vpc.vpc_name, data.resource.labels.subnetwork_name | append [|tstats count where index=* "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" by data.resource.labels.project_id, data.jsonPayload.dest_vpc.vpc_name, data.resource.labels.location] | search data.resource.labels.project_id IN ($projectid_tok$) AND data.resource.labels.location IN ($location_tok$) AND (data.jsonPayload.src_vpc.vpc_name IN ($vpc_tok$) OR data.jsonPayload.dest_vpc.vpc_name IN ($vpc_tok$)) | rename data.resource.labels.subnetwork_name as subnetwork_name |dedup subnetwork_name</query>
+        <query>|tstats count where `gcp_index` "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" by data.resource.labels.project_id, data.resource.labels.location, data.jsonPayload.src_vpc.vpc_name, data.resource.labels.subnetwork_name | append [|tstats count where `gcp_index` "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" by data.resource.labels.project_id, data.jsonPayload.dest_vpc.vpc_name, data.resource.labels.location] | search data.resource.labels.project_id IN ($projectid_tok$) AND data.resource.labels.location IN ($location_tok$) AND (data.jsonPayload.src_vpc.vpc_name IN ($vpc_tok$) OR data.jsonPayload.dest_vpc.vpc_name IN ($vpc_tok$)) | rename data.resource.labels.subnetwork_name as subnetwork_name |dedup subnetwork_name</query>
         <earliest>-24h@h</earliest>
         <latest>now</latest>
       </search>
@@ -73,7 +73,7 @@
       <fieldForLabel>vms</fieldForLabel>
       <fieldForValue>vms</fieldForValue>
       <search>
-        <query>|tstats count where index=* "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message"  by data.resource.labels.project_id, data.resource.labels.location, data.jsonPayload.src_vpc.vpc_name, data.resource.labels.subnetwork_name, data.jsonPayload.src_instance.vm_name | append [|tstats count where index=* "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" by data.resource.labels.project_id, data.jsonPayload.dest_vpc.vpc_name, data.resource.labels.location, data.jsonPayload.dest_instance.vm_name] |search data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$)|
+        <query>|tstats count where `gcp_index` "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message"  by data.resource.labels.project_id, data.resource.labels.location, data.jsonPayload.src_vpc.vpc_name, data.resource.labels.subnetwork_name, data.jsonPayload.src_instance.vm_name | append [|tstats count where `gcp_index` "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" by data.resource.labels.project_id, data.jsonPayload.dest_vpc.vpc_name, data.resource.labels.location, data.jsonPayload.dest_instance.vm_name] |search data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$)|
         rename data.jsonPayload.src_instance.vm_name as src_vm, data.jsonPayload.dest_instance.vm_name as dest_vm |eval vms=coalesce(src_vm,dest_vm) | fields vms | dedup vms</query>
         <earliest>-24h@h</earliest>
         <latest>now</latest>
@@ -86,7 +86,7 @@
       <title>Total Traffic (GB)</title>
       <single>
         <search>
-          <query>|tstats sum("data.jsonPayload.bytes_sent") as total_bytes sum("data.jsonPayload.packets_sent") as total_packets_sent where index=* sourcetype=google:gcp:pubsub:message  "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows" sourcetype="google:gcp:pubsub:message" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by _time
+          <query>|tstats sum("data.jsonPayload.bytes_sent") as total_bytes sum("data.jsonPayload.packets_sent") as total_packets_sent where `gcp_index` sourcetype=google:gcp:pubsub:message  "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows" sourcetype="google:gcp:pubsub:message" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by _time
 | eval GB = round((((total_bytes / 1024) / 1024) / 1024),2)
 | fields + GB |timechart avg(GB)</query>
           <earliest>$TimeRangePicker.earliest$</earliest>
@@ -102,7 +102,7 @@
       <title>Total Packets</title>
       <single>
         <search>
-          <query>|tstats  sum("data.jsonPayload.packets_sent") as total_packets_sent where index=* sourcetype=google:gcp:pubsub:message "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by _time | timechart sum(total_packets_sent)</query>
+          <query>|tstats  sum("data.jsonPayload.packets_sent") as total_packets_sent where `gcp_index` sourcetype=google:gcp:pubsub:message "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by _time | timechart sum(total_packets_sent)</query>
           <earliest>$TimeRangePicker.earliest$</earliest>
           <latest>$TimeRangePicker.latest$</latest>
         </search>
@@ -114,7 +114,7 @@
       <title>Sources</title>
       <single>
         <search>
-          <query>|tstats dc(data.jsonPayload.connection.src_ip) as Sources where index=* sourcetype=google:gcp:pubsub:message  "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by _time |timechart sum(Sources)</query>
+          <query>|tstats dc(data.jsonPayload.connection.src_ip) as Sources where `gcp_index` sourcetype=google:gcp:pubsub:message  "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by _time |timechart sum(Sources)</query>
           <earliest>-24h@h</earliest>
           <latest>now</latest>
         </search>
@@ -126,7 +126,7 @@
       <title>Destinations</title>
       <single>
         <search>
-          <query>|tstats dc("data.jsonPayload.connection.dest_ip") as Dest where index=* sourcetype=google:gcp:pubsub:message  "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by _time | timechart sum(Dest)</query>
+          <query>|tstats dc("data.jsonPayload.connection.dest_ip") as Dest where `gcp_index` sourcetype=google:gcp:pubsub:message  "data.logName"="*/logs/compute.googleapis.com%2Fvpc_flows" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by _time | timechart sum(Dest)</query>
           <earliest>$TimeRangePicker.earliest$</earliest>
           <latest>$TimeRangePicker.latest$</latest>
         </search>
@@ -141,7 +141,7 @@
       <title>Number of VPC Events by Source</title>
       <chart>
         <search>
-          <query>|tstats count where index=* "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$))  by _time, data.jsonPayload.connection.src_ip  |timechart count by data.jsonPayload.connection.src_ip useother=f</query>
+          <query>|tstats count where `gcp_index` "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$))  by _time, data.jsonPayload.connection.src_ip  |timechart count by data.jsonPayload.connection.src_ip useother=f</query>
           <earliest>$TimeRangePicker.earliest$</earliest>
           <latest>$TimeRangePicker.latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -186,7 +186,7 @@
       <title>VPC Events Destination</title>
       <map>
         <search>
-          <query>|tstats count where index=* "data.logName"=*%2Fvpc_flows  sourcetype="google:gcp:pubsub:message" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by data.jsonPayload.connection.dest_ip | iplocation data.jsonPayload.connection.dest_ip | geostats count by City</query>
+          <query>|tstats count where `gcp_index` "data.logName"=*%2Fvpc_flows  sourcetype="google:gcp:pubsub:message" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by data.jsonPayload.connection.dest_ip | iplocation data.jsonPayload.connection.dest_ip | geostats count by City</query>
           <earliest>$TimeRangePicker.earliest$</earliest>
           <latest>$TimeRangePicker.latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -226,7 +226,7 @@
       <title>Number of Events by Source</title>
       <table>
         <search>
-          <query>|tstats count where index=* "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$))  by data.jsonPayload.connection.src_ip | rename data.jsonPayload.connection.src_ip as SRC_IP, count as "Number of Events"| sort - "Number of Events"</query>
+          <query>|tstats count where `gcp_index` "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$))  by data.jsonPayload.connection.src_ip | rename data.jsonPayload.connection.src_ip as SRC_IP, count as "Number of Events"| sort - "Number of Events"</query>
           <earliest>$TimeRangePicker.earliest$</earliest>
           <latest>$TimeRangePicker.latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -245,7 +245,7 @@
       <title>Top Source IPs Sending Data (by volume)</title>
       <table>
         <search>
-          <query>|tstats sum("data.jsonPayload.bytes_sent") as Bytes_Sent where index=* "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by data.jsonPayload.connection.src_ip | rename data.jsonPayload.connection.src_ip as SRC_IP | eval MB_Sent=(round(Bytes_Sent/1024/1024,4)) |sort - MB_Sent | fields - Bytes_Sent</query>
+          <query>|tstats sum("data.jsonPayload.bytes_sent") as Bytes_Sent where `gcp_index` "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by data.jsonPayload.connection.src_ip | rename data.jsonPayload.connection.src_ip as SRC_IP | eval MB_Sent=(round(Bytes_Sent/1024/1024,4)) |sort - MB_Sent | fields - Bytes_Sent</query>
           <earliest>$TimeRangePicker.earliest$</earliest>
           <latest>$TimeRangePicker.latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -264,7 +264,7 @@
       <title>Rare Source IPs Sending Data (by volume)</title>
       <table>
         <search>
-          <query>|tstats sum("data.jsonPayload.bytes_sent") as Bytes_Sent where index=* "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by data.jsonPayload.connection.src_ip | rename data.jsonPayload.connection.src_ip as SRC_IP | eval MB_Sent=(round(Bytes_Sent/1024/1024,4)) |sort MB_Sent | fields - Bytes_Sent</query>
+          <query>|tstats sum("data.jsonPayload.bytes_sent") as Bytes_Sent where `gcp_index` "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by data.jsonPayload.connection.src_ip | rename data.jsonPayload.connection.src_ip as SRC_IP | eval MB_Sent=(round(Bytes_Sent/1024/1024,4)) |sort MB_Sent | fields - Bytes_Sent</query>
           <earliest>$TimeRangePicker.earliest$</earliest>
           <latest>$TimeRangePicker.latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -285,7 +285,7 @@
       <title>Number of Events by Destination</title>
       <table>
         <search>
-          <query>|tstats count where index=* "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by data.jsonPayload.connection.dest_ip | rename data.jsonPayload.connection.dest_ip as Dest_IP, count as "Number of Events"| sort - "Number of Events"</query>
+          <query>|tstats count where `gcp_index` "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by data.jsonPayload.connection.dest_ip | rename data.jsonPayload.connection.dest_ip as Dest_IP, count as "Number of Events"| sort - "Number of Events"</query>
           <earliest>$TimeRangePicker.earliest$</earliest>
           <latest>$TimeRangePicker.latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -304,7 +304,7 @@
       <title>Top Dest IPs Receiving Data (by volume)</title>
       <table>
         <search>
-          <query>|tstats sum("data.jsonPayload.bytes_sent") as Bytes_Sent where index=* "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by data.jsonPayload.connection.dest_ip | rename data.jsonPayload.connection.dest_ip as Dest_IP | eval MB_Sent=(round(Bytes_Sent/1024/1024,4)) |sort - MB_Sent | fields - Bytes_Sent</query>
+          <query>|tstats sum("data.jsonPayload.bytes_sent") as Bytes_Sent where `gcp_index` "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message" data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by data.jsonPayload.connection.dest_ip | rename data.jsonPayload.connection.dest_ip as Dest_IP | eval MB_Sent=(round(Bytes_Sent/1024/1024,4)) |sort - MB_Sent | fields - Bytes_Sent</query>
           <earliest>$TimeRangePicker.earliest$</earliest>
           <latest>$TimeRangePicker.latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -323,7 +323,7 @@
       <title>Rare Dest IPs Receiving Data (by volume)</title>
       <table>
         <search>
-          <query>|tstats sum("data.jsonPayload.bytes_sent") as Bytes_Sent where index=* "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message"  data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by data.jsonPayload.connection.dest_ip | rename data.jsonPayload.connection.dest_ip as Dest_IP | eval MB_Sent=(round(Bytes_Sent/1024/1024,4)) |sort MB_Sent | fields - Bytes_Sent</query>
+          <query>|tstats sum("data.jsonPayload.bytes_sent") as Bytes_Sent where `gcp_index` "data.logName"=*%2Fvpc_flows sourcetype="google:gcp:pubsub:message"  data.resource.labels.project_id IN ($projectid_tok$)  data.resource.labels.location IN ($location_tok$) (data.jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR data.jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) data.resource.labels.subnetwork_name IN ($subnet_tok$) (data.jsonPayload.src_instance.vm_name IN ($instance_tok$) OR data.jsonPayload.dest_instance.vm_name IN ($instance_tok$)) by data.jsonPayload.connection.dest_ip | rename data.jsonPayload.connection.dest_ip as Dest_IP | eval MB_Sent=(round(Bytes_Sent/1024/1024,4)) |sort MB_Sent | fields - Bytes_Sent</query>
           <earliest>$TimeRangePicker.earliest$</earliest>
           <latest>$TimeRangePicker.latest$</latest>
           <sampleRatio>1</sampleRatio>

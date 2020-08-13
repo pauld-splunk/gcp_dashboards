@@ -3,7 +3,7 @@
     <set token="minspan">1</set>
   </init>
   <search id="projects">
-    <query>|tstats count where index=* sourcetype="google:gcp:assets" by name, resource.parent
+    <query>|tstats count where `gcp_index` sourcetype="google:gcp:assets" by name, resource.parent
 |rex max_match=1 field=name "\S+\/projects\/(?&lt;projectid&gt;\S+)\/(zones|regions|global|topics|subscriptions|serviceAccounts)\/\S*"
 |rename resource.parent as parent
 |rex max_match=1 field=parent "\S*\/projects\/(?&lt;id&gt;\d*)"
@@ -20,7 +20,7 @@
     </done>
   </search>
   <search id="topLevelAssets">
-    <query>|tstats dc(name) where index=* sourcetype="google:gcp:assets"  by ancestors{}, asset_type | rename ancestors{} as ancestors</query>
+    <query>|tstats dc(name) where `gcp_index` sourcetype="google:gcp:assets"  by ancestors{}, asset_type | rename ancestors{} as ancestors</query>
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
   </search>
@@ -41,7 +41,7 @@
     </done>
   </search>
   <search id="functions">
-    <query>|tstats dc(data.resource.labels.function_name) as number where index=* sourcetype="google:gcp:pubsub:message" "data.logName"="*cloud-functions" data.resource.labels.project_id=$project_id_tok$
+    <query>|tstats dc(data.resource.labels.function_name) as number where `gcp_index` sourcetype="google:gcp:pubsub:message" "data.logName"="*cloud-functions" data.resource.labels.project_id=$project_id_tok$
     </query>
     <done>
       <eval token="Function_count">if(isnull($result.number$),0,$result.number$)</eval>
@@ -49,7 +49,7 @@
   </search>
   <search id="CreateCount">
     <query>
-       |tstats count where index=* sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  data.protoPayload.methodName IN (*create*, *insert*) data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$)
+       |tstats count where `gcp_index` sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  data.protoPayload.methodName IN (*create*, *insert*) data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$)
     </query>
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
@@ -59,7 +59,7 @@
   </search>
   <search id="UpdateCount">
     <query>
-       |tstats count where index=* sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  data.protoPayload.methodName IN (*update*, *patch*) data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$)
+       |tstats count where `gcp_index` sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  data.protoPayload.methodName IN (*update*, *patch*) data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$)
     </query>
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
@@ -69,7 +69,7 @@
   </search>
   <search id="DeleteCount">
     <query>
-       |tstats count where index=* sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  data.protoPayload.methodName IN (*delete*) data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$)
+       |tstats count where `gcp_index` sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  data.protoPayload.methodName IN (*delete*) data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$)
     </query>
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
@@ -78,7 +78,7 @@
     </done>
   </search>
   <label>GCP Infrastructure Activity</label>
-  <description>v1.0</description>
+  <description>v1.1</description>
   <fieldset submitButton="false"></fieldset>
   <row>
     <panel>
@@ -110,7 +110,7 @@
         <fieldForLabel>resourceType</fieldForLabel>
         <fieldForValue>resourceType</fieldForValue>
         <search>
-          <query>|tstats dc(data.protoPayload.authorizationInfo{}.resourceAttributes.type) where index=* sourcetype=google:gcp:pubsub:message data.resource.labels.project_id IN ($project_id_tok$) by data.resource.labels.project_id,  data.resource.type| rename  data.resource.type as resourceType|stats count by resourceType</query>
+          <query>|tstats dc(data.protoPayload.authorizationInfo{}.resourceAttributes.type) where `gcp_index` sourcetype=google:gcp:pubsub:message data.resource.labels.project_id IN ($project_id_tok$) by data.resource.labels.project_id,  data.resource.type| rename  data.resource.type as resourceType|stats count by resourceType</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -176,7 +176,7 @@
       </input>
       <chart>
         <search>
-          <query>|tstats count where index=* sourcetype="google:gcp:pubsub:message"  "data.logName"="*/logs/cloudaudit.googleapis.com%2Factivity" data.resource.labels.project_id IN ($project_id_tok$) "data.protoPayload.methodName" IN ($create_del_tok$) AND data.resource.type IN($resource_type_tok$) by _time, "data.protoPayload.methodName" span=$secs_for_bin$s | timechart span=$secs_for_bin$s sum(count) by data.protoPayload.methodName</query>
+          <query>|tstats count where `gcp_index` sourcetype="google:gcp:pubsub:message"  "data.logName"="*/logs/cloudaudit.googleapis.com%2Factivity" data.resource.labels.project_id IN ($project_id_tok$) "data.protoPayload.methodName" IN ($create_del_tok$) AND data.resource.type IN($resource_type_tok$) by _time, "data.protoPayload.methodName" span=$secs_for_bin$s | timechart span=$secs_for_bin$s sum(count) by data.protoPayload.methodName</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -192,7 +192,7 @@
       <title>Create</title>
       <table>
         <search>
-          <query>|tstats fillnull_value="null" count where index=* sourcetype="google:gcp:pubsub:message" "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$) data.protoPayload.methodName IN (*create*) by 
+          <query>|tstats fillnull_value="null" count where `gcp_index` sourcetype="google:gcp:pubsub:message" "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$) data.protoPayload.methodName IN (*create*) by 
 data.protoPayload.methodName, data.resource.type, attributes.logging.googleapis.com/timestamp, data.protoPayload.authenticationInfo.principalEmail, data.protoPayload.requestMetadata.callerIp, data.protoPayload.authorizationInfo{}.permission, data.protoPayload.authorizationInfo{}.resourceAttributes.name, data.protoPayload.authorizationInfo{}.resource
 | eval name1='data.protoPayload.authorizationInfo{}.resourceAttributes.name'
 | eval name2='data.protoPayload.authorizationInfo{}.resource'
@@ -215,7 +215,7 @@ data.protoPayload.methodName, data.resource.type, attributes.logging.googleapis.
       <title>Delete</title>
       <table>
         <search>
-          <query>|tstats fillnull_value="null" count where index=* sourcetype="google:gcp:pubsub:message" "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$) data.protoPayload.methodName IN (*delete*) by 
+          <query>|tstats fillnull_value="null" count where `gcp_index` sourcetype="google:gcp:pubsub:message" "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$) data.protoPayload.methodName IN (*delete*) by 
 data.protoPayload.methodName, data.resource.type, attributes.logging.googleapis.com/timestamp, data.protoPayload.authenticationInfo.principalEmail, data.protoPayload.requestMetadata.callerIp, data.protoPayload.authorizationInfo{}.permission, data.protoPayload.authorizationInfo{}.resourceAttributes.name, data.protoPayload.authorizationInfo{}.resource
 | eval name1='data.protoPayload.authorizationInfo{}.resourceAttributes.name'
 | eval name2='data.protoPayload.authorizationInfo{}.resource'

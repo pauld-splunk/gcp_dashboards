@@ -6,7 +6,7 @@
     </query>
   </search>
   <label>GCP Cloud Function Details</label>
-  <description>v1.0</description>
+  <description>v1.1</description>
   <init>
     <set token="minspan">30</set>
     <set token="show_annotations">*</set>
@@ -381,7 +381,7 @@
     <panel depends="$hide$">
       <table>
         <search id="eventBase">
-          <query>|tstats fillnull_value="null" count where $show_annotations$ index=* sourcetype=google:gcp:pubsub:message data.resource.labels.function_name=$function_tok$ data.logName=*$project_id_tok$* by _time, data.resource.labels.function_name data.severity, data.textPayload, data.protoPayload.methodName
+          <query>|tstats fillnull_value="null" count where $show_annotations$ `gcp_index` sourcetype=google:gcp:pubsub:message data.resource.labels.function_name=$function_tok$ data.logName=*$project_id_tok$* by _time, data.resource.labels.function_name data.severity, data.textPayload, data.protoPayload.methodName
 span=1s
 |eval message=if('data.textPayload'!="null",'data.textPayload', 'data.protoPayload.methodName')
 |table _time, data.severity, message</query>
@@ -413,7 +413,7 @@ span=1s
       <event>
         <title>Events</title>
         <search>
-          <query>index=* sourcetype=google:gcp:pubsub:message data.resource.labels.function_name=$function_tok$ data.logName=*$project_id_tok$*</query>
+          <query>`gcp_index` sourcetype=google:gcp:pubsub:message data.resource.labels.function_name=$function_tok$ data.logName=*$project_id_tok$*</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
