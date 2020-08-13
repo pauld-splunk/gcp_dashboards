@@ -268,7 +268,7 @@
       <title>Caller IP</title>
       <chart>
         <search base="audit_selection_base">
-          <query>search ProjectID IN ($project_tok$) AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) | timechart span=$secs_for_bin$s sum(count) by CallerIp limit=100</query>
+          <query>search ProjectID IN ($project_tok$) AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) | timechart span=$secs_for_bin$s sum(count) by CallerIP limit=100</query>
         </search>
         <option name="charting.chart">column</option>
         <option name="charting.chart.stackMode">stacked</option>
