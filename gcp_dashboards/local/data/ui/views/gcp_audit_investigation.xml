@@ -1,6 +1,6 @@
 <form>
   <label>GCP Audit Investigation</label>
-  <description>v1.4</description>
+  <description>v1.5</description>
   <init>
     <set token="minspan">1</set>
     <set token="show_annotations">*</set>
@@ -36,11 +36,9 @@
         <eval token="time_end">strftime($selection.latest$,"%m/%d/%y %H:%M:%S")</eval>
       </change>
     </input>
-    <input type="multiselect" token="project_tok" searchWhenChanged="true">
+    <input type="dropdown" token="project_tok" searchWhenChanged="true">
       <label>Project</label>
-      <choice value="*">ALL</choice>
-      <default>*</default>
-      <initialValue>*</initialValue>
+      <choice value="*, null">ALL</choice>
       <delimiter> </delimiter>
       <fieldForLabel>Label</fieldForLabel>
       <fieldForValue>ProjectID</fieldForValue>
@@ -50,6 +48,11 @@
           <eval token="form.secs_for_bin">if(isnull($time.latest$),$minspan$, if((round(relative_time(now(), $time.latest$)-relative_time(now(), $time.earliest$))/$time_resolution$)&lt;$minspan$,$minspan$,round(((relative_time(now(), $time.latest$)-relative_time(now(), $time.earliest$))/$time_resolution$)/$minspan$)*$minspan$))</eval>
         </progress>
       </search>
+      <default>*, null</default>
+      <initialValue>*, null</initialValue>
+      <change>
+        <eval token="project_query">if($project_tok$=="*, null",urlencode(" (\"data.resource.labels.project_id\"=*) OR (NOT \"data.resource.labels.project_id\"=*)"),if($project_tok$=="null", urlencode("NOT \"data.resource.labels.project_id\"=*"),urlencode("\"data.resource.labels.project_id\"=\""+$project_tok$+"\"")))</eval>
+      </change>
     </input>
     <input type="dropdown" token="sourcetype_tok" searchWhenChanged="true">
       <label>Source Type</label>
@@ -62,7 +65,7 @@
       <default>google:*</default>
       <initialValue>google:*</initialValue>
       <change>
-        <eval token="or_for_sourcetype">if($sourcetype_tok$=="google:gsuite:pubsub:audit:auth","%20OR%28%20%22data.logName%22%3D%22%2Aactivity%22%20OR%20%22data.logName%22%3D%22%2Aactivity%22%20OR%20%22data.logName%22%3D%22%2Adata_access%22%20OR%20%22data.logName%22%3D%22%2Asystem_event%22%20AND%20data.logName%20IN%20%28"+$logname_tok$+"%29%20AND%20data.protoPayload.authenticationInfo.principalEmail%20IN%20%28"+$email_tok$+"%29%20AND%20data.protoPayload.serviceName%20IN%20%28"+$service_tok$+"%29%20AND%20data.protoPayload.methodName%20IN%20%28"+$method_tok$+"%29%20AND%20data.protoPayload.resourceName%20IN%20%28"+$name_tok$+"%29%20AND%20data.resource.type%20IN%20%28"+$type_tok$+"%29%20%20%29",if($sourcetype_tok$=="google:*","%20ORsourcetype%3D%22google%3Agsuite%3Apubsub%3Aaudit%3Aauth%22%20%28%20%22data.logName%22%3D%22%2Aactivity%22%20OR%20%22data.logName%22%3D%22%2Aactivity%22%20OR%20%22data.logName%22%3D%22%2Adata_access%22%20OR%20%22data.logName%22%3D%22%2Asystem_event%22%20AND%20data.logName%20IN%20%28"+$logname_tok$+"%29%20AND%20data.protoPayload.authenticationInfo.principalEmail%20IN%20%28"+$email_tok$+"%29%20AND%20data.protoPayload.serviceName%20IN%20%28"+$service_tok$+"%29%20AND%20data.protoPayload.methodName%20IN%20%28"+$method_tok$+"%29%20AND%20data.protoPayload.resourceName%20IN%20%28"+$name_tok$+"%29%20AND%20data.resource.type%20IN%20%28"+$type_tok$+"%29%20%20%29")</eval>
+        <eval token="sourcetype_query">if($sourcetype_tok$!="*",urlencode(" sourcetype=\""+$sourcetype_tok$+"\" "), "")</eval>
       </change>
     </input>
     <input type="dropdown" token="logname_tok" searchWhenChanged="true">
@@ -75,6 +78,9 @@
       <search base="audit_selection_base">
         <query>search ProjectID IN ($project_tok$) AND sourcetype IN ($sourcetype_tok$)|stats count by LogName|eval Label=LogName+"("+tostring(count)+")"</query>
       </search>
+      <change>
+        <eval token="logname_query">if($logname_tok$!="*",urlencode("\"data.logName\"=\""+$logname_tok$+"\" "), "")</eval>
+      </change>
     </input>
     <input type="dropdown" token="service_tok" searchWhenChanged="true">
       <label>Service Name</label>
@@ -86,6 +92,9 @@
       <choice value="*">ALL</choice>
       <default>*</default>
       <initialValue>*</initialValue>
+      <change>
+        <eval token="servicename_query">if($service_tok$!="*",urlencode("\"data.protoPayload.serviceName\"=\""+$service_tok$+"\" "), "")</eval>
+      </change>
     </input>
     <input type="dropdown" token="type_tok" searchWhenChanged="true">
       <label>Resource Type</label>
@@ -96,6 +105,9 @@
       </search>
       <choice value="*">ALL</choice>
       <default>*</default>
+      <change>
+        <eval token="type_query">if($type_tok$!="*",urlencode("\"data.resource.type\"=\""+$type_tok$+"\" "), "")</eval>
+      </change>
     </input>
     <input type="dropdown" token="name_tok" searchWhenChanged="true">
       <label>Resource Name</label>
@@ -107,6 +119,9 @@
       <choice value="*">ALL</choice>
       <default>*</default>
       <initialValue>*</initialValue>
+      <change>
+        <eval token="name_query">if($name_tok$!="*",urlencode("\"data.protoPayload.resourceName\"=\""+$name_tok$+"\" "), "")</eval>
+      </change>
     </input>
     <input type="dropdown" token="method_tok" searchWhenChanged="true">
       <label>Method Name</label>
@@ -118,6 +133,9 @@
       <choice value="*">ALL</choice>
       <default>*</default>
       <initialValue>*</initialValue>
+      <change>
+        <eval token="method_query">if($method_tok$!="*",urlencode("\"data.protoPayload.methodName\"=\""+$method_tok$+"\" "), "")</eval>
+      </change>
     </input>
     <input type="dropdown" token="email_tok" searchWhenChanged="true">
       <label>Principal Email</label>
@@ -129,6 +147,9 @@
       <choice value="*">ALL</choice>
       <default>*</default>
       <initialValue>*</initialValue>
+      <change>
+        <eval token="email_query">if($email_tok$!="*",urlencode("\"data.protoPayload.authenticationInfo.principalEmail\"=\""+$email_tok$+"\" "), "")</eval>
+      </change>
     </input>
     <input type="text" token="search_text_tok" searchWhenChanged="true">
       <label>Search For Text</label>
@@ -232,7 +253,7 @@
           Click on chart to drill into detailed selection or legend to select category only <br/>
           <a href="gcp_audit_investigation?form.secs_for_bin=$secs_for_bin$&amp;form.project_tok=$project_tok$&amp;form.sourcetype_tok=$sourcetype_tok$&amp;form.logname_tok=$logname_tok$&amp;form.service_tok=$service_tok$&amp;form.type_tok=$type_tok$&amp;form.name_tok=$name_tok$&amp;form.method_tok=$method_tok$&amp;form.email_tok=$email_tok$&amp;form.by_token=$by_token$&amp;form.annotate_category_by_token=$annotate_category_by_token$&amp;form.annotate_detail_by_token=$annotate_detail_by_token$&amp;form.search_text_tok=$search_text_tok$&amp;form.time.earliest=$selection.earliest$&amp;form.time.latest=$selection.latest$&amp;form.time_resolution=$time_resolution$" target="_blank">Click here to open selection in above area in new window</a> <br/>
           
-          <a href="search?q=%60gcp_index%60%20sourcetype%3D$sourcetype_tok$%20%28%22data.logName%22%3D%22%2Aactivity%22%20OR%20%22data.logName%22%3D%22%2Aactivity%22%20OR%20%22data.logName%22%3D%22%2Adata_access%22%20OR%20%22data.logName%22%3D%22%2Asystem_event%22%20data.resource.labels.project_id%20IN%20%28$project_tok$%29%20AND%20data.logName%20IN%20%28$logname_tok$%29%20AND%20data.protoPayload.authenticationInfo.principalEmail%20IN%20%28$email_tok$%29%20AND%20data.protoPayload.serviceName%20IN%20%28$service_tok$%29%20AND%20data.protoPayload.methodName%20IN%20%28$method_tok$%29%20AND%20data.protoPayload.resourceName%20IN%20%28$name_tok$%29%20AND%20data.resource.type%20IN%20%28$type_tok$%29%20%29$or_for_sourcetype$%20$search_text_tok$&amp;earliest=$selection.earliest$&amp;latest=$selection.latest$" target="_blank">Click here to open as a Search</a>
+          <a href="search?q=%60gcp_index%60%20$sourcetype_query$%20%28%22data.logName%22%3D%22%2Aactivity%22%20OR%20%22data.logName%22%3D%22%2Aactivity%22%20OR%20%22data.logName%22%3D%22%2Adata_access%22%20OR%20%22data.logName%22%3D%22%2Asystem_event%22%29%20$project_query$%20$logname_query$%20$servicename_query$%20$type_query$%20$name_query$%20$method_query$%20$email_query$%20$search_text_tok$&amp;earliest=$selection.earliest$&amp;latest=$selection.latest$" target="_blank">Click here to open as a Search</a>
           
         </center>
         
