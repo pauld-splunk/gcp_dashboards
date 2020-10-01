@@ -1,6 +1,6 @@
 <form>
   <label>GCP Audit Investigation</label>
-  <description>v1.5</description>
+  <description>v1.6</description>
   <init>
     <set token="minspan">1</set>
     <set token="show_annotations">*</set>
@@ -37,21 +37,20 @@
       </change>
     </input>
     <input type="dropdown" token="project_tok" searchWhenChanged="true">
-      <label>Project</label>
-      <choice value="*, null">ALL</choice>
-      <delimiter> </delimiter>
+      <label>Organization/Folder/Project</label>
+      <choice value="*">ALL</choice>
       <fieldForLabel>Label</fieldForLabel>
       <fieldForValue>ProjectID</fieldForValue>
       <search base="audit_selection_base">
-        <query>stats count by ProjectID |eval Label=ProjectID+"("+tostring(count)+")"</query>
+        <query>eval ProjectID=replace(LogName,"^(\S+\/\S+)\/\S+\/\S+","\1") | stats count by ProjectID |eval Label=ProjectID+"("+tostring(count)+")"</query>
         <progress>
           <eval token="form.secs_for_bin">if(isnull($time.latest$),$minspan$, if((round(relative_time(now(), $time.latest$)-relative_time(now(), $time.earliest$))/$time_resolution$)&lt;$minspan$,$minspan$,round(((relative_time(now(), $time.latest$)-relative_time(now(), $time.earliest$))/$time_resolution$)/$minspan$)*$minspan$))</eval>
         </progress>
       </search>
-      <default>*, null</default>
-      <initialValue>*, null</initialValue>
+      <default>*</default>
+      <initialValue>*</initialValue>
       <change>
-        <eval token="project_query">if($project_tok$=="*, null",urlencode(" (\"data.resource.labels.project_id\"=*) OR (NOT \"data.resource.labels.project_id\"=*)"),if($project_tok$=="null", urlencode("NOT \"data.resource.labels.project_id\"=*"),urlencode("\"data.resource.labels.project_id\"=\""+$project_tok$+"\"")))</eval>
+        <eval token="project_query">if($project_tok$=="*",urlencode(" (\"data.logName\"=*)"),urlencode(" (\"data.logName\"=\""+$project_tok$+"*\")"))</eval>
       </change>
     </input>
     <input type="dropdown" token="sourcetype_tok" searchWhenChanged="true">
@@ -60,7 +59,7 @@
       <fieldForLabel>Label</fieldForLabel>
       <fieldForValue>sourcetype</fieldForValue>
       <search base="audit_selection_base">
-        <query>search ProjectID IN ($project_tok$)|stats count by sourcetype |eval Label=sourcetype+"("+tostring(count)+")"</query>
+        <query>search LogName=$project_tok$*|stats count by sourcetype |eval Label=sourcetype+"("+tostring(count)+")"</query>
       </search>
       <default>google:*</default>
       <initialValue>google:*</initialValue>
@@ -76,7 +75,7 @@
       <fieldForLabel>Label</fieldForLabel>
       <fieldForValue>LogName</fieldForValue>
       <search base="audit_selection_base">
-        <query>search ProjectID IN ($project_tok$) AND sourcetype IN ($sourcetype_tok$)|stats count by LogName|eval Label=LogName+"("+tostring(count)+")"</query>
+        <query>search LogName=$project_tok$* AND sourcetype IN ($sourcetype_tok$)|stats count by LogName|eval Label=LogName+"("+tostring(count)+")"</query>
       </search>
       <change>
         <eval token="logname_query">if($logname_tok$!="*",urlencode("\"data.logName\"=\""+$logname_tok$+"\" "), "")</eval>
@@ -87,7 +86,7 @@
       <fieldForLabel>Label</fieldForLabel>
       <fieldForValue>ServiceName</fieldForValue>
       <search base="audit_selection_base">
-        <query>search ProjectID IN ($project_tok$) AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$)|stats count by ServiceName|eval Label=ServiceName+"("+tostring(count)+")"</query>
+        <query>search LogName=$project_tok$* AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$)|stats count by ServiceName|eval Label=ServiceName+"("+tostring(count)+")"</query>
       </search>
       <choice value="*">ALL</choice>
       <default>*</default>
@@ -101,7 +100,7 @@
       <fieldForLabel>Label</fieldForLabel>
       <fieldForValue>ResourceType</fieldForValue>
       <search base="audit_selection_base">
-        <query>search ProjectID IN ($project_tok$) AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$)|stats count by ResourceType|eval Label=ResourceType+"("+tostring(count)+")"</query>
+        <query>search LogName=$project_tok$* AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$)|stats count by ResourceType|eval Label=ResourceType+"("+tostring(count)+")"</query>
       </search>
       <choice value="*">ALL</choice>
       <default>*</default>
@@ -114,7 +113,7 @@
       <fieldForLabel>Label</fieldForLabel>
       <fieldForValue>ResourceName</fieldForValue>
       <search base="audit_selection_base">
-        <query>search ProjectID IN ($project_tok$) AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND ResourceType IN ($type_tok$)| stats count by ResourceName|eval Label=ResourceName+"("+tostring(count)+")"</query>
+        <query>search LogName=$project_tok$* AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND ResourceType IN ($type_tok$)| stats count by ResourceName|eval Label=ResourceName+"("+tostring(count)+")"</query>
       </search>
       <choice value="*">ALL</choice>
       <default>*</default>
@@ -128,7 +127,7 @@
       <fieldForLabel>Label</fieldForLabel>
       <fieldForValue>MethodName</fieldForValue>
       <search base="audit_selection_base">
-        <query>search ProjectID IN ($project_tok$) AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$)|stats count by MethodName|eval Label=MethodName+"("+tostring(count)+")"</query>
+        <query>search LogName=$project_tok$* AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$)|stats count by MethodName|eval Label=MethodName+"("+tostring(count)+")"</query>
       </search>
       <choice value="*">ALL</choice>
       <default>*</default>
@@ -142,13 +141,13 @@
       <fieldForLabel>Label</fieldForLabel>
       <fieldForValue>Email</fieldForValue>
       <search base="audit_selection_base">
-        <query>search ProjectID IN ($project_tok$) AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)|stats count by Email|eval Label=Email+"("+tostring(count)+")"</query>
+        <query>search LogName=$project_tok$* AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)|stats count by Email|eval Label=Email+"("+tostring(count)+")"</query>
       </search>
       <choice value="*">ALL</choice>
       <default>*</default>
       <initialValue>*</initialValue>
       <change>
-        <eval token="email_query">if($email_tok$!="*",urlencode("\"data.protoPayload.authenticationInfo.principalEmail\"=\""+$email_tok$+"\" "), "")</eval>
+        <eval token="email_query">if($email_tok$=="*",urlencode("\"data.protoPayload.authenticationInfo.principalEmail\"=\"*\""), if($email_tok$=="null",urlencode("NOT \"data.protoPayload.authenticationInfo.principalEmail\"=*"), urlencode("\"data.protoPayload.authenticationInfo.principalEmail\"=\""+$email_tok$+"\" ") )</eval>
       </change>
     </input>
     <input type="text" token="search_text_tok" searchWhenChanged="true">
@@ -214,10 +213,10 @@
         <delimiter> </delimiter>
       </input>
       <chart>
-        <search base="annotations" type="annotation"></search>
         <search base="audit_selection_base">
-          <query>search ProjectID IN ($project_tok$) AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)| timechart span=$secs_for_bin$s sum(count) by $by_token$ limit=100</query>
+          <query>search LogName=$project_tok$* AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)| timechart span=$secs_for_bin$s sum(count) by $by_token$ limit=20</query>
         </search>
+        <search base="annotations" type="annotation"></search>
         <selection>
           <set token="selection.earliest">$start$</set>
           <set token="selection.latest">$end$</set>
@@ -265,7 +264,7 @@
       <title>Email Principal</title>
       <chart>
         <search base="audit_selection_base">
-          <query>search ProjectID IN ($project_tok$) AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)| timechart span=$secs_for_bin$s sum(count) by Email limit=50</query>
+          <query>search LogName=$project_tok$* AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)| timechart span=$secs_for_bin$s sum(count) by Email limit=20</query>
         </search>
         <option name="charting.chart">column</option>
         <option name="charting.chart.stackMode">stacked</option>
@@ -280,7 +279,7 @@
       <title>User Agent</title>
       <chart>
         <search base="audit_selection_base">
-          <query>search ProjectID IN ($project_tok$) AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)| timechart span=$secs_for_bin$s sum(count) by UserAgent limit=100</query>
+          <query>search LogName=$project_tok$* AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)| timechart span=$secs_for_bin$s sum(count) by UserAgent limit=20</query>
         </search>
         <option name="charting.chart">column</option>
         <option name="charting.chart.stackMode">stacked</option>
@@ -295,7 +294,7 @@
       <title>Caller IP</title>
       <chart>
         <search base="audit_selection_base">
-          <query>search ProjectID IN ($project_tok$) AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)| timechart span=$secs_for_bin$s sum(count) by CallerIP limit=100</query>
+          <query>search LogName=$project_tok$* AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)| timechart span=$secs_for_bin$s sum(count) by CallerIP limit=20</query>
         </search>
         <option name="charting.chart">column</option>
         <option name="charting.chart.stackMode">stacked</option>
@@ -309,7 +308,7 @@
     <panel>
       <table>
         <search base="audit_selection_base" id="annotations">
-          <query>|search $show_annotations$ ProjectID IN ($project_tok$) AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)
+          <query>|search $show_annotations$ LogName=$project_tok$* AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)
 |eval annotation_label='$annotate_category_by_token$'
 |eval annotation_category='$annotate_detail_by_token$'
 |top limit=1000 _time, annotation_label,annotation_category 
