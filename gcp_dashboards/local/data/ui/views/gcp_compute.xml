@@ -94,7 +94,7 @@
       <title>Running Instances by Zones Over Time</title>
       <chart>
         <search>
-          <query>| mstats max(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/uptime" AND index="gcp_metrics" AND project_id IN ($project_id_tok$)  span=10s BY zone
+          <query>| mstats max(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/uptime" AND `gcp_metrics` AND project_id IN ($project_id_tok$)  span=10s BY zone
 | timechart max(_value)  agg=max   BY zone
 | fields - _span*</query>
           <earliest>$time.earliest$</earliest>

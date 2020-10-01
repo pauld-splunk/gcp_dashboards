@@ -87,7 +87,7 @@
       <title>Disk Write Bytes Count</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/disk/write_bytes_count" AND index="gcp_metrics" AND instance_name IN ($disk_tok$) span=5m BY instance_name
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/disk/write_bytes_count" AND `gcp_metrics` AND instance_name IN ($disk_tok$) span=5m BY instance_name
 | timechart avg(_value) span=5m agg=max limit=5 useother=false BY instance_name
 | fields - _span*</query>
           <earliest>$time_tok.earliest$</earliest>
@@ -134,7 +134,7 @@
       <title>Disk Write Ops Count</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/disk/write_ops_count" AND index="gcp_metrics" AND instance_name IN ($disk_tok$) span=5m BY instance_name
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/disk/write_ops_count" AND `gcp_metrics` AND instance_name IN ($disk_tok$) span=5m BY instance_name
 | timechart avg(_value) span=5m agg=max limit=5 useother=false BY instance_name
 | fields - _span*</query>
           <earliest>$time_tok.earliest$</earliest>
@@ -183,7 +183,7 @@
       <title>Disk Read Bytes Count</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/disk/read_bytes_count" AND index="gcp_metrics" AND instance_name IN ($disk_tok$) span=5m BY instance_name
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/disk/read_bytes_count" AND `gcp_metrics` AND instance_name IN ($disk_tok$) span=5m BY instance_name
 | timechart avg(_value) span=5m agg=max limit=5 useother=false BY instance_name
 | fields - _span*</query>
           <earliest>$time_tok.earliest$</earliest>
@@ -230,7 +230,7 @@
       <title>Disk Read Ops Count</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/disk/read_ops_count" AND index="gcp_metrics" AND instance_name IN ($disk_tok$) span=5m BY instance_name
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/disk/read_ops_count" AND `gcp_metrics` AND instance_name IN ($disk_tok$) span=5m BY instance_name
 | timechart avg(_value) span=5m agg=max limit=5 useother=false BY instance_name
 | fields - _span*</query>
           <earliest>$time_tok.earliest$</earliest>

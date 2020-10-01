@@ -77,7 +77,7 @@
   </search>
   <search id="mstatsBase">
     <query>
-      | mstats $selected_cpu_aggregator$(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/*" AND index="gcp_metrics" AND instance_id=$selected_instance$  earliest=$time.earliest$ latest=$time.latest$ $secs_for_bin$ 
+      | mstats $selected_cpu_aggregator$(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/*" AND `gcp_metrics` AND instance_id=$selected_instance$  earliest=$time.earliest$ latest=$time.latest$ $secs_for_bin$ 
     </query>
   </search>
   <fieldset submitButton="false">

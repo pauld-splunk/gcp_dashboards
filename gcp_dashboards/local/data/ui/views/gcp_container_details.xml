@@ -99,7 +99,7 @@
       <title>container.googleapis.com/container/cpu/utilization</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/cpu/utilization" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/cpu/utilization" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
 | timechart avg(_value) as Avg span=$secs_for_bin$s $multiline$ $dims_tok$
 | fields - _span* VALUE</query>
           <earliest>$time.earliest$</earliest>
@@ -124,7 +124,7 @@
       <title>container.googleapis.com/container/memory/bytes_used</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/memory/bytes_used" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/memory/bytes_used" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
 | timechart avg(_value) as Avg span=$secs_for_bin$s $multiline$ $dims_tok$
 | fields - _span* VALUE</query>
           <earliest>$time.earliest$</earliest>
@@ -145,7 +145,7 @@
       <title>container.googleapis.com/container/memory/bytes_total</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/memory/bytes_total" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/memory/bytes_total" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
 | timechart avg(_value) as Avg span=$secs_for_bin$s $multiline$ $dims_tok$
 | fields - _span* VALUE</query>
           <earliest>$time.earliest$</earliest>
@@ -169,7 +169,7 @@
       <title>container.googleapis.com/container/cpu/reserved_cores</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/cpu/reserved_cores" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/cpu/reserved_cores" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
 | timechart avg(_value) as Avg span=$secs_for_bin$s $multiline$ $dims_tok$
 | fields - _span* VALUE</query>
           <earliest>$time.earliest$</earliest>
@@ -191,7 +191,7 @@
       <title>container.googleapis.com/container/cpu/usage_time</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/cpu/usage_time" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/cpu/usage_time" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
 | timechart avg(_value) as Avg span=$secs_for_bin$s $multiline$ $dims_tok$
 | fields - _span* VALUE</query>
           <earliest>$time.earliest$</earliest>
@@ -215,7 +215,7 @@
       <title>container.googleapis.com/container/disk/bytes_used</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/disk/bytes_used" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/disk/bytes_used" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
 | timechart avg(_value) as Avg span=$secs_for_bin$s $multiline$ $dims_tok$
 | fields - _span* VALUE</query>
           <earliest>$time.earliest$</earliest>
@@ -237,7 +237,7 @@
       <title>container.googleapis.com/container/disk/bytes_total</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/disk/bytes_total" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/disk/bytes_total" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
 | timechart avg(_value) as Avg span=$secs_for_bin$s $multiline$ $dims_tok$
 | fields - _span* VALUE</query>
           <earliest>$time.earliest$</earliest>
