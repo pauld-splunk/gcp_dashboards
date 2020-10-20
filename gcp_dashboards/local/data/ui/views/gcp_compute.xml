@@ -1,6 +1,6 @@
 <form>
   <search id="baseInstances">
-    <query>|tstats dc(resource.data.id) as Count where `gcp_index` sourcetype="google:gcp:assets" asset_type=compute.googleapis.com/Instance $text_search$ by _time, name, resource.data.name, resource.data.status, resource.data.id, resource.data.machineType 
+    <query>|tstats dc(resource.data.id) as Count where index=* (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type=compute.googleapis.com/Instance $text_search$ by _time, name, resource.data.name, resource.data.status, resource.data.id, resource.data.machineType, update_time 
        | eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1") 
        |eval zone=replace(name,"\S+zones\/(\S+)\/instances\S+","\1")
     </query>
@@ -24,7 +24,7 @@
     </done>
   </search>
   <label>GCP Compute Engine Overview</label>
-  <description>v1.1</description>
+  <description>v1.2</description>
   <fieldset submitButton="false">
     <input type="time" token="time">
       <label>Timespan</label>
@@ -93,12 +93,8 @@
     <panel>
       <title>Running Instances by Zones Over Time</title>
       <chart>
-        <search>
-          <query>| mstats max(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/uptime" AND `gcp_metrics` AND project_id IN ($project_id_tok$)  span=10s BY zone
-| timechart max(_value)  agg=max   BY zone
-| fields - _span*</query>
-          <earliest>$time.earliest$</earliest>
-          <latest>$time.latest$</latest>
+        <search base="baseInstances">
+          <query>search resource.data.status="Running"  projectid IN ($project_id_tok$) zone IN ($zone_tok$) | timechart count by zone</query>
         </search>
         <option name="charting.chart">area</option>
         <option name="charting.chart.stackMode">stacked100</option>
@@ -112,11 +108,11 @@
       <title>Instances</title>
       <table>
         <search base="baseInstances">
-          <query>search projectid IN ($project_id_tok$) zone IN ($zone_tok$) | stats count by resource.data.id, name, projectid, zone, resource.data.status, resource.data.machineType
+          <query>search projectid IN ($project_id_tok$) zone IN ($zone_tok$) | stats count by resource.data.id, name, projectid, zone, resource.data.status, resource.data.machineType, update_time
           | rename resource.data.machineType as mType resource.data.id as "Instance ID"| eval Type=replace(mType,"^\S+machineTypes\/(\S+)","\1")
           | eval Name=replace(name,"^\S+instances\/(\S+)","\1")
-          |table "Instance ID" , Name, projectid, zone, resource.data.status, Type
-          |rename projectid as ProjectID, resource.data.status as "Last Known Status"</query>
+          |table "Instance ID" , Name, projectid, zone, resource.data.status, Type, update_time
+          |rename projectid as ProjectID, resource.data.status as "Last Known Status" update_time as "Last Update"</query>
         </search>
         <option name="drilldown">cell</option>
         <option name="refresh.display">progressbar</option>

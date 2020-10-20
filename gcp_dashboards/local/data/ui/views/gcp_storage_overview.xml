@@ -1,7 +1,7 @@
 <form>
   <search id="baseInfo">
     <query>
-      |tstats count where `gcp_index` sourcetype="google:gcp:assets" asset_type="compute.googleapis.com/Disk" by name,resource.data.id,resource.data.name,resource.data.type,resource.data.zone,resource.data.status,resource.data.sizeGb
+      |tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata)  asset_type="compute.googleapis.com/Disk" by name,resource.data.id,resource.data.name,resource.data.type,resource.data.zone,resource.data.status,resource.data.sizeGb
 |dedup resource.data.id 
 |rename name as mProjectID, resource.data.type as mType, resource.data.zone as aZone, resource.data.id as ID, resource.data.name as Name, resource.data.status as Status, resource.data.sizeGb as Size 
 | eval Type=replace(mType,"^\S+diskTypes\/(\S+)","\1")
@@ -10,7 +10,7 @@
     </query>
   </search>
   <search id="connectedDisks">
-    <query>`gcp_index` sourcetype="google:gcp:assets" asset_type="compute.googleapis.com/Instance" earliest=$time_tok.earliest$ latest=$time_tok.latest$
+    <query>`gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type="compute.googleapis.com/Instance" earliest=$time_tok.earliest$ latest=$time_tok.latest$
 |eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
 |eval Zone=replace(name,"^\S+zones\/(\S+)\/instances\/\S+","\1") 
 |search projectid IN ($project_id_tok$) Zone IN ($zone_tok$)
@@ -24,7 +24,7 @@
     </done>
   </search>
   <search id="unnatachedDisks">
-    <query>|tstats dc(name) where `gcp_index` sourcetype="google:gcp:assets" asset_type="compute.googleapis.com/Disk" earliest=$time_tok.earliest$ latest=$time_tok.latest$ by name
+    <query>|tstats dc(name) where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk" earliest=$time_tok.earliest$ latest=$time_tok.latest$ by name
 |eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
 |eval Zone=replace(name,"^\S+zones\/(\S+)\/disks\/\S+","\1") 
 |dedup name
@@ -99,7 +99,7 @@
       <title>Connected Storage Instances by Zones</title>
       <chart>
         <search>
-          <query>`gcp_index` sourcetype="google:gcp:assets" asset_type="compute.googleapis.com/Instance" 
+          <query>`gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type="compute.googleapis.com/Instance" 
 |eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
 |eval Zone=replace(name,"^\S+zones\/(\S+)\/instances\/\S+","\1") 
 |search projectid IN ($project_id_tok$) Zone IN ($zone_tok$)
@@ -120,7 +120,7 @@
       <title>Disk Instances by Size</title>
       <chart>
         <search>
-          <query>|tstats dc(name) where `gcp_index` sourcetype="google:gcp:assets" asset_type="compute.googleapis.com/Disk" by name, resource.data.sizeGb,_time
+          <query>|tstats dc(name) where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk" by name, resource.data.sizeGb,_time
           |rename resource.data.sizeGb as Size 
           |eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
           |search projectid IN ($project_id_tok$)
@@ -141,7 +141,7 @@
       <title>Disk Instances by Type</title>
       <chart>
         <search>
-          <query>|tstats dc(name) where `gcp_index` sourcetype="google:gcp:assets" asset_type="compute.googleapis.com/Disk" by name, resource.data.type
+          <query>|tstats dc(name) where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk" by name, resource.data.type
 |dedup name
 |eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
 |search projectid IN ($project_id_tok$)
@@ -165,7 +165,7 @@
       <table>
         <search>
           <query>| set diff
-[search `gcp_index` sourcetype="google:gcp:assets" asset_type="compute.googleapis.com/Instance" 
+[search `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type="compute.googleapis.com/Instance" 
 |eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
 |eval Zone=replace(name,"^\S+zones\/(\S+)\/instances\/\S+","\1") 
 |spath output=disklist path=resource.data.disks{}  
@@ -175,7 +175,7 @@
 |fields diskName
 |fields - _*
 ]
-[search `gcp_index` sourcetype="google:gcp:assets" asset_type="compute.googleapis.com/Disk"
+[search `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk"
 |eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
 |eval Zone=replace(name,"^\S+zones\/(\S+)\/disks\/\S+","\1") 
 |eval diskName=replace(name,"^\S+projects\/(\S+)","\1")
