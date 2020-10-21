@@ -2,37 +2,18 @@
 
 # Splunk Dashboard Template for GCP
 
+(Note that this repo will have regular updated versions)
 
 This Splunk app contains a few SimpleXML dashboards for use with the Splunk Add-on for GCP or Cloud Functions.
-You will need assets information via Cloud Functions - see github.com/splunk/gcp_functions 
+You will need assets information via Cloud Functions (see https://github.com/splunk/gcp_functions), or by using gcloud command / cron schedule (https://cloud.google.com/asset-inventory/docs/exporting-to-cloud-storage)
 
-The App requires the events to have the json indexed extracted, so use the sourcetypes defined below.
-If you are using the functions linked above, ensure that all metrics collected are put into a metrics index. The searches in the template expects this index to be called "gcp_metrics"; if you have a different index name, please update in your dashboard searches.
+Pre-requisites:
+Install the Google Cloud Platform Add-on for the knowledge objects. https://splunkbase.splunk.com/app/3088/
 
-Perform the following updates to config files to accomodate this:
+The App requires the events to have the json indexed extracted, so use the sourcetype changes defined in the props/transforms folder here.
+If you are using the functions linked above, ensure that all metrics collected are put into a metrics index. The searches in the template expects this index to be called "gcp_metrics"; if you have a different index names, please update in the app's macros.
 
-$SPLUNK_HOME$/etc/apps/Splunk_TA_google-cloudplatform/local/props.conf
-<pre>
-[google:gcp:assets]
-category = Custom
-pulldown_type = 1
-DATETIME_CONFIG = 
-INDEXED_EXTRACTIONS = json
-LINE_BREAKER = ([\r\n]+)
-NO_BINARY_CHECK = true
-disabled = false
-
-
-[google:gcp:pubsub:message]
-TIME_PREFIX = "publish_time":
-TIME_FORMAT = %s.%Q
-INDEXED_EXTRACTIONS = json
-AUTO_KV_JSON = false
-KV_MODE=none
-TRUNCATE=0
-CHARSET=UTF-8
-</pre>
-
+Also, as some of the json in GCP's message payloads are large, you will need to apply this update to your limits.conf:
 
 $SPLUNK_HOME$/etc/system/local/limits.conf
 
