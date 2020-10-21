@@ -24,7 +24,7 @@
     </done>
   </search>
   <label>GCP Compute Engine Overview</label>
-  <description>v1.3</description>
+  <description>v1.4</description>
   <fieldset submitButton="false">
     <input type="time" token="time">
       <label>Timespan</label>
@@ -108,7 +108,8 @@
       <title>Instances</title>
       <table>
         <search base="baseInstances">
-          <query>search projectid IN ($project_id_tok$) zone IN ($zone_tok$) | stats count by resource.data.id, name, projectid, zone, resource.data.status, resource.data.machineType, update_time
+          <query>search projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
+|dedup resource.data.id sortby -update_time
           | rename resource.data.machineType as mType resource.data.id as "Instance ID"| eval Type=replace(mType,"^\S+machineTypes\/(\S+)","\1")
           | eval Name=replace(name,"^\S+instances\/(\S+)","\1")
           |table "Instance ID" , Name, projectid, zone, resource.data.status, Type, update_time
