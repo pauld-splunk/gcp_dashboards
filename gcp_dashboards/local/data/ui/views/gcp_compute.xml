@@ -1,6 +1,6 @@
 <form>
   <search id="baseInstances">
-    <query>|tstats dc(resource.data.id) as Count where index=* (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type=compute.googleapis.com/Instance $text_search$ by _time, name, resource.data.name, resource.data.status, resource.data.id, resource.data.machineType, update_time 
+    <query>|tstats dc(resource.data.id) as Count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type=compute.googleapis.com/Instance $text_search$ by _time, name, resource.data.name, resource.data.status, resource.data.id, resource.data.machineType, update_time 
        | eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1") 
        |eval zone=replace(name,"\S+zones\/(\S+)\/instances\S+","\1")
     </query>
@@ -24,7 +24,7 @@
     </done>
   </search>
   <label>GCP Compute Engine Overview</label>
-  <description>v1.2</description>
+  <description>v1.3</description>
   <fieldset submitButton="false">
     <input type="time" token="time">
       <label>Timespan</label>

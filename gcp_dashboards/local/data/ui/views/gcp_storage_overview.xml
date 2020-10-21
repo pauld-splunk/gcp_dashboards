@@ -36,7 +36,7 @@
     </done>
   </search>
   <label>GCP Storage Overview</label>
-  <description>v1.1</description>
+  <description>v1.2</description>
   <fieldset submitButton="false" autoRun="true">
     <input type="time" token="time_tok" searchWhenChanged="true">
       <label>Time Range</label>
@@ -86,6 +86,7 @@
   </fieldset>
   <row>
     <panel>
+      <title>Compute Instance Storage:</title>
       <html>
         <center>
         <h1 style="background-color:MediumSeaGreen;">Connected Storage Instances: $connected_storage$</h1>
@@ -96,7 +97,7 @@
   </row>
   <row>
     <panel>
-      <title>Connected Storage Instances by Zones</title>
+      <title>Connected Compute Storage Instances by Zones</title>
       <chart>
         <search>
           <query>`gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type="compute.googleapis.com/Instance" 
@@ -117,7 +118,7 @@
       </chart>
     </panel>
     <panel>
-      <title>Disk Instances by Size</title>
+      <title>Compute Disk Instances by Size</title>
       <chart>
         <search>
           <query>|tstats dc(name) where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk" by name, resource.data.sizeGb,_time
@@ -138,7 +139,7 @@
       </chart>
     </panel>
     <panel>
-      <title>Disk Instances by Type</title>
+      <title>Compute Disk Instances by Type</title>
       <chart>
         <search>
           <query>|tstats dc(name) where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk" by name, resource.data.type
@@ -161,7 +162,7 @@
   </row>
   <row>
     <panel>
-      <title>Unattached Disks</title>
+      <title>Unattached Compute Disks</title>
       <table>
         <search>
           <query>| set diff
@@ -188,6 +189,35 @@
         </search>
         <option name="drilldown">none</option>
         <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Google Cloud Storage (GCS) Buckets</title>
+      <table>
+        <search>
+          <query>|tstats fillnull_value="-" count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="storage.googleapis.com/Bucket" by resource.data.id, resource.data.location, resource.data.locationType, resource.data.projectNumber, resource.data.storageClass, resource.data.retentionPolicy.retentionPeriod, resource.data.retentionPolicy.effectiveTime, resource.data.retentionPolicy.isLocked
+|rename resource.data.projectNumber as project_number
+| join project_number [ |tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata)  asset_type=compute.googleapis.com/Project by resource.parent, resource.data.name
+|rename resource.parent as parent resource.data.name as ProjectID
+|eval project_number=replace(parent,"\S+projects\/(\d+)","\1")
+|fields - count, - parent]
+|search ProjectID=$project_id_tok$
+|table ProjectID, resource.data.id, resource.data.location, resource.data.locationType, resource.data.storageClass, resource.data.retentionPolicy.retentionPeriod, resource.data.retentionPolicy.effectiveTime, resource.data.retentionPolicy.isLocked
+|rename resource.data.location as Location, resource.data.locationType as "Location Type", resource.data.storageClass as "Storage Class", resource.data.retentionPolicy.retentionPeriod as "Retention Period", resource.data.retentionPolicy.effectiveTime as "Retention Effective Time", resource.data.retentionPolicy.isLocked as "Retention Policy Locked"</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
       </table>
     </panel>
   </row>
