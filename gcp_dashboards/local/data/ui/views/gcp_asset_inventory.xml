@@ -1,0 +1,237 @@
+<form>
+  <label>GCP Asset Inventory</label>
+  <description>v1.0</description>
+  <fieldset submitButton="false" autoRun="true">
+    <input type="time" token="time" searchWhenChanged="true">
+      <label>Time Range</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="dropdown" token="project_tok" searchWhenChanged="true">
+      <label>Project ID</label>
+      <choice value="*">ALL</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <fieldForLabel>ProjectID</fieldForLabel>
+      <fieldForValue>project_number</fieldForValue>
+      <search>
+        <query>|tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata)  asset_type=compute.googleapis.com/Project by resource.parent, resource.data.name
+|rename resource.parent as parent resource.data.name as ProjectID
+|eval project_number=replace(parent,"\S+(projects\/\d+)","\1")
+|fields - count, - parent</query>
+      </search>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Compute Instances</title>
+      <table>
+        <search>
+          <query>|tstats dc(resource.data.id) as Count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type=compute.googleapis.com/Instance  by _time, name, resource.data.name, resource.data.status, resource.data.id, resource.data.machineType, update_time, ancestors{}
+| rename "ancestors{}" as ancestors
+|search ancestors=$project_tok$
+       | eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1") 
+       |eval zone=replace(name,"\S+zones\/(\S+)\/instances\S+","\1") 
+       | search zone IN (*) 
+|dedup resource.data.id sortby -update_time
+          | rename resource.data.machineType as mType resource.data.id as "Instance ID"| eval Type=replace(mType,"^\S+machineTypes\/(\S+)","\1")
+          | eval Name=replace(name,"^\S+instances\/(\S+)","\1")
+          |table "Instance ID" , Name, projectid, zone, resource.data.status, Type, update_time
+          |rename projectid as ProjectID, resource.data.status as "Last Known Status" update_time as "Last Update"</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Connected Compute Storage</title>
+      <table>
+        <search>
+          <query>|tstats count where index=* sourcetype="google:gcp:assets" asset_type="compute.googleapis.com/Disk"  earliest=-24h@h latest=now  by resource.data.id ,name, resource.data.name, resource.data.sizeGb, resource.data.type, resource.data.sourceImage, resource.data.guestOsFeatures{}.type, ancestors{}
+| rename "ancestors{}" as ancestors
+|search ancestors=$project_tok$
+|dedup resource.data.id  
+|eval ProjectID=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
+|eval Zone=replace(name,"^\S+zones\/(\S+)\/disks\/\S+","\1") 
+|eval dName=replace(name,"^\S+projects\/(\S+)","\1")
+|rename resource.data.id as ID, resource.data.type as Type, resource.data.sourceImage as sourceImage, resource.data.guestOsFeatures{}.type as GuestOSFeatures, resource.data.sizeGb as Size, resource.data.name as Name
+|eval Type=replace(Type,"\S+diskTypes\/(\S+)","\1")
+|eval sourceImage=replace(sourceImage,"\S+images\/(\S+)","\1") | search Zone IN (*)
+                 |table ProjectID,Zone,ID,Name,Size, Type, sourceImage, GuestOSFeatures</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Unattached Compute Storage</title>
+      <table>
+        <search>
+          <query>| set diff
+[search `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type="compute.googleapis.com/Instance" 
+|eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
+|eval Zone=replace(name,"^\S+zones\/(\S+)\/instances\/\S+","\1") 
+|spath output=disklist path=resource.data.disks{}  
+|rex max_match=20 field=disklist "source\":\"https:\/\/www.googleapis.com\/compute\/v1\/projects\/(?&lt;diskName&gt;\S*)\","  
+|mvexpand diskName
+|dedup diskName
+|fields diskName
+|fields - _*
+]
+[search `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk"
+|eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
+|eval Zone=replace(name,"^\S+zones\/(\S+)\/disks\/\S+","\1") 
+|eval diskName=replace(name,"^\S+projects\/(\S+)","\1")
+|dedup diskName
+|fields diskName
+|fields - _*
+]</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>VPCs</title>
+      <table>
+        <search>
+          <query>|tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Network" by resource.data.id, name, resource.data.routingConfig.routingMode, resource.data.subnetworks{}, ancestors{}
+| rename "ancestors{}" as ancestors
+|search ancestors=$project_tok$
+|eval projectid=replace(name,"\S+projects\/(\S+)\/global\S+","\1")
+|eval vpcname=replace(name,"\S+\/networks\/(\S+)","\1")
+|rename resource.data.subnetworks{} as subnetworks, resource.data.routingConfig.routingMode as "Routing Mode"
+|rex max_match=30 field=subnetworks "https:\/\/www.googleapis.com\/compute\/v1\/projects\/\S*\/regions\/(?&lt;regionval&gt;\S*)\/subnetworks\/(?&lt;subnetnames&gt;\S*)"
+|eval subs=regionval.":".subnetnames
+|stats list(subs) as "Region:Subnet Name" by projectid, vpcname, "Routing Mode"
+|rename projectid as "Project ID", vpcname as "VPC Name"</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>SubNets</title>
+      <table>
+        <search>
+          <query>|tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Subnetwork" by resource.data.network, resource.location, resource.data.name, resource.data.ipCidrRange, resource.data.gatewayAddress, ancestors{}
+| rename "ancestors{}" as ancestors
+|search ancestors=$project_tok$
+|rename resource.data.network as network
+|eval projectid=replace(network,"\S+projects\/(\S+)\/global\S+","\1")
+|eval vpcname=replace(network,"\S+\/networks\/(\S+)","\1")
+|stats list(resource.location) as Location list(resource.data.name) as "SubNet Name" list(resource.data.ipCidrRange) as "IP CIDR Range", list(resource.data.gatewayAddress) as "Gateway Address", by projectid, vpcname
+|rename vpcname as "VPC Name"</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Network Routes</title>
+      <table>
+        <search>
+          <query>|tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Route" by resource.data.id, name, resource.data.network
+, resource.data.nextHopNetwork, resource.data.priority, resource.data.destRange, resource.data.description, ancestors{}
+| rename "ancestors{}" as ancestors
+|search ancestors=$project_tok$
+|eval ProjectID=replace(name,"\S+projects\/(\S+)\/global\S+","\1")
+|rename name as Name, resource.data.network as VPC, resource.data.nextHopNetwork as "Next Hop Network", resource.data.priority as Priority, resource.data.destRange as "Dest Range", resource.data.description as Description
+|table ProjectID, Name, VPC, "Next Hop Network",  "Dest Range", Priority, Description</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Firewalls</title>
+      <table>
+        <search>
+          <query>`gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type=compute.googleapis.com/Firewall
+|spath output=data path=resource.data
+|eval projectid=replace(name,"\S+projects\/(\S+)\/global\S+","\1")
+|search projectid=$project_tok$
+|rename resource.data.network as vpcname
+|eval vpc=replace(vpcname,"\S+\/networks\/(\S+)","\1")
+|rex max_match=20 field=data "\{\"IPProtocol\":\"(?&lt;Protocol&gt;\w+)\"(,\"ports\":\[(?&lt;Ports&gt;\"[^\]]*))*"
+|rex max_match=20 field=data "\"sourceRanges\":\[(?&lt;sourceRanges&gt;\"[^\]]*)"
+|rex max_match=20 field=data "\"sourceTags\":\[(?&lt;sourceTags&gt;\"[^\]]*)"
+|dedup resource.data.name
+|table projectid, vpc, resource.data.name, resource.data.priority, resource.data.direction,Protocol, sourceRanges, Ports, sourceTags, resource.data.logConfig.enable, resource.data.description
+|rename resource.data.name as "Firewall Name", resource.data.priority as Priority, resource.data.direction as "Direction", resource.data.logConfig.enable as "Logs Enabled", resource.data.description as Description</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Google Cloud Storage (GCS) Buckets</title>
+      <table>
+        <search>
+          <query>|tstats fillnull_value="-" count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="storage.googleapis.com/Bucket" by resource.data.id, resource.data.location, resource.data.locationType, resource.data.projectNumber, resource.data.storageClass, resource.data.retentionPolicy.retentionPeriod, resource.data.retentionPolicy.effectiveTime, resource.data.retentionPolicy.isLocked, ancestors{}
+| rename "ancestors{}" as ancestors
+|search ancestors=$project_tok$
+|rename resource.data.projectNumber as project_number
+| join project_number [ |tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata)  asset_type=compute.googleapis.com/Project by resource.parent, resource.data.name
+|rename resource.parent as parent resource.data.name as ProjectID
+|eval project_number=replace(parent,"\S+projects\/(\d+)","\1")
+|fields - count, - parent]
+|table ProjectID, resource.data.id, resource.data.location, resource.data.locationType, resource.data.storageClass, resource.data.retentionPolicy.retentionPeriod, resource.data.retentionPolicy.effectiveTime, resource.data.retentionPolicy.isLocked
+|rename resource.data.location as Location, resource.data.locationType as "Location Type", resource.data.storageClass as "Storage Class", resource.data.retentionPolicy.retentionPeriod as "Retention Period", resource.data.retentionPolicy.effectiveTime as "Retention Effective Time", resource.data.retentionPolicy.isLocked as "Retention Policy Locked"</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+</form>
