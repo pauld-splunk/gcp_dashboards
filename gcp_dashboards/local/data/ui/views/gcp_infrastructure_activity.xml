@@ -20,9 +20,17 @@
     </done>
   </search>
   <search id="topLevelAssets">
-    <query>|tstats dc(name) where `gcp_index` sourcetype="google:gcp:assets"  by ancestors{}, asset_type | rename ancestors{} as ancestors</query>
+    <query>|tstats dc(name) where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata OR sourcetype=google:gcp:compute:instance) by ancestors{}, asset_type | rename ancestors{} as ancestors</query>
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
+  </search>
+  <search id="disks" base="topLevelAssets">
+    <query>
+      |search asset_type=*Disk ancestors=*$projectNumber$ | rename dc(name) as number
+    </query>
+    <done>
+      <eval token="Disk_count">if(isnull($result.number$),0,$result.number$)</eval>
+    </done>
   </search>
   <search id="instances" base="topLevelAssets">
     <query>
@@ -47,6 +55,39 @@
       <eval token="Function_count">if(isnull($result.number$),0,$result.number$)</eval>
     </done>
   </search>
+  <search id="networks" base="topLevelAssets">
+    <query>|search asset_type=*Network ancestors=*$projectNumber$ | rename dc(name) as number
+    </query>
+    <done>
+      <eval token="VPC_count">if(isnull($result.number$),0,$result.number$)</eval>
+    </done>
+  </search>
+  <search id="subnets" base="topLevelAssets">
+    <query>|search asset_type=*Subnetwork ancestors=*$projectNumber$ | rename dc(name) as number
+    </query>
+    <done>
+      <eval token="subnet_count">if(isnull($result.number$),0,$result.number$)</eval>
+    </done>
+  </search>
+  <search id="containers" base="topLevelAssets">
+    <query>|search asset_type="k8s.io/Node" ancestors=*$projectNumber$ | rename dc(name) as number
+    </query>
+    <done>
+      <eval token="containers_count">if(isnull($result.number$),0,$result.number$)</eval>
+    </done>
+  </search>
+  <search id="containersclusters">
+    <query>|tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="k8s.io/Node" by name, ancestors{}
+|rename ancestors{} as ancestors 
+|search ancestors=*$projectNumber$
+|eval ClusterName=replace(name,"(^\S+clusters\/\S+)\/k8s\S*","\1") | stats dc(ClusterName) | rename dc(ClusterName) as number
+    </query>
+    <done>
+      <eval token="clusters_count">if(isnull($result.number$),0,$result.number$)</eval>
+    </done>
+  </search>
+  
+  
   <search id="CreateCount">
     <query>
        |tstats count where `gcp_index` sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  data.protoPayload.methodName IN (*create*, *insert*) data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$)
@@ -78,7 +119,7 @@
     </done>
   </search>
   <label>GCP Infrastructure Activity</label>
-  <description>v1.4</description>
+  <description>v1.6</description>
   <fieldset submitButton="false"></fieldset>
   <row>
     <panel>
@@ -140,24 +181,59 @@
 <tbody>
 <tr>
 <td style="width: 137px; background-color: #ebebeb;">Compute</td>
-<td style="width: 249px; background-color: #ebebeb; ">$Instance_count$ Instances</td>
-<td style="width: 11px; "/>
-<td style="width: 260px;background-color: mediumseagreen;">Total Create Events</td>
-<td style="width: 192px; background-color: mediumseagreen; ">$creates_tok$</td>
+<td style="width: 249px; background-color: #ebebeb;">$Instance_count$ Instances</td>
+<td style="width: 11px;"/>
+<td style="width: 260px; background-color: mediumseagreen;">Total Create Events</td>
+<td style="width: 192px; background-color: mediumseagreen;">$creates_tok$</td>
 </tr>
 <tr>
-<td style="width: 137px; ">Storage</td>
-<td style="width: 249px; ">$Bucket_count$ Buckets</td>
-<td style="width: 11px; "/>
-<td style="width: 260px; background-color: #ffdd33; ">Total Update Events</td>
-<td style="width: 192px; background-color: #ffdd33; ">$updates_tok$</td>
+<td style="width: 137px; background-color: #ebebeb;">Disks</td>
+<td style="width: 249px; background-color: #ebebeb;">$Disk_count$ Disks</td>
+<td style="width: 11px;"/>
+<td style="width: 260px; background-color: #ffdd33;">Total Update Events</td>
+<td style="width: 192px; background-color: #ffdd33;">$updates_tok$</td>
 </tr>
 <tr>
-<td style="width: 137px; background-color: #ebebeb; ">Cloud Functions</td>
-<td style="width: 249px; background-color: #ebebeb; ">$Function_count$ Functions</td>
-<td style="width: 11px; "/>
-<td style="width: 260px; background-color: tomato; ">Total Delete Events</td>
-<td style="width: 192px; background-color: tomato; ">$deletes_tok$</td>
+<td style="width: 137px; background-color: #ebebeb;">Storage</td>
+<td style="width: 249px; background-color: #ebebeb;">$Bucket_count$ Buckets</td>
+<td style="width: 11px;"/>
+<td style="width: 260px; background-color: tomato;">Total Delete Events</td>
+<td style="width: 192px; background-color: tomato;">$deletes_tok$</td>
+</tr>
+<tr>
+<td style="width: 137px; background-color: #ebebeb;">VPCs</td>
+<td style="width: 249px; background-color: #ebebeb;">$VPC_count$ Networks</td>
+<td style="width: 11px;"/>
+<td style="width: 260px;"/>
+<td style="width: 192px;"/>
+</tr>
+<tr>
+<td style="width: 137px;background-color: #ebebeb;">Subnets</td>
+<td style="width: 249px;background-color: #ebebeb;">$subnet_count$ Subnets</td>
+<td style="width: 11px;"/>
+<td style="width: 260px;"/>
+<td style="width: 192px;"/>
+</tr>
+<tr>
+<td style="width: 137px;background-color: #ebebeb;">GKS Clusters</td>
+<td style="width: 249px;background-color: #ebebeb;">$clusters_count$ Clusters</td>
+<td style="width: 11px;"/>
+<td style="width: 260px;"/>
+<td style="width: 192px;"/>
+</tr>
+<tr>
+<td style="width: 137px;background-color: #ebebeb;">GKS Cluster Nodes</td>
+<td style="width: 249px;background-color: #ebebeb;">$containers_count$ Nodes</td>
+<td style="width: 11px;"/>
+<td style="width: 260px;"/>
+<td style="width: 192px;"/>
+</tr>
+<tr>
+<td style="width: 137px;background-color: #ebebeb;">Cloud Functions</td>
+<td style="width: 249px;background-color: #ebebeb;">$Function_count$ Functions</td>
+<td style="width: 11px;"/>
+<td style="width: 260px;"/>
+<td style="width: 192px;"/>
 </tr>
 </tbody>
 </table>
@@ -172,7 +248,8 @@
         <choice value="*update*, *patch*">Update</choice>
         <choice value="*delete*">Delete</choice>
         <delimiter>,</delimiter>
-        <default>"*create*, *insert*, *update*, *patch*, *delete*"</default>
+        <default>"*create*, *insert*","*update*, *patch*",*delete*</default>
+        <initialValue>*create*, *insert*,*update*, *patch*,*delete*</initialValue>
       </input>
       <chart>
         <search>
