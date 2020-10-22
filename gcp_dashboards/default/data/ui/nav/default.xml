@@ -1,7 +1,7 @@
 <nav search_view="search" color="#ffffff">
   <collection label ="Operational Views">
-       <view name="gcp_asset_inventory"
        <view name="gcp_infrastructure_activity"/>
+       <view name="gcp_asset_inventory"/>
        <view name="gcp_compute"/>
        <view name="single_instance"/>
        <view name="gcp_storage_overview"/>
@@ -10,7 +10,7 @@
        <view name="gcp_container_details"/>
        <view name="gcp_cloud_functions"/>	
        <view name="cloud_function_details"/>
-       <view name="gcp_network_overview"
+       <view name="gcp_network_overview"/>
   </collection>
   <collection label ="Security and Audit">
        <view name="gcp_audit_investigation"/>
