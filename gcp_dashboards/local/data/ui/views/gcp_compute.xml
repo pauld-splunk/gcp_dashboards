@@ -9,7 +9,9 @@
   </search>
   <search base="baseInstances">
     <query>
-       search resource.data.status="Running"  projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
+       search projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
+       |dedup resource.data.id sortby -update_time
+       |search resource.data.status="Running"
        |stats dc(resource.data.id) as count
     </query>
     <done>
@@ -17,14 +19,16 @@
     </done>
   </search>
   <search base="baseInstances">
-    <query> search resource.data.status="TERMINATED"  projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
-    |stats dc(resource.data.id) as count</query>
+    <query> search  projectid IN ($project_id_tok$) zone IN ($zone_tok$)
+|dedup resource.data.id sortby -update_time
+|search resource.data.status="TERMINATED" 
+    |stats count as count</query>
     <done>
       <set token="stopped_tok">$result.count$</set>
     </done>
   </search>
   <label>GCP Compute Engine Overview</label>
-  <description>v1.4</description>
+  <description>v1.6</description>
   <fieldset submitButton="false">
     <input type="time" token="time">
       <label>Timespan</label>
@@ -64,7 +68,7 @@
   </fieldset>
   <row>
     <panel>
-      <html>Usage note: setting time&gt;6hrs will potentially result in instances that no longer exist be displayed</html>
+      <html>Usage note: a search time&gt;6hrs will potentially result in instances that no longer exist be displayed</html>
     </panel>
   </row>
   <row>
@@ -102,6 +106,24 @@
         <option name="refresh.display">progressbar</option>
       </chart>
     </panel>
+    <panel>
+      <title>Operations</title>
+      <chart>
+        <search>
+          <query>|tstats count where (index=gcp_json OR index=gcp) sourcetype="google:gcp:pubsub:message" "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" "data.resource.type"=gce_instance by _time, data.protoPayload.resourceName,data.protoPayload.methodName, data.protoPayload.response.operationType, data.resource.labels.project_id, data.resource.labels.zone
+|rename data.protoPayload.methodName as methodName data.protoPayload.resourceName as name, data.resource.labels.project_id as projectid, data.resource.labels.zone as zone
+          |search  projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
+|rename data.protoPayload.response.operationType as Action
+|timechart count  by Action</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
   </row>
   <row>
     <panel>
@@ -128,6 +150,23 @@
       <html>
         <center>Click on one of the instances above to view detailed instance information</center>
       </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Recent Activity / Users</title>
+      <table>
+        <search>
+          <query>|tstats count where (index=gcp_json OR index=gcp) sourcetype="google:gcp:pubsub:message" "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" "data.resource.type"=gce_instance by _time, data.protoPayload.resourceName,data.protoPayload.methodName, data.protoPayload.response.operationType, data.protoPayload.response.user, data.resource.labels.project_id, data.resource.labels.zone
+|rename data.protoPayload.methodName as methodName data.protoPayload.resourceName as Instance, data.protoPayload.response.operationType as Action, data.protoPayload.response.user as User  data.resource.labels.project_id as projectid, data.resource.labels.zone as zone
+|search  projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
+|table _time, Instance, Action, User</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
     </panel>
   </row>
 </form>
