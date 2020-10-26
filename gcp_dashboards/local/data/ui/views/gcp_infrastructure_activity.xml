@@ -86,8 +86,6 @@
       <eval token="clusters_count">if(isnull($result.number$),0,$result.number$)</eval>
     </done>
   </search>
-  
-  
   <search id="CreateCount">
     <query>
        |tstats count where `gcp_index` sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  data.protoPayload.methodName IN (*create*, *insert*) data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$)
@@ -119,7 +117,7 @@
     </done>
   </search>
   <label>GCP Infrastructure Activity</label>
-  <description>v1.6</description>
+  <description>v1.7</description>
   <fieldset submitButton="false"></fieldset>
   <row>
     <panel>
@@ -275,8 +273,8 @@ data.protoPayload.methodName, data.resource.type, attributes.logging.googleapis.
 | eval name2='data.protoPayload.authorizationInfo{}.resource'
 | eval Name=if(name1="null", name2,name1)
 |search Name!="null"
-| rename "data.protoPayload.methodName" as Method, data.resource.type as "Resource Type", data.protoPayload.authorizationInfo{}.permission as Permission, "attributes.logging.googleapis.com/timestamp" as Time, "data.protoPayload.authenticationInfo.principalEmail" as Email, data.protoPayload.requestMetadata.callerIp as "Caller IP"
-| table Method, "Resource Type",Permission, Name, Time, Email, "Caller IP"</query>
+| rename "data.protoPayload.methodName" as Method, data.resource.type as "Resource Type", data.protoPayload.authorizationInfo{}.permission as Permission, "attributes.logging.googleapis.com/timestamp" as Time, "data.protoPayload.authenticationInfo.principalEmail" as User, data.protoPayload.requestMetadata.callerIp as "Caller IP"
+| table Method, "Resource Type",Permission, Name, Time, User, "Caller IP"</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -298,8 +296,8 @@ data.protoPayload.methodName, data.resource.type, attributes.logging.googleapis.
 | eval name2='data.protoPayload.authorizationInfo{}.resource'
 | eval Name=if(name1="null", name2,name1)
 |search Name!="null"
-| rename "data.protoPayload.methodName" as Method, data.resource.type as "Resource Type", data.protoPayload.authorizationInfo{}.permission as Permission, "attributes.logging.googleapis.com/timestamp" as Time, "data.protoPayload.authenticationInfo.principalEmail" as Email, data.protoPayload.requestMetadata.callerIp as "Caller IP"
-| table Method, "Resource Type",Permission, Name, Time, Email, "Caller IP"</query>
+| rename "data.protoPayload.methodName" as Method, data.resource.type as "Resource Type", data.protoPayload.authorizationInfo{}.permission as Permission, "attributes.logging.googleapis.com/timestamp" as Time, "data.protoPayload.authenticationInfo.principalEmail" as User, data.protoPayload.requestMetadata.callerIp as "Caller IP"
+| table Method, "Resource Type",Permission, Name, Time, User, "Caller IP"</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -321,8 +319,8 @@ data.protoPayload.methodName, data.resource.type, attributes.logging.googleapis.
 | eval name2='data.protoPayload.authorizationInfo{}.resource'
 | eval Name=if(name1="null", name2,name1)
 |search Name!="null"
-| rename "data.protoPayload.methodName" as Method, data.resource.type as "Resource Type", data.protoPayload.authorizationInfo{}.permission as Permission, "attributes.logging.googleapis.com/timestamp" as Time, "data.protoPayload.authenticationInfo.principalEmail" as Email, data.protoPayload.requestMetadata.callerIp as "Caller IP"
-| table Method, "Resource Type",Permission, Name, Time, Email, "Caller IP"</query>
+| rename "data.protoPayload.methodName" as Method, data.resource.type as "Resource Type", data.protoPayload.authorizationInfo{}.permission as Permission, "attributes.logging.googleapis.com/timestamp" as Time, "data.protoPayload.authenticationInfo.principalEmail" as User, data.protoPayload.requestMetadata.callerIp as "Caller IP"
+| table Method, "Resource Type",Permission, Name, Time, User, "Caller IP"</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>

@@ -1,6 +1,6 @@
 <form>
   <label>GCP Single Instance Details</label>
-  <description>v1.1</description>
+  <description>v1.2</description>
   <init>
     <set token="minspan">60</set>
   </init>
@@ -8,8 +8,7 @@
     <query>| tstats count fillnull_value=true
     where 
     resource.data.id=$selected_instance$
-    `gcp_index` 
-    sourcetype="google:gcp:assets" 
+    `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance)
     asset_type="compute.googleapis.com/Instance" 
     earliest=-24h@h latest=now by 
     name,
@@ -68,7 +67,7 @@
     </done>
   </search>
   <search id="baseDisk">
-    <query>|tstats count where `gcp_index` sourcetype="google:gcp:assets" resource.data.user{}=$selfLink$ by resource.data.id | rename resource.data.id as ids|eval ids=ids+" ,"|fields - count|stats values(ids) as ids|nomv ids
+    <query>|tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) resource.data.user{}=$selfLink$ by resource.data.id | rename resource.data.id as ids|eval ids=ids+" ,"|fields - count|stats values(ids) as ids|nomv ids
 |eval ids=rtrim(ids," ,")
       </query>
     <done>
@@ -77,7 +76,7 @@
   </search>
   <search id="mstatsBase">
     <query>
-      | mstats $selected_cpu_aggregator$(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/*" AND `gcp_metrics` AND instance_id=$selected_instance$  earliest=$time.earliest$ latest=$time.latest$ $secs_for_bin$ 
+      | mstats $selected_cpu_aggregator$(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/*" AND index="gcp_metrics" AND instance_id=$selected_instance$  earliest=$time.earliest$ latest=$time.latest$ $secs_for_bin$ 
     </query>
   </search>
   <fieldset submitButton="false">
@@ -197,8 +196,7 @@
       <table>
         <title>Disk</title>
         <search>
-          <query>`gcp_index` 
-    sourcetype="google:gcp:assets" 
+          <query>`gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance)
     asset_type="compute.googleapis.com/Instance"
     resource.data.id=$selected_instance$
 | spath output=disks path=resource.data.disk{}
@@ -215,8 +213,8 @@
       <table>
         <title>Network</title>
         <search>
-          <query>`gcp_index` 
-    sourcetype="google:gcp:assets" 
+          <query>`gcp_index`
+    (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) 
     asset_type="compute.googleapis.com/Instance"
     resource.data.id=$selected_instance$
 |head 1

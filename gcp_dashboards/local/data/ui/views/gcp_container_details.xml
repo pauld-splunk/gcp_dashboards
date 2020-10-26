@@ -1,7 +1,7 @@
 <form>
   <search id="baseInfo">
     <query>
-    |tstats dc(name) where `gcp_index` sourcetype="google:gcp:assets" asset_type="k8s.io/Node" by name,resource.data.metadata.name, resource.data.metadata.annotations.container.googleapis.com/instance_id,resource.data.metadata.labels.beta.kubernetes.io/instance-type, resource.data.metadata.labels.kubernetes.io/hostname, resource.data.metadata.labels.cloud.google.com/gke-nodepool, resource.data.status.nodeInfo.containerRuntimeVersion 
+    |tstats dc(name) where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="k8s.io/Node" by name,resource.data.metadata.name, resource.data.metadata.annotations.container.googleapis.com/instance_id,resource.data.metadata.labels.beta.kubernetes.io/instance-type, resource.data.metadata.labels.kubernetes.io/hostname, resource.data.metadata.labels.cloud.google.com/gke-nodepool, resource.data.status.nodeInfo.containerRuntimeVersion 
 | rename name as Name,resource.data.metadata.name as NodeName, resource.data.metadata.annotations.container.googleapis.com/instance_id as Instance_ID, resource.data.metadata.labels.beta.kubernetes.io/instance-type as InstanceType, resource.data.metadata.labels.kubernetes.io/hostname as HostName, resource.data.metadata.labels.cloud.google.com/gke-nodepool as NodePool, resource.data.status.nodeInfo.containerRuntimeVersion as containerRuntimeVersion
 | eval ProjectID=replace(Name,"^\S+projects\/(\S+)\/(zones|locations)\S*","\1")
 | eval Zone=replace(Name,"^\S+(zones|locations)\/(\S+)\/clusters\S*","\2")
@@ -13,7 +13,7 @@
     <set token="minspan">60</set>
     <set token="show_annotations">*</set>
   </init>
-  <description>v1.1</description>
+  <description>v1.2</description>
   <fieldset submitButton="false">
     <input type="time" searchWhenChanged="true" token="time">
       <label>Time Range</label>
@@ -64,7 +64,7 @@
       <fieldForLabel>Dims</fieldForLabel>
       <fieldForValue>Dims</fieldForValue>
       <search>
-        <query>| mcatalog values(_dims) as Dims WHERE `gcp_index` AND metric_name=container.googleapis.com/container/*
+        <query>| mcatalog values(_dims) as Dims WHERE index=* AND metric_name=container.googleapis.com/container/*
 | mvexpand Dims
 |search NOT Dims IN ("metricKind","resourceType","valueType")</query>
         <earliest>-24h@h</earliest>
@@ -99,7 +99,7 @@
       <title>container.googleapis.com/container/cpu/utilization</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/cpu/utilization" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/cpu/utilization" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
 | timechart avg(_value) as Avg span=$secs_for_bin$s $multiline$ $dims_tok$
 | fields - _span* VALUE</query>
           <earliest>$time.earliest$</earliest>
@@ -124,7 +124,7 @@
       <title>container.googleapis.com/container/memory/bytes_used</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/memory/bytes_used" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/memory/bytes_used" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
 | timechart avg(_value) as Avg span=$secs_for_bin$s $multiline$ $dims_tok$
 | fields - _span* VALUE</query>
           <earliest>$time.earliest$</earliest>
@@ -145,7 +145,7 @@
       <title>container.googleapis.com/container/memory/bytes_total</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/memory/bytes_total" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/memory/bytes_total" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
 | timechart avg(_value) as Avg span=$secs_for_bin$s $multiline$ $dims_tok$
 | fields - _span* VALUE</query>
           <earliest>$time.earliest$</earliest>
@@ -169,7 +169,7 @@
       <title>container.googleapis.com/container/cpu/reserved_cores</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/cpu/reserved_cores" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/cpu/reserved_cores" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
 | timechart avg(_value) as Avg span=$secs_for_bin$s $multiline$ $dims_tok$
 | fields - _span* VALUE</query>
           <earliest>$time.earliest$</earliest>
@@ -191,7 +191,7 @@
       <title>container.googleapis.com/container/cpu/usage_time</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/cpu/usage_time" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/cpu/usage_time" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
 | timechart avg(_value) as Avg span=$secs_for_bin$s $multiline$ $dims_tok$
 | fields - _span* VALUE</query>
           <earliest>$time.earliest$</earliest>
@@ -215,7 +215,7 @@
       <title>container.googleapis.com/container/disk/bytes_used</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/disk/bytes_used" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/disk/bytes_used" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
 | timechart avg(_value) as Avg span=$secs_for_bin$s $multiline$ $dims_tok$
 | fields - _span* VALUE</query>
           <earliest>$time.earliest$</earliest>
@@ -237,7 +237,7 @@
       <title>container.googleapis.com/container/disk/bytes_total</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/disk/bytes_total" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="container.googleapis.com/container/disk/bytes_total" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND zone IN ($zone_tok$) AND cluster_name IN ($cluster_tok$) span=$secs_for_bin$s $dims_tok$
 | timechart avg(_value) as Avg span=$secs_for_bin$s $multiline$ $dims_tok$
 | fields - _span* VALUE</query>
           <earliest>$time.earliest$</earliest>
@@ -260,7 +260,7 @@
     <panel depends="$hide$">
       <table>
         <search id="eventBase">
-          <query>|tstats fillnull_value="null" count where `gcp_index` sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="k8s.io" data.resource.labels.cluster_name IN ($cluster_tok$) data.resource.labels.project_id IN ($project_id_tok$)
+          <query>|tstats fillnull_value="null" count where `gcp_index`  sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="k8s.io" data.resource.labels.cluster_name IN ($cluster_tok$) data.resource.labels.project_id IN ($project_id_tok$)
        by _time, data.resource.labels.project_id,data.logName,data.protoPayload.resourceName, data.resource.type, "data.protoPayload.authenticationInfo.principalEmail",data.protoPayload.serviceName, data.protoPayload.methodName, data.protoPayload.requestMetadata.callerIp, data.protoPayload.requestMetadata.callerSuppliedUserAgent data.labels.authorization.k8s.io/decision data.labels.authorization.k8s.io/reason
        | rename data.resource.labels.project_id as ProjectID, data.logName as LogName, data.protoPayload.authenticationInfo.principalEmail as Email,data.protoPayload.serviceName as ServiceName, data.protoPayload.resourceName as ResourceName, data.resource.type as ResourceType, data.protoPayload.methodName as MethodName, data.protoPayload.requestMetadata.callerIp as CallerIP, data.protoPayload.requestMetadata.callerSuppliedUserAgent as UserAgent data.labels.authorization.k8s.io/decision as Decision data.labels.authorization.k8s.io/reason as Reason</query>
           <earliest>$time.earliest$</earliest>
