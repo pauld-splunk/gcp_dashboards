@@ -39,7 +39,7 @@
     </done>
   </search>
   <label>GCP Compute Engine Overview</label>
-  <description>v1.7</description>
+  <description>v1.8</description>
   <fieldset submitButton="false">
     <input type="time" token="time">
       <label>Timespan</label>
@@ -200,6 +200,23 @@
         <option name="drilldown">none</option>
         <option name="refresh.display">progressbar</option>
       </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Instance Errors/Warnings</title>
+      <chart>
+        <search>
+          <query>|tstats count where (index=gcp_json OR index=gcp) sourcetype="google:gcp:pubsub:message" "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" "data.resource.type"=gce_instance by _time, data.protoPayload.resourceName,data.protoPayload.methodName, data.resource.labels.project_id, data.resource.labels.zone, data.protoPayload.status.message, data.protoPayload.response.error.errors{}.reason, data.severity, data.protoPayload.authenticationInfo.principalEmail
+|rename data.protoPayload.methodName as methodName data.protoPayload.resourceName as Instance, data.protoPayload.response.operationType as Action, data.resource.labels.project_id as projectid, data.resource.labels.zone as zone, data.protoPayload.status.message as Message, data.protoPayload.response.error.errors{}.reason as Reason, data.severity as Severity, data.protoPayload.authenticationInfo.principalEmail as User
+|search  projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
+|timechart count  by Reason</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
     </panel>
   </row>
 </form>
