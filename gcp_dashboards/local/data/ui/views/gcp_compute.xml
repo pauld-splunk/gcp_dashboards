@@ -19,6 +19,17 @@
     </done>
   </search>
   <search base="baseInstances">
+    <query>
+       search projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
+       |dedup resource.data.id sortby -update_time
+       |search resource.data.status="SUSPENDED" OR resource.data.status="SUSPENDING"
+       |stats dc(resource.data.id) as count
+    </query>
+    <done>
+      <set token="suspended_tok">$result.count$</set>
+    </done>
+  </search>
+  <search base="baseInstances">
     <query> search  projectid IN ($project_id_tok$) zone IN ($zone_tok$)
 |dedup resource.data.id sortby -update_time
 |search resource.data.status="TERMINATED" 
@@ -28,7 +39,7 @@
     </done>
   </search>
   <label>GCP Compute Engine Overview</label>
-  <description>v1.6</description>
+  <description>v1.7</description>
   <fieldset submitButton="false">
     <input type="time" token="time">
       <label>Timespan</label>
@@ -73,10 +84,11 @@
   </row>
   <row>
     <panel>
-      <title>Running Instances</title>
+      <title>Instance State</title>
       <html>
         <center>
           <h1 style="background-color:MediumSeaGreen;">Running Instances: $running_tok$</h1>
+          <h1 style="background-color:Orange;">Suspended Instances: $suspended_tok$</h1>
           <h1 style="background-color:Tomato;"> Stopped Instances: $stopped_tok$</h1>
         </center>
       </html>
@@ -100,8 +112,9 @@
         <search base="baseInstances">
           <query>search resource.data.status="Running"  projectid IN ($project_id_tok$) zone IN ($zone_tok$) | timechart count by zone</query>
         </search>
-        <option name="charting.chart">area</option>
-        <option name="charting.chart.stackMode">stacked100</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.stackMode">stacked</option>
         <option name="charting.drilldown">none</option>
         <option name="refresh.display">progressbar</option>
       </chart>
@@ -161,6 +174,26 @@
 |rename data.protoPayload.methodName as methodName data.protoPayload.resourceName as Instance, data.protoPayload.response.operationType as Action, data.protoPayload.response.user as User  data.resource.labels.project_id as projectid, data.resource.labels.zone as zone
 |search  projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
 |table _time, Instance, Action, User</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Top Users</title>
+      <table>
+        <search>
+          <query>|tstats count where (index=gcp_json OR index=gcp) sourcetype="google:gcp:pubsub:message" "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" "data.resource.type"=gce_instance by _time, data.protoPayload.resourceName,data.protoPayload.methodName, data.protoPayload.response.operationType, data.protoPayload.response.user, data.resource.labels.project_id, data.resource.labels.zone
+|rename data.protoPayload.methodName as methodName data.protoPayload.resourceName as Instance, data.protoPayload.response.operationType as Action, data.protoPayload.response.user as User  data.resource.labels.project_id as projectid, data.resource.labels.zone as zone
+|search projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
+|stats count(Action) by  User, Action
+|stats count AS Actions count(eval(Action="insert")) AS insert count(eval(Action="start")) AS start count(eval(Action="resume")) as resume count(eval(Action="stop")) as stop count(eval(Action="suspend")) as suspend count(eval(Action="delete")) as delete  by User
+|sort by -Actions
+|rename Actions as "Total Actions"</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
