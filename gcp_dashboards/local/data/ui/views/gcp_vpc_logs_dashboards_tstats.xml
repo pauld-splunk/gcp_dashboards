@@ -45,9 +45,7 @@
       <fieldForLabel>location</fieldForLabel>
       <fieldForValue>location</fieldForValue>
       <search base="base_vpc">
-        <query> | search data.resource.labels.project_id IN ($projectid_tok$) |stats count by data.resource.labels.project_id, data.resource.labels.location| fields data.resource.labels.location | dedup data.resource.labels.location| rename data.resource.labels.location as location| search NOT location="-null-"</query>
-        <earliest>-24h@h</earliest>
-        <latest>now</latest>
+        <query>| search data.resource.labels.project_id IN ($projectid_tok$) |stats count by data.resource.labels.project_id, data.resource.labels.location| fields data.resource.labels.location | dedup data.resource.labels.location| rename data.resource.labels.location as location| search NOT location="-null-" AND NOT location="-"</query>
       </search>
       <delimiter>,</delimiter>
     </input>
@@ -163,11 +161,8 @@
       <title>Number of VPC Events by Source</title>
       <chart>
         <search base="sub_vpc_search">
-          <query>
-            |stats count  by _time, data.jsonPayload.connection.src_ip  |timechart count by data.jsonPayload.connection.src_ip useother=f</query>
-          <earliest>$TimeRangePicker.earliest$</earliest>
-          <latest>$TimeRangePicker.latest$</latest>
-          <sampleRatio>1</sampleRatio>
+          <query>| search NOT data.jsonPayload.connection.src_ip="-null-"
+|stats count  by _time, data.jsonPayload.connection.src_ip  |timechart count by data.jsonPayload.connection.src_ip useother=f</query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
