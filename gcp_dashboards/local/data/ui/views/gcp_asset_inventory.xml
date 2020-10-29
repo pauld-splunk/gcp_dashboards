@@ -83,7 +83,6 @@
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
   </search>
-  
   <search id="routes">
     <query>|tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Route" by resource.data.id, name, resource.data.network
 , resource.data.nextHopNetwork, resource.data.priority, resource.data.destRange, resource.data.description, ancestors{}
@@ -96,7 +95,6 @@
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
   </search>
-  
   <search id="firewalls">
     <query>`gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type=compute.googleapis.com/Firewall
 |spath output=data path=resource.data
@@ -114,8 +112,6 @@
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
   </search>
-  
-  
   <search id="gcs">
     <query>|tstats fillnull_value="-" count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="storage.googleapis.com/Bucket" by resource.data.id, resource.data.location, resource.data.locationType, resource.data.projectNumber, resource.data.storageClass, resource.data.retentionPolicy.retentionPeriod, resource.data.retentionPolicy.effectiveTime, resource.data.retentionPolicy.isLocked, ancestors{}
 | rename "ancestors{}" as ancestors
@@ -126,14 +122,14 @@
 |eval project_number=replace(parent,"\S+projects\/(\d+)","\1")
 |fields - count, - parent]
 |table ProjectID, resource.data.id, resource.data.location, resource.data.locationType, resource.data.storageClass, resource.data.retentionPolicy.retentionPeriod, resource.data.retentionPolicy.effectiveTime, resource.data.retentionPolicy.isLocked
-|rename resource.data.location as Location, resource.data.locationType as "Location Type", resource.data.storageClass as "Storage Class", resource.data.retentionPolicy.retentionPeriod as "Retention Period", resource.data.retentionPolicy.effectiveTime as "Retention Effective Time", resource.data.retentionPolicy.isLocked as "Retention Policy Locked"
+|rename resource.data.id as Bucket, resource.data.location as Location, resource.data.locationType as "Location Type", resource.data.storageClass as "Storage Class", resource.data.retentionPolicy.retentionPeriod as "Retention Period", resource.data.retentionPolicy.effectiveTime as "Retention Effective Time", resource.data.retentionPolicy.isLocked as "Retention Policy Locked"
+|dedup ProjectID Bucket
     </query>
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
   </search>
-  
   <label>GCP Asset Inventory</label>
-  <description>v1.0</description>
+  <description>v1.2</description>
   <fieldset submitButton="false" autoRun="true">
     <input type="time" token="time" searchWhenChanged="true">
       <label>Time Range</label>
@@ -169,7 +165,7 @@
     </panel>
     <panel>
       <single>
-        <title>Connected Compute Storage</title>
+        <title>Connected Compute Disks</title>
         <search base="computeconnectedstorage">
           <query>stats count</query>
         </search>
@@ -178,7 +174,7 @@
     </panel>
     <panel>
       <single>
-        <title>Unattached Compute Storage</title>
+        <title>Unattached Compute Disks</title>
         <search base="disconnectedstorage">
           <query>stats count</query>
         </search>
@@ -248,7 +244,7 @@
   <row>
     <panel>
       <table>
-        <title>Connected Compute Storage</title>
+        <title>Connected Compute Disk</title>
         <search base="computeconnectedstorage">
           <query>search *</query>
         </search>
@@ -259,7 +255,7 @@
   <row>
     <panel>
       <table>
-        <title>Unattached Compute Storage</title>
+        <title>Unattached Compute Disk</title>
         <search base="disconnectedstorage">
           <query>search *</query>
         </search>
