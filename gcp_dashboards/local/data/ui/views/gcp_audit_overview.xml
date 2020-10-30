@@ -1,0 +1,119 @@
+<form>
+  <label>GCP Audit Overview</label>
+  <description>v1.1</description>
+  <fieldset submitButton="false">
+    <input type="time" token="field2">
+      <label></label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="dropdown" token="field1">
+      <label>field1</label>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>GCP - Activity Changes by Type</title>
+      <chart>
+        <search>
+          <query>|tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName != ""  data.resource.type != "" by data.resource.type</query>
+          <earliest>-4h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>GCP - # of Activity Events by Source</title>
+      <chart>
+        <search>
+          <query>|tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName!=""  by source</query>
+          <earliest>-4h@m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>GCP - Count of Activities by Users</title>
+      <chart>
+        <search>
+          <query>|tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName!="" data.resource.type!="" by _time, data.protoPayload.serviceName, data.protoPayload.authenticationInfo.principalEmail |rename "data.protoPayload.authenticationInfo.principalEmail" as username | timechart count by username useother=false usenull=false</query>
+          <earliest>-4h@m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>GCP - Count of Events by User and Severity</title>
+      <table>
+        <search>
+          <query>|tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message "data.logName"="*logs/cloudaudit.googleapis.com%2Factivity*" by "data.protoPayload.authenticationInfo.principalEmail", data.severity | rename data.severity as severity, "data.protoPayload.authenticationInfo.principalEmail" as "UserName"
+|chart sum(count) by UserName, severity</query>
+          <earliest>$field2.earliest$</earliest>
+          <latest>$field2.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+    <panel>
+      <title>GCP - Operation Count by User</title>
+      <table>
+        <search>
+          <query>`gcp_index` sourcetype=google:gcp:pubsub:message "logName"="*logs/cloudaudit.googleapis.com%2Factivity*" | rename data.protoPayload.authenticationInfo.principalEmail as Username | eval Username=if(Username=="", "Unknown", Username) | stats count by Username, data.protoPayload.request.@type | rename data.protoPayload.request.@type as "Event Type" | sort -count | rename count as Count | table Username, "Event Type", Count</query>
+          <earliest>-4h@m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>GCP - ERROR Logs Count</title>
+      <chart>
+        <search>
+          <query>`gcp_index` sourcetype=google:gcp:pubsub:message severity=*ERROR* | stats count by data.protoPayload.serviceName</query>
+          <earliest>$earliest$</earliest>
+          <latest>$latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+</form>
