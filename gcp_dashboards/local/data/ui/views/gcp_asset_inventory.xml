@@ -1,6 +1,25 @@
+<!-- v1.3-->
 <form>
+  <search id="tstats_query">
+    <query>
+      |makeresults 
+      |eval usetstats="Yes" 
+      |eval notstats="No"
+      |eval tstatstag=`tstatstag`
+      |eval tstats_compute=if(tstatstag=="Yes", "|tstats dc(resource.data.id) as Count where","")
+      |eval tstats_simple=if(tstatstag=="Yes", "|tstats count where","")
+      |eval tstats_nulls=if(tstatstag=="Yes", "|tstats fillnull_value=\"-\" count where","")
+      |eval stats_count=if(tstatstag=="No", "|stats count ", "")
+    </query>
+    <done>
+      <set token="tstats_compute">$result.tstats_compute$</set>
+      <set token="stats_count">$result.stats_count$</set>
+      <set token="tstats_simple">$result.tstats_simple$</set>
+      <set token="tstats_nulls">$result.tstats_nulls$</set>
+    </done>
+  </search>
   <search id="computeinstances">
-    <query>|tstats dc(resource.data.id) as Count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type=compute.googleapis.com/Instance  by _time, name, resource.data.name, resource.data.status, resource.data.id, resource.data.machineType, update_time, ancestors{}
+    <query>$tstats_compute$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type=compute.googleapis.com/Instance $stats_count$ by _time, name, resource.data.name, resource.data.status, resource.data.id, resource.data.machineType, update_time, ancestors{}
 | rename "ancestors{}" as ancestors
 |search ancestors=$project_tok$
        | eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1") 
@@ -16,7 +35,7 @@
   </search>
   <search id="computeconnectedstorage">
     <query>
-    |tstats count where index=* sourcetype="google:gcp:assets" asset_type="compute.googleapis.com/Disk"  earliest=-24h@h latest=now  by resource.data.id ,name, resource.data.name, resource.data.sizeGb, resource.data.type, resource.data.sourceImage, resource.data.guestOsFeatures{}.type, ancestors{}
+    $tstats_simple$ `gcp_index` sourcetype="google:gcp:assets" asset_type="compute.googleapis.com/Disk"  earliest=-24h@h latest=now $stats_count$ by resource.data.id ,name, resource.data.name, resource.data.sizeGb, resource.data.type, resource.data.sourceImage, resource.data.guestOsFeatures{}.type, ancestors{}
 | rename "ancestors{}" as ancestors
 |search ancestors=$project_tok$
 |dedup resource.data.id  
@@ -57,7 +76,7 @@
   </search>
   <search id="vpcs">
     <query>
-      |tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Network" by resource.data.id, name, resource.data.routingConfig.routingMode, resource.data.subnetworks{}, ancestors{}
+      $tstats_simple$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Network" $stats_count$ by resource.data.id, name, resource.data.routingConfig.routingMode, resource.data.subnetworks{}, ancestors{}
 | rename "ancestors{}" as ancestors
 |search ancestors=$project_tok$
 |eval projectid=replace(name,"\S+projects\/(\S+)\/global\S+","\1")
@@ -72,7 +91,7 @@
     <latest>$time.latest$</latest>
   </search>
   <search id="subnets">
-    <query>|tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Subnetwork" by resource.data.network, resource.location, resource.data.name, resource.data.ipCidrRange, resource.data.gatewayAddress, ancestors{}
+    <query>$tstats_simple$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Subnetwork" $stats_count$ by resource.data.network, resource.location, resource.data.name, resource.data.ipCidrRange, resource.data.gatewayAddress, ancestors{}
 | rename "ancestors{}" as ancestors
 |search ancestors=$project_tok$
 |rename resource.data.network as network
@@ -84,7 +103,7 @@
     <latest>$time.latest$</latest>
   </search>
   <search id="routes">
-    <query>|tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Route" by resource.data.id, name, resource.data.network
+    <query>$tstats_simple$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Route" $stats_count$ by resource.data.id, name, resource.data.network
 , resource.data.nextHopNetwork, resource.data.priority, resource.data.destRange, resource.data.description, ancestors{}
 | rename "ancestors{}" as ancestors
 |search ancestors=$project_tok$
@@ -113,11 +132,11 @@
     <latest>$time.latest$</latest>
   </search>
   <search id="gcs">
-    <query>|tstats fillnull_value="-" count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="storage.googleapis.com/Bucket" by resource.data.id, resource.data.location, resource.data.locationType, resource.data.projectNumber, resource.data.storageClass, resource.data.retentionPolicy.retentionPeriod, resource.data.retentionPolicy.effectiveTime, resource.data.retentionPolicy.isLocked, ancestors{}
+    <query>$tstats_nulls$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="storage.googleapis.com/Bucket" $stats_count$ by resource.data.id, resource.data.location, resource.data.locationType, resource.data.projectNumber, resource.data.storageClass, resource.data.retentionPolicy.retentionPeriod, resource.data.retentionPolicy.effectiveTime, resource.data.retentionPolicy.isLocked, ancestors{}
 | rename "ancestors{}" as ancestors
 |search ancestors=$project_tok$
 |rename resource.data.projectNumber as project_number
-| join project_number [ |tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata)  asset_type=compute.googleapis.com/Project by resource.parent, resource.data.name
+| join project_number [ $tstats_simple$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata)  asset_type=compute.googleapis.com/Project $stats_count$ by resource.parent, resource.data.name
 |rename resource.parent as parent resource.data.name as ProjectID
 |eval project_number=replace(parent,"\S+projects\/(\d+)","\1")
 |fields - count, - parent]
@@ -129,7 +148,7 @@
     <latest>$time.latest$</latest>
   </search>
   <label>GCP Asset Inventory</label>
-  <description>v1.2</description>
+  <description>v1.3</description>
   <fieldset submitButton="false" autoRun="true">
     <input type="time" token="time" searchWhenChanged="true">
       <label>Time Range</label>
@@ -146,7 +165,7 @@
       <fieldForLabel>ProjectID</fieldForLabel>
       <fieldForValue>project_number</fieldForValue>
       <search>
-        <query>|tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata)  asset_type=compute.googleapis.com/Project by resource.parent, resource.data.name
+        <query>$tstats_simple$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata)  asset_type=compute.googleapis.com/Project $stats_count$ by resource.parent, resource.data.name
 |rename resource.parent as parent resource.data.name as ProjectID
 |eval project_number=replace(parent,"\S+(projects\/\d+)","\1")
 |fields - count, - parent</query>
