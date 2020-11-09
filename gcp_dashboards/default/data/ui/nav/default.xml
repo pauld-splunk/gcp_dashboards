@@ -18,6 +18,12 @@
        <view name="gcp_vpc_logs_dashboards_tstats"/>
        <view name="gcp_vpc_ts"/>
   </collection>
+  <collection label ="Unassigned Overviews">
+       <view name="gcp_iam_overview_2"/>
+       <view name="gcp_bigquery_overview"/>
+       <view name="gcp_gae_overview"/>
+       <view name="gcp_cloudsql_overview"/>
+  </collection>
   <view name="audit_log_overview" />
   <view name="billing_overview" />
   <collection label="Search">
