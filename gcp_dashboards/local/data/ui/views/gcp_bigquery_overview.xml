@@ -1,40 +1,63 @@
-<dashboard>
+<form>
   <label>BigQuery Overview</label>
+  <description>v1.0</description>
+  <search id="source_data_query">
+    <query>
+      |makeresults | eval addon="data."| eval dataflow="" 
+      |eval datatag=`datatag`
+    </query>
+    <done>
+      <set token="datatag">$result.datatag$</set>
+    </done>
+  </search>
   <search id="tstats_query">
     <query>
       |makeresults 
-      |eval usetstats="|tstats fillnull_value=\"null\" count where" |eval notstats=" "
+      |eval usetstats="|tstats fillnull_value=\"-\" count where `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName=\"bigquery.googleapis.com\" by _time, $datatag$resource.labels.project_id, $datatag$protoPayload.methodName, $datatag$severity, $datatag$protoPayload.requestMetadata.callerIp, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobConfiguration.query.query, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.startTime, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.endTime, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.status.code, $datatag$protoPayload.status.message, $datatag$protoPayload.authorizationInfo{}.granted span=1s" 
+      |eval notstats=" `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName=\"bigquery.googleapis.com\" "
       |eval tstatstag=`tstatstag`
-      |eval tstats_post_midtag=if(tstatstag!=" "," ","| fillnull value=\"null\" _time, $datatag$resource.labels.project_id, $datatag$logName, $datatag$protoPayload.resourceName, $datatag$resource.type, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.serviceName, $datatag$protoPayload.methodName, $datatag$protoPayload.requestMetadata.callerIp, $datatag$protoPayload.requestMetadata.callerSuppliedUserAgent | stats count")
-      |eval tstats_post_endtag=if(tstatstag!=" ", "span=$secs_for_bin$s", "")
     </query>
     <done>
-      <set token="tstatstag">$result.tstatstag$</set>
-      <set token="tstats_post_midtag">$result.tstats_post_midtag$</set>
-      <set token="tstats_post_endtag">$result.tstats_post_endtag$</set>
+      <set token="search_tag">$result.tstatstag$</set>
     </done>
   </search>
-  <!--<row depends="$dont_show$">-->
-  <!--  <panel>-->
-  <!--    <html>-->
-  <!--      <style>-->
-  <!--        .dashboard-row .dashboard-panel .panel-element-row {-->
-  <!--          overflow: auto;-->
-  <!--          max-height: 5000px;-->
-  <!--        }-->
-  <!--      </style>-->
-  <!--    </html>-->
-  <!--  </panel>-->
-  <!--</row>-->
+  <search id="base_bq">
+    <query> $search_tag$
+      <!--|tstats fillnull_value="-" count where `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName="bigquery.googleapis.com" by _time, $datatag$resource.labels.project_id, $datatag$protoPayload.methodName, $datatag$severity, $datatag$protoPayload.requestMetadata.callerIp, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobConfiguration.query.query, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.startTime, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.endTime, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.status.code, $datatag$protoPayload.status.message, $datatag$protoPayload.authorizationInfo{}.granted span=1s -->
+    </query>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
+  </search>
+  <fieldset submitButton="false">
+    <input type="time" token="time">
+      <label></label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="dropdown" token="project_tok">
+      <label>Project ID</label>
+      <fieldForLabel>ProjectID</fieldForLabel>
+      <fieldForValue>ProjectID</fieldForValue>
+      <search base="base_bq">
+        <query>|rename $datatag$resource.labels.project_id as ProjectID | stats count by ProjectID </query>
+      </search>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <choice value="*">ALL</choice>
+    </input>
+  </fieldset>
   <row>
     <panel>
       <title>Request location</title>
       <map>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" | iplocation $datatag$protoPayload.requestMetadata.callerIp | geostats latfield=lat longfield=lon count by $datatag$protoPayload.requestMetadata.callerIp</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
-          <sampleRatio>1</sampleRatio>
+        <search base="base_bq">
+          <query>
+            <!--`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" | iplocation $datatag$protoPayload.requestMetadata.callerIp | geostats latfield=lat longfield=lon count by $datatag$protoPayload.requestMetadata.callerIp
+            -->
+              search $datatag$resource.labels.project_id =$project_tok$ $datatag$protoPayload.requestMetadata.callerIp!="-" | iplocation $datatag$protoPayload.requestMetadata.callerIp | geostats latfield=lat longfield=lon count by $datatag$protoPayload.requestMetadata.callerIp
+            </query>
         </search>
         <option name="drilldown">none</option>
         <option name="mapping.choroplethLayer.colorBins">5</option>
@@ -67,11 +90,12 @@
     <panel>
       <title>Operations over time</title>
       <chart>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" | timechart count by $datatag$protoPayload.methodName</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
-          <sampleRatio>1</sampleRatio>
+        <search base="base_bq">
+          <query>
+            <!--`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" | timechart count by $datatag$protoPayload.methodName
+            -->
+             search $datatag$resource.labels.project_id =$project_tok$| timechart count by $datatag$protoPayload.methodName
+            </query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -112,11 +136,13 @@
     <panel>
       <title>Longest Running Queries</title>
       <table>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName="bigquery.googleapis.com" "$datatag$protoPayload.methodName"="jobservice.jobcompleted" | table $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobConfiguration.query.query, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.startTime, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.endTime | rename $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.startTime as startTime $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.endTime as endTime $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobConfiguration.query.query as query | convert timeformat="%Y-%m-%dT%H:%M:%S.%9NZ" mktime(endTime) | convert timeformat="%Y-%m-%dT%H:%M:%S.%9NZ" mktime(startTime) | eval query_time=endTime-startTime |eval query=substr(query,1,500) | table query_time, query | where query!="" |  sort - query_time</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
-          <sampleRatio>1</sampleRatio>
+        <search base="base_bq">
+          <query>
+            |search $datatag$resource.labels.project_id =$project_tok$ $datatag$protoPayload.methodName="jobservice.jobcompleted" | table $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobConfiguration.query.query, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.startTime, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.endTime | rename $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.startTime as startTime $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.endTime as endTime $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobConfiguration.query.query as query | convert timeformat="%Y-%m-%dT%H:%M:%S.%9NZ" mktime(endTime) | convert timeformat="%Y-%m-%dT%H:%M:%S.%9NZ" mktime(startTime) | eval query_time=endTime-startTime |eval query=substr(query,1,500) | table query_time, query | where query!="" |  sort - query_time
+            <!--`gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName="bigquery.googleapis.com" "$datatag$protoPayload.methodName"="jobservice.jobcompleted" | table $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobConfiguration.query.query, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.startTime, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.endTime | rename $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.startTime as startTime $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.endTime as endTime $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobConfiguration.query.query as query | convert timeformat="%Y-%m-%dT%H:%M:%S.%9NZ" mktime(endTime) | convert timeformat="%Y-%m-%dT%H:%M:%S.%9NZ" mktime(startTime) | eval query_time=endTime-startTime |eval query=substr(query,1,500) | table query_time, query | where query!="" |  sort - query_time
+            -->
+            
+            </query>
         </search>
         <option name="count">2</option>
         <option name="dataOverlayMode">none</option>
@@ -131,11 +157,13 @@
     <panel>
       <title>Top users by total query time</title>
       <table>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName="bigquery.googleapis.com" "$datatag$protoPayload.methodName"="jobservice.jobcompleted" | table $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobConfiguration.query.query, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.startTime, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.endTime, $datatag$protoPayload.authenticationInfo.principalEmail | rename $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.startTime as startTime $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.endTime as endTime $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobConfiguration.query.query as query $datatag$protoPayload.authenticationInfo.principalEmail as user | convert timeformat="%Y-%m-%dT%H:%M:%S.%9NZ" mktime(endTime) | convert timeformat="%Y-%m-%dT%H:%M:%S.%9NZ" mktime(startTime) | eval query_time=endTime-startTime |eval query=substr(query,1,2000) | table query, query_time, user |  sort - query_time | stats sum(query_time) as total_query_time by user | sort - total_query_time  | table total_query_time, user</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
-          <sampleRatio>1</sampleRatio>
+        <search base="base_bq">
+          <query>
+            search $datatag$resource.labels.project_id =$project_tok$ $datatag$protoPayload.methodName="jobservice.jobcompleted" | table $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobConfiguration.query.query, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.startTime, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.endTime, $datatag$protoPayload.authenticationInfo.principalEmail | rename $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.startTime as startTime $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.endTime as endTime $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobConfiguration.query.query as query $datatag$protoPayload.authenticationInfo.principalEmail as user | convert timeformat="%Y-%m-%dT%H:%M:%S.%9NZ" mktime(endTime) | convert timeformat="%Y-%m-%dT%H:%M:%S.%9NZ" mktime(startTime) | eval query_time=endTime-startTime |eval query=substr(query,1,2000) | table query, query_time, user |  sort - query_time | stats sum(query_time) as total_query_time by user | sort - total_query_time  | table total_query_time, user
+            
+            <!--`gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName="bigquery.googleapis.com" "$datatag$protoPayload.methodName"="jobservice.jobcompleted" | table $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobConfiguration.query.query, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.startTime, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.endTime, $datatag$protoPayload.authenticationInfo.principalEmail | rename $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.startTime as startTime $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.endTime as endTime $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobConfiguration.query.query as query $datatag$protoPayload.authenticationInfo.principalEmail as user | convert timeformat="%Y-%m-%dT%H:%M:%S.%9NZ" mktime(endTime) | convert timeformat="%Y-%m-%dT%H:%M:%S.%9NZ" mktime(startTime) | eval query_time=endTime-startTime |eval query=substr(query,1,2000) | table query, query_time, user |  sort - query_time | stats sum(query_time) as total_query_time by user | sort - total_query_time  | table total_query_time, user
+            -->
+            </query>
         </search>
         <option name="count">10</option>
         <option name="dataOverlayMode">none</option>
@@ -150,11 +178,13 @@
     <panel>
       <title>Operations breakdown</title>
       <chart>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" | stats count by $datatag$protoPayload.methodName</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
-          <sampleRatio>1</sampleRatio>
+        <search base="base_bq">
+          <query>
+            search $datatag$resource.labels.project_id =$project_tok$| stats count by $datatag$protoPayload.methodName
+            
+            <!--`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" | stats count by $datatag$protoPayload.methodName -->
+            
+            </query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -195,11 +225,11 @@
     <panel>
       <title>Operations by Project</title>
       <chart>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" | stats count by resource.labels.project_id</query>
-          <earliest>-30m@m</earliest>
-          <latest>now</latest>
-          <sampleRatio>1</sampleRatio>
+        <search base="base_bq">
+          <query>
+            search $datatag$resource.labels.project_id =$project_tok$| stats count by $datatag$resource.labels.project_id
+            <!--`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" | stats count by $datatag$resource.labels.project_id-->
+            </query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -229,6 +259,7 @@
         <option name="charting.legend.mode">standard</option>
         <option name="charting.legend.placement">right</option>
         <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
         <option name="trellis.enabled">0</option>
         <option name="trellis.scales.shared">1</option>
         <option name="trellis.size">medium</option>
@@ -237,11 +268,11 @@
     <panel>
       <title>Errors over time by project</title>
       <chart>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" severity=ERROR | timechart count by resource.labels.project_id</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
-          <sampleRatio>1</sampleRatio>
+        <search base="base_bq">
+          <query>
+            search $datatag$resource.labels.project_id =$project_tok$ $datatag$protoPayload.serviceName="bigquery.googleapis.com" $datatag$severity=ERROR | timechart count by $datatag$resource.labels.project_id 
+            <!--`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" severity=ERROR | timechart count by $datatag$resource.labels.project_id -->
+            </query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -271,6 +302,7 @@
         <option name="charting.legend.mode">standard</option>
         <option name="charting.legend.placement">right</option>
         <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
         <option name="trellis.enabled">0</option>
         <option name="trellis.scales.shared">1</option>
         <option name="trellis.size">medium</option>
@@ -279,11 +311,11 @@
     <panel>
       <title>Operations over time by project</title>
       <chart>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" | timechart count by resource.labels.project_id</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
-          <sampleRatio>1</sampleRatio>
+        <search base="base_bq">
+          <query>search $datatag$resource.labels.project_id=$project_tok$  $datatag$protoPayload.serviceName="bigquery.googleapis.com" | timechart count by $datatag$resource.labels.project_id 
+          
+          <!--`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" | timechart count by $datatag$resource.labels.project_id -->
+          </query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -313,6 +345,7 @@
         <option name="charting.legend.mode">standard</option>
         <option name="charting.legend.placement">right</option>
         <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
         <option name="trellis.enabled">0</option>
         <option name="trellis.scales.shared">1</option>
         <option name="trellis.size">medium</option>
@@ -323,11 +356,10 @@
     <panel>
       <title>Insert Request Location</title>
       <map>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" "$datatag$protoPayload.methodName"="jobservice.insert" | iplocation $datatag$protoPayload.requestMetadata.callerIp | geostats latfield=lat longfield=lon count by $datatag$protoPayload.requestMetadata.callerIp</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
-          <sampleRatio>1</sampleRatio>
+        <search base="base_bq">
+          <query>search $datatag$resource.labels.project_id=$project_tok$ $datatag$protoPayload.methodName="jobservice.insert" | iplocation $datatag$protoPayload.requestMetadata.callerIp | geostats latfield=lat longfield=lon count by $datatag$protoPayload.requestMetadata.callerIp
+          <!--`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" "$datatag$protoPayload.methodName"="jobservice.insert" | iplocation $datatag$protoPayload.requestMetadata.callerIp | geostats latfield=lat longfield=lon count by $datatag$protoPayload.requestMetadata.callerIp -->
+          </query>
         </search>
         <option name="drilldown">none</option>
         <option name="mapping.choroplethLayer.colorBins">5</option>
@@ -351,6 +383,7 @@
         <option name="mapping.tileLayer.minZoom">0</option>
         <option name="mapping.tileLayer.tileOpacity">1</option>
         <option name="mapping.type">marker</option>
+        <option name="refresh.display">progressbar</option>
         <option name="trellis.enabled">0</option>
         <option name="trellis.scales.shared">1</option>
         <option name="trellis.size">medium</option>
@@ -359,11 +392,10 @@
     <panel>
       <title>Query errors over time</title>
       <chart>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" "$datatag$protoPayload.methodName"="jobservice.jobcompleted" | search severity=ERROR | timechart count by severity</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
-          <sampleRatio>1</sampleRatio>
+        <search base="base_bq">
+          <query>search $datatag$resource.labels.project_id=$project_tok$ $datatag$protoPayload.methodName="jobservice.jobcompleted" | search $datatag$severity=ERROR | timechart count by $datatag$severity
+          <!--`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" "$datatag$protoPayload.methodName"="jobservice.jobcompleted" | search $datatag$severity=ERROR | timechart count by $datatag$severity -->
+          </query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -402,11 +434,10 @@
     <panel>
       <title>Query Failure rate</title>
       <single>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" "$datatag$protoPayload.methodName"="jobservice.jobcompleted" | stats count by severity | transpose | where column="count" | eval failure_rate='row 1'/'row 2' | table failure_rate</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
-          <sampleRatio>1</sampleRatio>
+        <search base="base_bq">
+          <query>search $datatag$resource.labels.project_id=$project_tok$ $datatag$protoPayload.methodName="jobservice.jobcompleted" | stats count by $datatag$severity | transpose | where column="count" | eval failure_rate='row 1'/'row 2' | table failure_rate 
+          <!--`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" "$datatag$protoPayload.methodName"="jobservice.jobcompleted" | stats count by $datatag$severity | transpose | where column="count" | eval failure_rate='row 1'/'row 2' | table failure_rate -->
+          </query>
         </search>
         <option name="colorBy">value</option>
         <option name="colorMode">none</option>
@@ -414,6 +445,7 @@
         <option name="numberPrecision">0.0000</option>
         <option name="rangeColors">["0x53a051","0xf8be34","0xf1813f","0xdc4e41"]</option>
         <option name="rangeValues">[1,10,20]</option>
+        <option name="refresh.display">progressbar</option>
         <option name="showSparkline">1</option>
         <option name="showTrendIndicator">1</option>
         <option name="trellis.enabled">0</option>
@@ -432,11 +464,10 @@
     <panel>
       <title>Recent Error locations</title>
       <map>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" "$datatag$protoPayload.methodName"="jobservice.jobcompleted" | search severity=ERROR | iplocation $datatag$protoPayload.requestMetadata.callerIp | geostats latfield=lat longfield=lon count by $datatag$protoPayload.authenticationInfo.principalEmail</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
-          <sampleRatio>1</sampleRatio>
+        <search base="base_bq">
+          <query>search $datatag$resource.labels.project_id=$project_tok$ $datatag$protoPayload.methodName="jobservice.jobcompleted" | search $datatag$severity=ERROR | iplocation $datatag$protoPayload.requestMetadata.callerIp | geostats latfield=lat longfield=lon count by $datatag$protoPayload.authenticationInfo.principalEmail
+            <!--`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" "$datatag$protoPayload.methodName"="jobservice.jobcompleted" | search $datatag$severity=ERROR | iplocation $datatag$protoPayload.requestMetadata.callerIp | geostats latfield=lat longfield=lon count by $datatag$protoPayload.authenticationInfo.principalEmail -->
+            </query>
         </search>
         <option name="drilldown">none</option>
         <option name="mapping.choroplethLayer.colorBins">5</option>
@@ -469,11 +500,10 @@
     <panel>
       <title>Top queries by failure count</title>
       <table>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" "$datatag$protoPayload.methodName"="jobservice.jobcompleted" | search severity=ERROR | rename $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobConfiguration.query.query as query | eval query=substr(query,1,200) | stats count by query | table count, query | sort - count</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
-          <sampleRatio>1</sampleRatio>
+        <search base="base_bq">
+          <query>search $datatag$resource.labels.project_id=$project_tok$ $datatag$protoPayload.methodName="jobservice.jobcompleted" $datatag$severity=ERROR | rename $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobConfiguration.query.query as query | eval query=substr(query,1,200) | stats count by query | table count, query | sort - count
+          <!--`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" $datatag$protoPayload.methodName="jobservice.jobcompleted" | search $datatag$severity=ERROR | rename $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobConfiguration.query.query as query | eval query=substr(query,1,200) | stats count by query | table count, query | sort - count -->
+          </query>
         </search>
         <option name="count">2</option>
         <option name="dataOverlayMode">none</option>
@@ -490,11 +520,10 @@
     <panel>
       <title>Recent Query Errors</title>
       <table>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" "$datatag$protoPayload.methodName"="jobservice.jobcompleted" | search severity=ERROR | table _time, $datatag$protoPayload.status.code, $datatag$protoPayload.status.message, $datatag$protoPayload.authenticationInfo.principalEmail| sort - _time | rename $datatag$protoPayload.status.code as code $datatag$protoPayload.status.message as message $datatag$protoPayload.authenticationInfo.principalEmail as user</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
-          <sampleRatio>1</sampleRatio>
+        <search base="base_bq">
+          <query>search $datatag$resource.labels.project_id=$project_tok$ "$datatag$protoPayload.methodName"="jobservice.jobcompleted" $datatag$severity=ERROR | table _time, $datatag$protoPayload.status.code, $datatag$protoPayload.status.message, $datatag$protoPayload.authenticationInfo.principalEmail| sort - _time | rename $datatag$protoPayload.status.code as code $datatag$protoPayload.status.message as message $datatag$protoPayload.authenticationInfo.principalEmail as user
+          <!-- `gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" "$datatag$protoPayload.methodName"="jobservice.jobcompleted" | search $datatag$severity=ERROR | table _time, $datatag$protoPayload.status.code, $datatag$protoPayload.status.message, $datatag$protoPayload.authenticationInfo.principalEmail| sort - _time | rename $datatag$protoPayload.status.code as code $datatag$protoPayload.status.message as message $datatag$protoPayload.authenticationInfo.principalEmail as user -->
+          </query>
         </search>
         <option name="count">5</option>
         <option name="dataOverlayMode">none</option>
@@ -511,11 +540,10 @@
     <panel>
       <title>TableService Operations over time</title>
       <chart>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" $datatag$protoPayload.methodName=google.cloud.bigquery.v2.TableService.* | timechart count by $datatag$protoPayload.methodName</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
-          <sampleRatio>1</sampleRatio>
+        <search base="base_bq">
+          <query>search $datatag$resource.labels.project_id=$project_tok$ $datatag$protoPayload.methodName=google.cloud.bigquery.v2.TableService.* | timechart count by $datatag$protoPayload.methodName
+          <!-- `gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" $datatag$protoPayload.methodName=google.cloud.bigquery.v2.TableService.* | timechart count by $datatag$protoPayload.methodName -->
+          </query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -545,6 +573,7 @@
         <option name="charting.legend.mode">standard</option>
         <option name="charting.legend.placement">right</option>
         <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
         <option name="trellis.enabled">0</option>
         <option name="trellis.scales.shared">1</option>
         <option name="trellis.size">medium</option>
@@ -553,11 +582,10 @@
     <panel>
       <title>DatasetService Operations over time</title>
       <chart>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" $datatag$protoPayload.methodName=google.cloud.bigquery.v2.DatasetService.* | timechart count by $datatag$protoPayload.methodName</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
-          <sampleRatio>1</sampleRatio>
+        <search base="base_bq">
+          <query>search $datatag$resource.labels.project_id=$project_tok$ $datatag$protoPayload.methodName=google.cloud.bigquery.v2.DatasetService.* | timechart count by $datatag$protoPayload.methodName
+          <!-- `gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" $datatag$protoPayload.methodName=google.cloud.bigquery.v2.DatasetService.* | timechart count by $datatag$protoPayload.methodName -->
+          </query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -587,6 +615,7 @@
         <option name="charting.legend.mode">standard</option>
         <option name="charting.legend.placement">right</option>
         <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
         <option name="trellis.enabled">0</option>
         <option name="trellis.scales.shared">1</option>
         <option name="trellis.size">medium</option>
@@ -597,11 +626,10 @@
     <panel>
       <title>Authorization errors over time</title>
       <chart>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" "$datatag$protoPayload.authorizationInfo{}.granted"!=true | timechart count</query>
-          <earliest>-60m@m</earliest>
-          <latest>now</latest>
-          <sampleRatio>1</sampleRatio>
+        <search base="base_bq">
+          <query>search $datatag$resource.labels.project_id=$project_tok$ $datatag$protoPayload.authorizationInfo{}.granted!=true | timechart count
+          <!-- `gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" $datatag$protoPayload.authorizationInfo{}.granted!=true | timechart count -->
+          </query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -631,6 +659,7 @@
         <option name="charting.legend.mode">standard</option>
         <option name="charting.legend.placement">right</option>
         <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
         <option name="trellis.enabled">0</option>
         <option name="trellis.scales.shared">1</option>
         <option name="trellis.size">medium</option>
@@ -639,16 +668,16 @@
     <panel>
       <title>Recent authorization failures</title>
       <table>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" "$datatag$protoPayload.authorizationInfo{}.granted"!=true | table _time, $datatag$protoPayload.methodName, $datatag$protoPayload.authenticationInfo.principalEmail</query>
-          <earliest>-60m@m</earliest>
-          <latest>now</latest>
-          <sampleRatio>1</sampleRatio>
+        <search base="base_bq">
+          <query>search $datatag$resource.labels.project_id=$project_tok$ $datatag$protoPayload.authorizationInfo{}.granted!=true | table _time, $datatag$protoPayload.methodName, $datatag$protoPayload.authenticationInfo.principalEmail
+          <!-- `gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" $datatag$protoPayload.authorizationInfo{}.granted!=true | table _time, $datatag$protoPayload.methodName, $datatag$protoPayload.authenticationInfo.principalEmail-->
+          </query>
         </search>
         <option name="count">20</option>
         <option name="dataOverlayMode">none</option>
         <option name="drilldown">none</option>
         <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
         <option name="rowNumbers">false</option>
         <option name="totalsRow">false</option>
         <option name="wrap">true</option>
@@ -657,11 +686,10 @@
     <panel>
       <title>Location of recent authorization failures</title>
       <map>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" "$datatag$protoPayload.authorizationInfo{}.granted"!=true | table _time, $datatag$protoPayload.methodName, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.requestMetadata.callerIp | iplocation $datatag$protoPayload.requestMetadata.callerIp | geostats latfield=lat longfield=lon count by $datatag$protoPayload.authenticationInfo.principalEmail</query>
-          <earliest>-60m@m</earliest>
-          <latest>now</latest>
-          <sampleRatio>1</sampleRatio>
+        <search base="base_bq">
+          <query>search $datatag$resource.labels.project_id=$project_tok$ $datatag$protoPayload.authorizationInfo{}.granted!=true | table _time, $datatag$protoPayload.methodName, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.requestMetadata.callerIp | iplocation $datatag$protoPayload.requestMetadata.callerIp | geostats latfield=lat longfield=lon count by $datatag$protoPayload.authenticationInfo.principalEmail 
+          <!--`gcp_index` sourcetype=google:gcp:pubsub:message bigquery $datatag$protoPayload.serviceName="bigquery.googleapis.com" $datatag$protoPayload.authorizationInfo{}.granted!=true | table _time, $datatag$protoPayload.methodName, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.requestMetadata.callerIp | iplocation $datatag$protoPayload.requestMetadata.callerIp | geostats latfield=lat longfield=lon count by $datatag$protoPayload.authenticationInfo.principalEmail -->
+          </query>
         </search>
         <option name="drilldown">none</option>
         <option name="mapping.choroplethLayer.colorBins">5</option>
@@ -685,10 +713,11 @@
         <option name="mapping.tileLayer.minZoom">0</option>
         <option name="mapping.tileLayer.tileOpacity">1</option>
         <option name="mapping.type">marker</option>
+        <option name="refresh.display">progressbar</option>
         <option name="trellis.enabled">0</option>
         <option name="trellis.scales.shared">1</option>
         <option name="trellis.size">medium</option>
       </map>
     </panel>
   </row>
-</dashboard>
+</form>
