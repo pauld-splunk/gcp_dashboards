@@ -1,5 +1,4 @@
-<!-- v1.3-->
-<form>
+<!-- v1.4--><form>
   <search id="tstats_query">
     <query>
       |makeresults 
@@ -16,6 +15,14 @@
       <set token="stats_count">$result.stats_count$</set>
       <set token="tstats_simple">$result.tstats_simple$</set>
       <set token="tstats_nulls">$result.tstats_nulls$</set>
+    </done>
+  </search>
+  <search id="latest_assets_indexed">
+    <query>
+      $tstats_simple$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata OR sourcetype=google:gcp:compute:instance) $stats_count$ by _time |stats max(_time) as time | eval time=time-900
+    </query>
+    <done>
+      <set token="earliest_tok">$result.time$</set>
     </done>
   </search>
   <search id="computeinstances">
@@ -52,7 +59,7 @@
   </search>
   <search id="disconnectedstorage">
     <query>| set diff
-[search `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type="compute.googleapis.com/Instance" 
+[search `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type="compute.googleapis.com/Instance" earliest=$earliest_tok$
 |eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
 |eval Zone=replace(name,"^\S+zones\/(\S+)\/instances\/\S+","\1") 
 |spath output=disklist path=resource.data.disks{}  
@@ -62,7 +69,7 @@
 |fields diskName
 |fields - _*
 ]
-[search `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk"
+[search `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk" earliest=$earliest_tok$
 |eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
 |eval Zone=replace(name,"^\S+zones\/(\S+)\/disks\/\S+","\1") 
 |eval diskName=replace(name,"^\S+projects\/(\S+)","\1")
@@ -148,7 +155,7 @@
     <latest>$time.latest$</latest>
   </search>
   <label>GCP Asset Inventory</label>
-  <description>v1.3</description>
+  <description>v1.4</description>
   <fieldset submitButton="false" autoRun="true">
     <input type="time" token="time" searchWhenChanged="true">
       <label>Time Range</label>

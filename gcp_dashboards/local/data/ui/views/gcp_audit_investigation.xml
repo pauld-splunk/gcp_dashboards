@@ -1,6 +1,6 @@
 <form>
   <label>GCP Audit Investigation</label>
-  <description>v2.1</description>
+  <description>v2.2</description>
   <init>
     <set token="minspan">1</set>
     <set token="show_annotations">*</set>
@@ -68,7 +68,7 @@
       <search base="audit_selection_base">
         <query>eval ProjectID=replace(LogName,"^(\S+\/\S+)\/\S+\/\S+","\1") | stats count by ProjectID |eval Label=ProjectID+"("+tostring(count)+")"</query>
         <done>
-          <eval token="project_query">if($project_tok$=="*",urlencode(" ($datatag$+"logName=*)"),urlencode(" ($datatag$+"logName=\""+$project_tok$+"*\")"))</eval>
+          <eval token="project_query">if($project_tok$=="*",urlencode(" ("+$datatag$+"logName=*)"),urlencode(" ("+$datatag$+"logName=\""+$project_tok$+"*\")"))</eval>
         </done>
       </search>
       <default>*</default>
