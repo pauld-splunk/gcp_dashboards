@@ -1,4 +1,4 @@
-<!-- infrastructure activity v1.8 --><form>
+<!-- infrastructure activity v1.9 --><form>
   <init>
     <set token="minspan">1</set>
   </init>
@@ -25,6 +25,7 @@
       
       |eval tstats_dc_function=if(tstatstag=="Yes", "|tstats dc($datatag$resource.labels.function_name) as number where","")
       |eval stats_dc_function=if(tstatstag=="No","|stats dc($datatag$resource.labels.function_name) as number","")
+      
       |eval tstats_dc_type=if(tstatstag=="Yes", "|tstats dc($datatag$protoPayload.authorizationInfo{}.resourceAttributes.type) where","")
       |eval stats_dc_type=if(tstatstag=="No","|stats dc($datatag$protoPayload.authorizationInfo{}.resourceAttributes.type)","")
 
@@ -49,8 +50,6 @@ $datatag$protoPayload.methodName, $datatag$resource.type, $datatag$timestamp, $d
       <set token="tstats_by_methodname">$result.tstats_by_methodname$</set>
       <set token="count_type">$result.count_type$</set>
       <set token="tstats_by_crud">$result.tstats_by_crud$</set>
-      
-      
     </done>
   </search>
   <search id="projects">
@@ -100,11 +99,13 @@ $datatag$protoPayload.methodName, $datatag$resource.type, $datatag$timestamp, $d
     </done>
   </search>
   <search id="functions">
-    <query>$tstats_dc_function$ `gcp_index` sourcetype="google:gcp:pubsub:message" data.logName="*cloud-functions" $datatag$resource.labels.project_id=$project_id_tok$  $stats_dc_function$
+    <query>$tstats_dc_function$ `gcp_index` sourcetype="google:gcp:pubsub:message" $datatag$logName="*cloud-functions" $datatag$resource.labels.project_id=$project_id_tok$  $stats_dc_function$
     </query>
     <done>
       <eval token="Function_count">if(isnull($result.number$),0,$result.number$)</eval>
     </done>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
   </search>
   <search id="networks" base="topLevelAssets">
     <query>|search asset_type=*Network ancestors=*$projectNumber$ | rename dc(name) as number
@@ -168,7 +169,7 @@ $datatag$protoPayload.methodName, $datatag$resource.type, $datatag$timestamp, $d
     </done>
   </search>
   <label>GCP Infrastructure Activity</label>
-  <description>v1.8</description>
+  <description>v1.9</description>
   <fieldset submitButton="false"></fieldset>
   <row>
     <panel>
