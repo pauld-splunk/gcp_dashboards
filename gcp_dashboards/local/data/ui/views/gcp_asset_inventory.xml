@@ -1,4 +1,4 @@
-<!-- v1.4--><form>
+<!-- v1.5--><form>
   <search id="tstats_query">
     <query>
       |makeresults 
@@ -9,12 +9,19 @@
       |eval tstats_simple=if(tstatstag=="Yes", "|tstats count where","")
       |eval tstats_nulls=if(tstatstag=="Yes", "|tstats fillnull_value=\"-\" count where","")
       |eval stats_count=if(tstatstag=="No", "|stats count ", "")
+      
+      |eval tstats_gcs=if(tstatstag=="Yes", "|tstats fillnull_value=\"-\" count where","")
+      |eval tstats_gcs2=if(tstatstag=="Yes", "|tstats fillnull_value=\"-\" count where","search ")
+      |eval table_gcs=if(tstatstag=="No", "|table "," by ")
+      
     </query>
     <done>
       <set token="tstats_compute">$result.tstats_compute$</set>
       <set token="stats_count">$result.stats_count$</set>
       <set token="tstats_simple">$result.tstats_simple$</set>
-      <set token="tstats_nulls">$result.tstats_nulls$</set>
+      <set token="tstats_gcs">$result.tstats_gcs$</set>
+      <set token="tstats_gcs2">$result.tstats_gcs2$</set>
+      <set token="table_gcs">$result.table_gcs$</set>
     </done>
   </search>
   <search id="latest_assets_indexed">
@@ -139,11 +146,11 @@
     <latest>$time.latest$</latest>
   </search>
   <search id="gcs">
-    <query>$tstats_nulls$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="storage.googleapis.com/Bucket" $stats_count$ by resource.data.id, resource.data.location, resource.data.locationType, resource.data.projectNumber, resource.data.storageClass, resource.data.retentionPolicy.retentionPeriod, resource.data.retentionPolicy.effectiveTime, resource.data.retentionPolicy.isLocked, ancestors{}
+    <query>$tstats_gcs$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="storage.googleapis.com/Bucket" $table_gcs$ resource.data.id, resource.data.location, resource.data.locationType, resource.data.projectNumber, resource.data.storageClass, resource.data.retentionPolicy.retentionPeriod, resource.data.retentionPolicy.effectiveTime, resource.data.retentionPolicy.isLocked, ancestors{}
 | rename "ancestors{}" as ancestors
 |search ancestors=$project_tok$
 |rename resource.data.projectNumber as project_number
-| join project_number [ $tstats_simple$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata)  asset_type=compute.googleapis.com/Project $stats_count$ by resource.parent, resource.data.name
+| join project_number [ $tstats_gcs2$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata)  asset_type=compute.googleapis.com/Project $table_gcs$ resource.parent, resource.data.name
 |rename resource.parent as parent resource.data.name as ProjectID
 |eval project_number=replace(parent,"\S+projects\/(\d+)","\1")
 |fields - count, - parent]
@@ -155,7 +162,7 @@
     <latest>$time.latest$</latest>
   </search>
   <label>GCP Asset Inventory</label>
-  <description>v1.4</description>
+  <description>v1.5</description>
   <fieldset submitButton="false" autoRun="true">
     <input type="time" token="time" searchWhenChanged="true">
       <label>Time Range</label>
