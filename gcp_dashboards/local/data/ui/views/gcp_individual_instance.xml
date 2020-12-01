@@ -1,42 +1,94 @@
 <form>
   <label>GCP Single Instance Details</label>
-  <description>v1.2</description>
+  <description>v2.0</description>
   <init>
     <set token="minspan">60</set>
   </init>
+  <search id="source_data_query">
+    <query>
+      |makeresults | eval addon="data."| eval dataflow="" 
+      |eval datatag=`datatag`
+    </query>
+    <done>
+      <set token="datatag">$result.datatag$</set>
+    </done>
+  </search>
+  <search id="metrics_source_query">
+    <query>
+      |makeresults 
+      | eval addon="addon"
+      | eval metrics="metrics" 
+      | eval sim="sim"
+      | eval metricstag=`metricstag`
+      
+      | eval base_metrics_search=
+            if(metricstag=="metrics", 
+              "| mstats $selected_cpu_aggregator$(_value) prestats=true WHERE metric_name=\"compute.googleapis.com/instance/*\" AND `gcp_metrics` AND instance_id=$selected_instance$  earliest=$time.earliest$ latest=$time.latest$ $secs_for_bin$",
+            (if (metricstag=="sim", 
+              "| sim flow query=\"data('*', filter=filter('service', 'compute') and filter('instance_id','$selected_instance$')).publish()\" resolution=6000 ",
+            (if (metricstag=="addon", "`gcp_metrics` sourcetype=google:gcp:monitoring metric.type=\"compute.googleapis.com/instance*\" resource.labels.instance_id=$selected_instance$ earliest=$time.earliest$ latest=$time.latest$ | rename metric.type AS metric_name points{}.value.int64Value as int64Value points{}.value.doubleValue as doubleValue |eval _value=if(int64Value&gt;0, int64Value, doubleValue)","")))))
+ 
+    </query>
+    <done>
+      <set token="metrics_source">$result.metricstag$</set>
+      <set token="base_metrics_search">$result.base_metrics_search$</set>
+    </done>
+  </search>
+  <search id="tstats_query">
+    <query>
+      |makeresults 
+      |eval usetstats="Yes" 
+      |eval notstats="No"
+      |eval tstatstag=`tstatstag`
+      
+      |eval tstats_count=if(tstatstag=="Yes", "|tstats count where","")
+      |eval tstats_nulls=if(tstatstag=="Yes", "|tstats fillnull_value=\"-\" count where","")
+      
+      |eval tstats_dc_id=if(tstatstag=="Yes", "|tstats dc(resource.data.id) as Count where","")
+      |eval stats_dc_id=if(tstatstag=="No","|stats dc(resource.data.id) as Count ","")
+      
+      |eval stats_count=if(tstatstag=="No", "|stats count ", "")
+      
+      |eval count_type=if(tstatstag!=" ","sum(count)","count")
+      
+      |eval tstats_by_base=if(tstatstag=="Yes"," by name, resource.data.id, resource.data.name, resource.data.machineType, resource.data.cpuPlatform, resource.data.zone, resource.data.status, resource.data.deletionProtection, resource.data.selfLink, \"resource.data.disks{}.licenses{}\"", "")
+      
+      |eval tstats_by_id=if(tstatstag=="Yes"," by resource.data.id ","")
+      
+      |eval tstats_by_annotation=if(tstatstag=="Yes"," by _time, $datatag$resource.type $datatag$protoPayload.methodName $datatag$severity $datatag$jsonPayload.info{}.detail_message $datatag$jsonPayload.event_subtype, $datatag$jsonPayload.MESSAGE, $datatag$jsonPayload._EXE, $datatag$jsonPayload.SYSLOG_IDENTIFIER, $datatag$jsonPayload._SYSTEMD_UNIT, $datatag$jsonPayload.message, $datatag$resource.labels.disk_id span=1s", "")
+      
+    </query>
+    <done>
+      <set token="stats_count">$result.stats_count$</set>
+      <set token="tstats_count">$result.tstats_count$</set>
+      <set token="tstats_nulls">$result.tstats_nulls$</set>
+      <set token="tstats_dc_id">$result.tstats_dc_id$</set>
+      <set token="stats_dc_id">$result.stats_dc_id$</set>
+      <set token="count_type">$result.count_type$</set>
+      <set token="tstats_by_base">$result.tstats_by_base$</set>
+      <set token="tstats_by_id">$result.tstats_by_id$</set>
+      <set token="tstats_by_annotation">$result.tstats_by_annotation$</set>
+    </done>
+  </search>
   <search id="baseInfo">
-    <query>| tstats count fillnull_value=true
-    where 
-    resource.data.id=$selected_instance$
-    `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance)
-    asset_type="compute.googleapis.com/Instance" 
-    earliest=-24h@h latest=now by 
-    name,
-    resource.data.id,
-    resource.data.name,
-    resource.data.machineType,
-    resource.data.cpuPlatform,
-    resource.data.zone,
-    resource.data.status
-    resource.data.deletionProtection
-    resource.data.selfLink
-    "resource.data.disk{}.license{}"
+    <query>
+      <!--| tstats count fillnull_value=true where resource.data.id=$selected_instance$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type="compute.googleapis.com/Instance" earliest=-24h@h latest=now 
+    by name, resource.data.id,    resource.data.name,    resource.data.machineType,    resource.data.cpuPlatform,    resource.data.zone,    resource.data.status    resource.data.deletionProtection    resource.data.selfLink    "resource.data.disk{}.license{}"    
     |rename name as fullName, resource.data.zone as fullZone, resource.data.machineType as mType, resource.data.disk{}.license{} as license
-| stats count by
-    fullName,
-    resource.data.id,
-    resource.data.name,
-    mType,
-    resource.data.cpuPlatform,
-    fullZone,
-    resource.data.status,
-    resource.data.deletionProtection,
-    resource.data.selfLink,
-    license
-| eval ProjectID= replace(fullName,"^\S+projects\/(\S+)\/zones\S*","\1")
-| eval Zone=replace(fullZone,"^\S+zones\/(\S+)","\1")
-| eval machineType=replace(mType,"^\S+machineTypes\/(\S+)","\1")
-| eval OS= replace(license,"^\S+licenses\/(\S+)","\1")
+    | stats count by fullName, resource.data.id, resource.data.name, mType, resource.data.cpuPlatform, fullZone, resource.data.status, resource.data.deletionProtection, resource.data.selfLink, license
+    | eval ProjectID= replace(fullName,"^\S+projects\/(\S+)\/zones\S*","\1")
+    | eval Zone=replace(fullZone,"^\S+zones\/(\S+)","\1")
+    | eval machineType=replace(mType,"^\S+machineTypes\/(\S+)","\1")
+    | eval OS= replace(license,"^\S+licenses\/(\S+)","\1")
+    -->
+    $tstats_nulls$ resource.data.id=$selected_instance$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type="compute.googleapis.com/Instance" earliest=-24h@h latest=now 
+    $tstats_by_base$
+    |rename name as fullName, resource.data.zone as fullZone, resource.data.machineType as mType, resource.data.disks{}.licenses{} as license
+    | stats count by fullName, resource.data.id, resource.data.name, mType, resource.data.cpuPlatform, fullZone, resource.data.status, resource.data.deletionProtection, resource.data.selfLink, license
+    | eval ProjectID= replace(fullName,"^\S+projects\/(\S+)\/zones\S*","\1")
+    | eval Zone=replace(fullZone,"^\S+zones\/(\S+)","\1")
+    | eval machineType=replace(mType,"^\S+machineTypes\/(\S+)","\1")
+    | eval OS= replace(license,"^\S+licenses\/(\S+)","\1")
 </query>
     <earliest>-7h</earliest>
     <latest>now</latest>
@@ -67,7 +119,7 @@
     </done>
   </search>
   <search id="baseDisk">
-    <query>|tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) resource.data.user{}=$selfLink$ by resource.data.id | rename resource.data.id as ids|eval ids=ids+" ,"|fields - count|stats values(ids) as ids|nomv ids
+    <query>$tstats_count$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) resource.data.users{}=$selfLink$ by resource.data.id | rename resource.data.id as ids|eval ids=ids+" ,"|fields - count|stats values(ids) as ids|nomv ids
 |eval ids=rtrim(ids," ,")
       </query>
     <done>
@@ -76,15 +128,18 @@
   </search>
   <search id="mstatsBase">
     <query>
-      | mstats $selected_cpu_aggregator$(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/*" AND index="gcp_metrics" AND instance_id=$selected_instance$  earliest=$time.earliest$ latest=$time.latest$ $secs_for_bin$ 
+      <!--| mstats $selected_cpu_aggregator$(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/*" AND index="gcp_metrics" AND instance_id=$selected_instance$  earliest=$time.earliest$ latest=$time.latest$ $secs_for_bin$ -->
+      $base_metrics_search$
     </query>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
   </search>
   <fieldset submitButton="false">
     <input type="time" token="time" searchWhenChanged="true">
       <label>Select Timerange</label>
       <default>
-        <earliest>-24h@h</earliest>
-        <latest>now</latest>
+        <earliest>$time.earliest$</earliest>
+        <latest>$time.latest$</latest>
       </default>
       <change>
         <eval token="form.secs_for_bin">if(isnull($time.latest$),$minspan$, if((round(relative_time(now(), $time.latest$)-relative_time(now(), $time.earliest$))/$time_resolution$)&lt;$minspan$,$minspan$,round(((relative_time(now(), $time.latest$)-relative_time(now(), $time.earliest$))/$time_resolution$)/$minspan$)*$minspan$))</eval>
@@ -199,7 +254,7 @@
           <query>`gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance)
     asset_type="compute.googleapis.com/Instance"
     resource.data.id=$selected_instance$
-| spath output=disks path=resource.data.disk{}
+| spath output=disks path=resource.data.disks{}
 |rename resource.data.sourceImage as sourceImage
 |head 1
 | rex max_match=20 field=disks "\{\"autoDelete\":(?&lt;autoDelete&gt;\S*),\"boot\":(?&lt;boot&gt;\S*),\"deviceName\":\"(?&lt;deviceName&gt;\S*)\",\"diskSizeGb\":\"(?&lt;size&gt;\d+)\"\S+\"index\":(?&lt;diskNumber&gt;\d+),\"interface\":\"(?&lt;interface&gt;\S*)\",\S*\"mode\":\"(?&lt;mode&gt;\S+)\",\"source\S*\"type\":\"(?&lt;type&gt;\S+)\"\}"
@@ -213,19 +268,17 @@
       <table>
         <title>Network</title>
         <search>
-          <query>`gcp_index`
-    (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) 
-    asset_type="compute.googleapis.com/Instance"
-    resource.data.id=$selected_instance$
+          <query>`gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type="compute.googleapis.com/Instance"  resource.data.id=$selected_instance$
 |head 1
-| spath output=networkInterface path=resource.data.networkInterface{}
-| rex max_match=4 field=networkInterface "\S*\"externalIp\":\"(?&lt;externalIP&gt;\d+.\d+.\d+.\d+)\",.*\"ipAddress\":\"(?&lt;internalIP&gt;\d+.\d+.\d+.\d+)\",\"name\":\"(?&lt;NICname&gt;\S+)\",\"network"
-| rename NICname as "NIC Name", externalIP as "External IP", internalIP as "Internal IP"
-| table "NIC Name", "External IP", "Internal IP"</query>
+| spath output=networkInterface path=resource.data.networkInterfaces{}
+| rex max_match=4 field=networkInterface "\S*\"name\":\"(?&lt;ConfigName&gt;[^\"]+)\",\"natIP\":\"(?&lt;externalIP&gt;\d+.\d+.\d+.\d+)\",.*\"name\":\"(?&lt;NICname&gt;\S+)\",\"network\":.*\"networkIP\":\"(?&lt;internalIP&gt;\d+.\d+.\d+.\d+)\""
+| rename NICname as "NIC Name", externalIP as "External IP", internalIP as "Internal IP", ConfigName as "Config Name"
+| table "NIC Name", "Config Name", "External IP", "Internal IP"</query>
           <earliest>-7h</earliest>
           <latest>now</latest>
         </search>
         <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
       </table>
     </panel>
   </row>
@@ -246,8 +299,8 @@
       </input>
       <chart>
         <search base="mstatsBase">
-          <query>| search metric_name="compute.googleapis.com/instance/cpu/utilization" 
-| timechart $selected_cpu_aggregator$(_value) AS Avg $secs_for_bin$
+          <query>| search metric_name="*instance/cpu/utilization" 
+| timechart $selected_cpu_aggregator$(_value) AS $selected_cpu_aggregator$ $secs_for_bin$
 | fields - _span*</query>
         </search>
         <search base="annotations" type="annotation"></search>
@@ -305,8 +358,9 @@
       </input>
       <chart>
         <search base="mstatsBase">
-          <query>| search metric_name="compute.googleapis.com/instance/disk/*bytes_count" 
-          |eval metric=substr(metric_name,38)
+          <query>| search metric_name="*instance/disk/*bytes_count" 
+          |eval metric=replace(metric_name,"instance/disk/","") 
+          |eval metric=replace(metric, "compute.googleapis.com/","")
 | timechart eval($selected_netrec_aggregator$(_value)/1024/1024) AS Avg $secs_for_bin$ by metric
 | fields - _span*</query>
         </search>
@@ -366,8 +420,9 @@
       <chart>
         <search base="disk_annotations" type="annotation"></search>
         <search base="mstatsBase">
-          <query>| search metric_name="compute.googleapis.com/instance/disk/*ops_count" 
-|eval metric=substr(metric_name,38)
+          <query>| search metric_name="*instance/disk/*ops_count" 
+|eval metric=replace(metric_name,"instance/disk/","")
+|eval metric=replace(metric, "compute.googleapis.com/","")
 | timechart $selected_netsent_aggregator$(_value) AS Avg $secs_for_bin$ by metric
 | fields - _span*</query>
         </search>
@@ -425,8 +480,9 @@
       </input>
       <chart>
         <search base="mstatsBase">
-          <query>|search metric_name="compute.googleapis.com/instance/network/*packets_count" 
-|eval metric=substr(metric_name,41)
+          <query>|search metric_name="*instance/network/*packets_count" 
+|eval metric=replace(metric_name,"instance/network/","")
+|eval metric=replace(metric, "compute.googleapis.com/","")
 | timechart $selected_netsent_aggregator$(_value) AS Avg $secs_for_bin$ by metric
 | fields - _span*</query>
         </search>
@@ -484,8 +540,9 @@
       </input>
       <chart>
         <search base="mstatsBase">
-          <query>| search metric_name="compute.googleapis.com/instance/network/*_bytes_count" 
-|eval metric=substr(metric_name,41)
+          <query>| search metric_name="*instance/network/*_bytes_count" 
+|eval metric=replace(metric_name,"instance/network/","")
+|eval metric=replace(metric, "compute.googleapis.com/","")
 | timechart eval($selected_netrec_aggregator$(_value)/1024/1024) AS Avg $secs_for_bin$ by metric
 | fields - _span*</query>
         </search>
@@ -530,12 +587,10 @@
     <panel depends="$hide$">
       <table>
         <search id="eventBase">
-          <query>|tstats fillnull_value="null" count as ev where `gcp_index` sourcetype=google:gcp:pubsub:message (data.resource.labels.instance_id
-=$selected_instance$) OR data.resource.labels.disk_id IN ($diskids$)  
-by _time, data.resource.type data.protoPayload.methodName data.severity data.jsonPayload.info{}.detail_message data.jsonPayload.event_subtype, data.jsonPayload.MESSAGE, data.jsonPayload._EXE, data.jsonPayload.SYSLOG_IDENTIFIER, data.jsonPayload._SYSTEMD_UNIT, data.jsonPayload.message, data.resource.labels.disk_id
-
-span=1s
-|table _time, data.*</query>
+          <query>$tstats_nulls$  `gcp_index` sourcetype=google:gcp:pubsub:message ($datatag$resource.labels.instance_id
+=$selected_instance$) OR $datatag$resource.labels.disk_id IN ($diskids$)  $tstats_by_annotation$
+|fields - count
+|table _time, *</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -548,11 +603,11 @@ span=1s
     <panel>
       <table>
         <search base="eventBase" id="annotations">
-          <query>eval annotation_label='data.severity'
+          <query>eval annotation_label='$datatag$severity'
 |eval annotation_category=if(annotation_category="null","",annotation_category)
-|eval annotation_category=if('data.protoPayload.methodName'="null",'data.jsonPayload.event_subtype','data.protoPayload.methodName')
-|eval annotation_category=if('data.jsonPayload.info{}.detail_message'!="null",annotation_category+", "+'data.jsonPayload.info{}.detail_message',annotation_category)
-|eval annotation_category=if('data.jsonPayload.message'!="null", annotation_category+'data.jsonPayload.message',annotation_category)
+|eval annotation_category=if('$datatag$protoPayload.methodName'="null",'$datatag$jsonPayload.event_subtype','$datatag$protoPayload.methodName')
+|eval annotation_category=if('$datatag$jsonPayload.info{}.detail_message'!="null",annotation_category+", "+'$datatag$jsonPayload.info{}.detail_message',annotation_category)
+|eval annotation_category=if('$datatag$jsonPayload.message'!="null", annotation_category+'$datatag$jsonPayload.message',annotation_category)
 |top limit=1000 _time, annotation_label,annotation_category
 |table _time, annotation*</query>
         </search>
@@ -565,8 +620,8 @@ span=1s
         <search base="eventBase" id="disk_annotations">
           <query>search data.resource.type=gce_disk
           |eval annotation_label='data.severity'
-          |eval annotation_category=if('data.protoPayload.methodName'="null",'data.jsonPayload.event_subtype','data.protoPayload.methodName')
-          |eval annotation_category=if('data.jsonPayload.info{}.detail_message'!="null",annotation_category+", "+'data.jsonPayload.info{}.detail_message',annotation_category)
+          |eval annotation_category=if('$datatag$protoPayload.methodName'="null",'$datatag$jsonPayload.event_subtype','$datatag$protoPayload.methodName')
+          |eval annotation_category=if('$datatag$jsonPayload.info{}.detail_message'!="null",annotation_category+", "+'$datatag$jsonPayload.info{}.detail_message',annotation_category)
           |top limit=1000 _time, annotation_label,annotation_category 
           |table _time, annotation*</query>
         </search>
