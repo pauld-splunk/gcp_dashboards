@@ -1,18 +1,99 @@
-<form>
+<!-- gcp individual storage v1.3--><form>
+  <label>GCP Individual Storage</label>
+  <description>v1.3</description>
+  <search id="source_data_query">
+    <query>
+      |makeresults | eval addon="data."| eval dataflow="" 
+      |eval datatag=`datatag`
+    </query>
+    <done>
+      <set token="datatag">$result.datatag$</set>
+    </done>
+  </search>
+  <search id="metrics_source_query">
+    <query>
+      |makeresults 
+      | eval addon="addon"
+      | eval metrics="metrics" 
+      | eval sim="sim"
+      | eval metricstag=`metricstag`
+      
+      | eval base_metrics_search=
+            if(metricstag=="metrics", 
+              "| mstats avg(_value) prestats=true WHERE metric_name=\"compute.googleapis.com/instance/disk/*\" AND `gcp_metrics` AND instance_name IN ($instance_tok$) AND device_name IN ($disk_tok$) span=5m by device_name",
+            (if (metricstag=="sim", 
+              "| sim flow query=\"data('instance/disk*', filter=filter('service', 'compute') and filter('device_name','$disk_tok$') and filter('instance_name','$instance_tok$')).publish()\" resolution=6000 ",
+            (if (metricstag=="addon", "`gcp_metrics` sourcetype=google:gcp:monitoring metric.type=\"compute.googleapis.com/instance/disk*\" resource.labels.instance_id=$instance_tok$ metric.labels.device_name
+=$disk_tok$ earliest=$time_tok.earliest$ latest=$time_tok.latest$ | rename  metric.labels.device_name as device_name, metric.type AS metric_name points{}.value.int64Value as int64Value points{}.value.doubleValue as doubleValue |eval _value=if(int64Value&gt;0, int64Value, doubleValue)","")))))
+    </query>
+    <done>
+      <set token="metrics_source">$result.metricstag$</set>
+      <set token="base_metrics_search">$result.base_metrics_search$</set>
+    </done>
+  </search>
+  <search id="tstats_query">
+    <query>
+      |makeresults 
+      |eval usetstats="Yes" 
+      |eval notstats="No"
+      |eval tstatstag=`tstatstag`
+      
+      |eval tstats_nulls=if(tstatstag=="Yes", "|tstats fillnull_value=\"-\" count where","")
+      
+      |eval tstats_by_base=if(tstatstag=="No", "|table  ", "by ")
+
+      |eval tstats_join=if(tstatstag=="Yes","| join ID [|tstats fillnull_value=\"-\" count where `gcp_index` (sourcetype=google:gcp:assets OR sourcetype=google:gcp:buckets:jsondata) asset_type=\"compute.googleapis.com/Disk\"  earliest=$time_tok.earliest$ latest=$time_tok.latest$  by  resource.data.id, resource.data.guestOsFeatures{}.type | rename resource.data.id as ID, resource.data.guestOsFeatures{}.type as GuestB |dedup ID, GuestB] | eval GuestOSFeatures=if(GuestOSFeatures==GuestB, if(GuestB==\"-\",\"-\",\"X\"), GuestOSFeatures.\", \".GuestB) |search GuestOSFeatures!=\"X\"
+|fields - GuestB", "")
+      
+    </query>
+    <done>
+      
+      <set token="tstats_count">$result.tstats_count$</set>
+      <set token="tstats_nulls">$result.tstats_nulls$</set>
+      
+      <set token="tstats_join">$result.tstats_join$</set>
+      
+      <set token="tstats_by_base">$result.tstats_by_base$</set>
+    
+    </done>
+  </search>
   <search id="baseInfo">
     <query>
-      |tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk"  earliest=$time_tok.earliest$ latest=$time_tok.latest$  by resource.data.id ,name, resource.data.name, resource.data.sizeGb, resource.data.type, resource.data.sourceImage, resource.data.guestOsFeatures{}.type
-|dedup resource.data.id  
+      $tstats_nulls$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk"  earliest=$time_tok.earliest$ latest=$time_tok.latest$  $tstats_by_base$ resource.data.id ,name, resource.data.name, resource.data.sizeGb, resource.data.type, resource.data.sourceImage, resource.data.guestOsFeatures{}.type, resource.data.users{}
+|rename resource.data.users{} as Instance
 |eval ProjectID=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
 |eval Zone=replace(name,"^\S+zones\/(\S+)\/disks\/\S+","\1") 
 |eval dName=replace(name,"^\S+projects\/(\S+)","\1")
+|eval Instance=replace(Instance,"^\S+zones\/\S+\/instances\/(\S+)","\1")
 |rename resource.data.id as ID, resource.data.type as Type, resource.data.sourceImage as sourceImage, resource.data.guestOsFeatures{}.type as GuestOSFeatures, resource.data.sizeGb as Size, resource.data.name as Name
 |eval Type=replace(Type,"\S+diskTypes\/(\S+)","\1")
 |eval sourceImage=replace(sourceImage,"\S+images\/(\S+)","\1")
+|fillnull value="-" 
+|dedup ID, GuestOSFeatures
+$tstats_join$
+
+
+
+      <!-- |tstats fillnull_value="-" count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk"  earliest=$time_tok.earliest$ latest=$time_tok.latest$  by resource.data.id ,name, resource.data.name, resource.data.sizeGb, resource.data.type, resource.data.sourceImage, resource.data.guestOsFeatures{}.type, resource.data.users{}
+|dedup resource.data.id
+|rename resource.data.users{} as Instance
+|eval ProjectID=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
+|eval Zone=replace(name,"^\S+zones\/(\S+)\/disks\/\S+","\1") 
+|eval dName=replace(name,"^\S+projects\/(\S+)","\1")
+|eval Instance=replace(Instance,"^\S+zones\/\S+\/instances\/(\S+)","\1")
+|rename resource.data.id as ID, resource.data.type as Type, resource.data.sourceImage as sourceImage, resource.data.guestOsFeatures{}.type as GuestOSFeatures, resource.data.sizeGb as Size, resource.data.name as Name
+|eval Type=replace(Type,"\S+diskTypes\/(\S+)","\1")
+|eval sourceImage=replace(sourceImage,"\S+images\/(\S+)","\1") -->
+
     </query>
   </search>
-  <label>GCP Individual Storage</label>
-  <description>v1.2</description>
+  <search id="mstatsBase">
+    <query>
+      $base_metrics_search$
+    </query>
+    <earliest>$time_tok.earliest$</earliest>
+    <latest>$time_tok.latest$</latest>
+  </search>
   <fieldset submitButton="false">
     <input type="multiselect" token="project_id_tok" searchWhenChanged="true">
       <label>Project ID</label>
@@ -38,7 +119,18 @@
       </search>
       <delimiter>,</delimiter>
     </input>
-    <input type="multiselect" token="disk_tok">
+    <input type="dropdown" token="instance_tok">
+      <label>Compute Instance</label>
+      <choice value="*">ALL</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <fieldForLabel>Instance</fieldForLabel>
+      <fieldForValue>Instance</fieldForValue>
+      <search base="baseInfo">
+        <query>search ProjectID IN ($project_id_tok$) AND Zone IN ($zone_tok$) AND Instance!="-"| dedup Instance</query>
+      </search>
+    </input>
+    <input type="dropdown" token="disk_tok">
       <label>Disk</label>
       <choice value="*">ALL</choice>
       <default>*</default>
@@ -47,12 +139,11 @@
       <fieldForValue>Name</fieldForValue>
       <search base="baseInfo">
         <query>
-          search ProjectID IN ($project_id_tok$) AND Zone IN ($zone_tok$)|dedup Name
+          search ProjectID IN ($project_id_tok$) AND Zone IN ($zone_tok$) AND Instance=$instance_tok$ |dedup Name
         </query>
-        <earliest>-24h@h</earliest>
-        <latest>now</latest>
+       
       </search>
-      <delimiter>,</delimiter>
+      
     </input>
     <input type="time" token="time_tok" searchWhenChanged="true">
       <label>Time Range</label>
@@ -86,13 +177,16 @@
     <panel>
       <title>Disk Write Bytes Count</title>
       <chart>
-        <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/disk/write_bytes_count" AND index="gcp_metrics" AND instance_name IN ($disk_tok$) span=5m BY instance_name
+        <search base="mstatsBase">
+          <query>
+            | search metric_name="*disk/write_bytes_count" 
+            | timechart avg(_value) span=5m agg=max limit=5 useother=false BY device_name
+| fields - _span*
+            <!-- | mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/disk/write_bytes_count" AND index="gcp_metrics" AND instance_name IN ($disk_tok$) span=5m BY instance_name
 | timechart avg(_value) span=5m agg=max limit=5 useother=false BY instance_name
-| fields - _span*</query>
-          <earliest>$time_tok.earliest$</earliest>
-          <latest>$time_tok.latest$</latest>
-          <sampleRatio>1</sampleRatio>
+| fields - _span* -->
+          </query>
+        
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -133,13 +227,16 @@
     <panel>
       <title>Disk Write Ops Count</title>
       <chart>
-        <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/disk/write_ops_count" AND index="gcp_metrics" AND instance_name IN ($disk_tok$) span=5m BY instance_name
+        <search base="mstatsBase">
+          <query>
+            | search metric_name="*disk/write_ops_count" 
+            | timechart avg(_value) span=5m agg=max limit=5 useother=false BY device_name
+| fields - _span*
+            <!--| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/disk/write_ops_count" AND index="gcp_metrics" AND instance_name IN ($disk_tok$) span=5m BY instance_name
 | timechart avg(_value) span=5m agg=max limit=5 useother=false BY instance_name
-| fields - _span*</query>
-          <earliest>$time_tok.earliest$</earliest>
-          <latest>$time_tok.latest$</latest>
-          <sampleRatio>1</sampleRatio>
+| fields - _span* -->
+        </query>
+          
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -182,13 +279,16 @@
     <panel>
       <title>Disk Read Bytes Count</title>
       <chart>
-        <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/disk/read_bytes_count" AND index="gcp_metrics" AND instance_name IN ($disk_tok$) span=5m BY instance_name
+        <search base="mstatsBase">
+          <query>
+            | search metric_name="*disk/read_bytes_count" 
+            | timechart avg(_value) span=5m agg=max limit=5 useother=false BY device_name
+            | fields - _span*
+            <!-- | mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/disk/read_bytes_count" AND index="gcp_metrics" AND instance_name IN ($disk_tok$) span=5m BY instance_name
 | timechart avg(_value) span=5m agg=max limit=5 useother=false BY instance_name
-| fields - _span*</query>
-          <earliest>$time_tok.earliest$</earliest>
-          <latest>$time_tok.latest$</latest>
-          <sampleRatio>1</sampleRatio>
+| fields - _span* -->
+        </query>
+          
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -229,13 +329,16 @@
     <panel>
       <title>Disk Read Ops Count</title>
       <chart>
-        <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/disk/read_ops_count" AND index="gcp_metrics" AND instance_name IN ($disk_tok$) span=5m BY instance_name
+        <search base="mstatsBase">
+          <query>
+            | search metric_name="*disk/read_ops_count" 
+            | timechart avg(_value) span=5m agg=max limit=5 useother=false BY device_name
+            | fields - _span*
+            <!-- | mstats avg(_value) prestats=true WHERE metric_name="compute.googleapis.com/instance/disk/read_ops_count" AND index="gcp_metrics" AND instance_name IN ($disk_tok$) span=5m BY instance_name
 | timechart avg(_value) span=5m agg=max limit=5 useother=false BY instance_name
-| fields - _span*</query>
-          <earliest>$time_tok.earliest$</earliest>
-          <latest>$time_tok.latest$</latest>
-          <sampleRatio>1</sampleRatio>
+| fields - _span* -->
+        </query>
+          
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
