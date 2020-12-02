@@ -1,6 +1,34 @@
 <form>
   <label>GCP Network Overview</label>
-  <description>v 1.0</description>
+  <description>v 1.3</description>
+  <search id="tstats_query">
+    <query>
+      |makeresults 
+      |eval usetstats="Yes" 
+      |eval notstats="No"
+      |eval tstatstag=`tstatstag`
+      |eval tstats_compute=if(tstatstag=="Yes", "|tstats dc(resource.data.id) as Count where","")
+      |eval tstats_simple=if(tstatstag=="Yes", "|tstats count where","")
+      |eval tstats_nulls=if(tstatstag=="Yes", "|tstats fillnull_value=\"-\" count where","")
+      |eval stats_count=if(tstatstag=="No", "|stats count ", "")
+      
+      |eval tstats_by_name=if(tstatstag=="Yes", "by name","")
+      |eval tstats_by_vpcs=if(tstatstag=="Yes", "by resource.data.id, name, resource.data.routingConfig.routingMode, resource.data.subnetworks{}","")
+      
+      |eval tstats_by_subnets=if(tstatstag=="Yes", "by resource.data.network, resource.location, resource.data.name, resource.data.ipCidrRange, resource.data.gatewayAddress","")
+      |eval tstats_by_routes=if(tstatstag=="Yes", "by resource.data.id, name, resource.data.network, resource.data.nextHopNetwork, resource.data.priority, resource.data.destRange, resource.data.description","")
+      
+    </query>
+    <done>
+      <set token="tstats_compute">$result.tstats_compute$</set>
+      <set token="stats_count">$result.stats_count$</set>
+      <set token="tstats_simple">$result.tstats_simple$</set>
+      <set token="tstats_by_name">$result.tstats_by_name$</set>
+      <set token="tstats_by_vpcs">$result.tstats_by_vpcs$</set>
+      <set token="tstats_by_subnets">$result.tstats_by_subnets$</set>
+      <set token="tstats_by_routes">$result.tstats_by_routes$</set>
+    </done>
+  </search>
   <fieldset submitButton="false" autoRun="true">
     <input type="time" token="time" searchWhenChanged="true">
       <label>Time Range</label>
@@ -17,9 +45,13 @@
       <fieldForLabel>projectid</fieldForLabel>
       <fieldForValue>projectid</fieldForValue>
       <search>
-        <query>|tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Network" by resource.data.id, name, resource.data.routingConfig.routingMode, resource.data.subnetworks{}
+        <query>$tstats_simple$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Network" $stats_count$ by name
 |eval projectid=replace(name,"\S+projects\/(\S+)\/global\S+","\1")
-|stats count by projectid</query>
+|stats count by projectid
+          <!-- |tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Network" by resource.data.id, name, resource.data.routingConfig.routingMode, resource.data.subnetworks{}
+|eval projectid=replace(name,"\S+projects\/(\S+)\/global\S+","\1")
+|stats count by projectid -->
+        </query>
       </search>
     </input>
   </fieldset>
@@ -28,9 +60,10 @@
       <title>VPCs</title>
       <table>
         <search>
-          <query>|tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Network" by resource.data.id, name, resource.data.routingConfig.routingMode, resource.data.subnetworks{}
+          <query>$tstats_simple$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Network" $stats_count$ by resource.data.id, name, resource.data.routingConfig.routingMode, resource.data.subnetworks{}
 |eval projectid=replace(name,"\S+projects\/(\S+)\/global\S+","\1")
 |eval vpcname=replace(name,"\S+\/networks\/(\S+)","\1")
+
 |search projectid=$project_tok$
 |rename resource.data.subnetworks{} as subnetworks, resource.data.routingConfig.routingMode as "Routing Mode"
 |rex max_match=30 field=subnetworks "https:\/\/www.googleapis.com\/compute\/v1\/projects\/\S*\/regions\/(?&lt;regionval&gt;\S*)\/subnetworks\/(?&lt;subnetnames&gt;\S*)"
@@ -57,17 +90,43 @@
       <title>SubNets</title>
       <table>
         <search>
-          <query>|tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Subnetwork" by resource.data.network, resource.location, resource.data.name, resource.data.ipCidrRange, resource.data.gatewayAddress
+          <query>$tstats_simple$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Subnetwork" $stats_count$ by resource.data.network, resource.location, resource.data.name, resource.data.ipCidrRange, resource.data.gatewayAddress
 |rename resource.data.network as network
 |eval projectid=replace(network,"\S+projects\/(\S+)\/global\S+","\1")
 |eval vpcname=replace(network,"\S+\/networks\/(\S+)","\1")
 |search projectid=$project_tok$
-|stats list(resource.location) as Location list(resource.data.name) as "SubNet Name" list(resource.data.ipCidrRange) as "IP CIDR Range", list(resource.data.gatewayAddress) as "Gateway Address", by vpcname
+|stats list(resource.location) as Location list(resource.data.name) as "SubNet Name" list(resource.data.ipCidrRange) as "IP CIDR Range", list(resource.data.gatewayAddress) as "Gateway Address", by projectid, vpcname
 |rename vpcname as "VPC Name"</query>
           <earliest>-24h@h</earliest>
           <latest>now</latest>
         </search>
         <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Network Routes</title>
+      <table>
+        <search>
+          <query>$tstats_simple$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Route" $stats_count$  by resource.data.id, name, resource.data.network, resource.data.nextHopNetwork, resource.data.priority, resource.data.destRange, resource.data.description
+|eval ProjectID=replace(name,"\S+projects\/(\S+)\/global\S+","\1")
+|search ProjectID=$project_tok$
+|rename name as Name, resource.data.network as VPC, resource.data.nextHopNetwork as "Next Hop Network", resource.data.priority as Priority, resource.data.destRange as "Dest Range", resource.data.description as Description
+|table ProjectID, Name, VPC, "Next Hop Network",  "Dest Range", Priority, Description</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
       </table>
     </panel>
   </row>
@@ -79,6 +138,7 @@
           <query>`gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type=compute.googleapis.com/Firewall
 |spath output=data path=resource.data
 |eval projectid=replace(name,"\S+projects\/(\S+)\/global\S+","\1")
+|search projectid=$project_tok$
 |rename resource.data.network as vpcname
 |eval vpc=replace(vpcname,"\S+\/networks\/(\S+)","\1")
 |rex max_match=20 field=data "\{\"IPProtocol\":\"(?&lt;Protocol&gt;\w+)\"(,\"ports\":\[(?&lt;Ports&gt;\"[^\]]*))*"
