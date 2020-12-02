@@ -1,4 +1,8 @@
-<!-- v1.5--><form>
+<!-- v1.5-->
+<form>
+  <label>GCP Asset Inventory</label>
+  <description>v1.5</description>
+  
   <search id="tstats_query">
     <query>
       |makeresults 
@@ -161,8 +165,7 @@
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
   </search>
-  <label>GCP Asset Inventory</label>
-  <description>v1.5</description>
+  
   <fieldset submitButton="false" autoRun="true">
     <input type="time" token="time" searchWhenChanged="true">
       <label>Time Range</label>
