@@ -11,8 +11,13 @@
        <view name="gcp_cloud_functions"/>	
        <view name="cloud_function_details"/>
        <view name="gcp_network_overview"/>
+       <view name="gcp_gae_overview"/>
+       <view name="gcp_bigquery_overview"/>
+       <view name="gcp_cloudsql_overview"/>
   </collection>
   <collection label ="Security and Audit">
+       <view name="gcp_iam_overview"/>
+       <view name="gcp_audit_overview"/>
        <view name="gcp_audit_investigation"/>
        <view name="gcp__security"/>
        <view name="gcp_vpc_logs_dashboards_tstats"/>

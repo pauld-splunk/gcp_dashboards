@@ -1,16 +1,57 @@
 <form>
   <label>GCP Audit Overview</label>
-  <description>v1.1</description>
+  <description>v1.2</description>
+  <search id="source_data_query">
+    <query>
+      |makeresults | eval addon="data."| eval dataflow="" 
+      |eval datatag=`datatag`
+    </query>
+    <done>
+      <set token="datatag">$result.datatag$</set>
+    </done>
+  </search>
+  <search id="tstats_query">
+    <query>
+      |makeresults 
+      |eval usetstats="Yes" 
+      |eval notstats="No"
+      |eval tstatstag=`tstatstag`
+      
+      |eval tstats_count=if(tstatstag=="Yes", "|tstats count where","")
+      
+      |eval tstats_nulls=if(tstatstag=="Yes", "|tstats fillnull_value=\"-\" count where","")
+      
+      |eval stats_count=if(tstatstag=="No", "|stats count ", "")
+      
+      |eval count_type=if(tstatstag=="Yes", "sum(count)", "count")
+      
+      |eval by_type=if(tstatstag=="Yes"," by _time, $datatag$resource.type", " ")
+      |eval by_email=if(tstatstag=="Yes"," by _time, $datatag$protoPayload.authenticationInfo.principalEmail"," ") 
+      
+      
+      
+    </query>
+    <done>
+      <set token="tstats_count">$result.tstats_count$</set>
+      <set token="tstats_nulls">$result.tstats_nulls$</set>
+      <set token="stats_count">$result.stats_count$</set>
+      <set token="count_type">$result.count_type$</set>
+      <set token="by_type">$result.by_type$</set>
+      <set token="by_email">$result.by_email$</set>
+    </done>
+  </search>
   <fieldset submitButton="false">
-    <input type="time" token="field2">
-      <label></label>
+    <input type="time" token="time" searchWhenChanged="true">
+      <label>Time</label>
       <default>
         <earliest>-24h@h</earliest>
         <latest>now</latest>
       </default>
     </input>
-    <input type="dropdown" token="field1">
-      <label>field1</label>
+    <input type="dropdown" token="project_tok" searchWhenChanged="true">
+      <label>Project</label>
+      <choice value="*">ALL</choice>
+      <initialValue>*</initialValue>
     </input>
   </fieldset>
   <row>
@@ -18,9 +59,13 @@
       <title>GCP - Activity Changes by Type</title>
       <chart>
         <search>
-          <query>|tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName != ""  data.resource.type != "" by data.resource.type</query>
-          <earliest>-4h@h</earliest>
-          <latest>now</latest>
+          <query>
+            $tstats_count$ `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName!=""  $datatag$resource.type!=""  $by_type$ | timechart $count_type$ by $datatag$resource.type useother=false usenull=false
+            
+            <!-- |tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName != ""  $datatag$resource.type != "" by _time, $datatag$resource.type | timechart sum(count) by $datatag$resource.type useother=false usenull=false -->
+          </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
         <option name="charting.chart">column</option>
@@ -34,9 +79,13 @@
       <title>GCP - # of Activity Events by Source</title>
       <chart>
         <search>
-          <query>|tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName!=""  by source</query>
-          <earliest>-4h@m</earliest>
-          <latest>now</latest>
+          <query>
+                $tstats_count$ `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName!=""  $stats_count$ by source
+            <!-- |tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName!=""  by source -->
+          
+          </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
         <option name="charting.chart">pie</option>
@@ -48,12 +97,19 @@
       <title>GCP - Count of Activities by Users</title>
       <chart>
         <search>
-          <query>|tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName!="" data.resource.type!="" by _time, data.protoPayload.serviceName, data.protoPayload.authenticationInfo.principalEmail |rename "data.protoPayload.authenticationInfo.principalEmail" as username | timechart count by username useother=false usenull=false</query>
+          <query>
+            $tstats_count$ `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName!="" $datatag$resource.type!="" $by_email$
+            |rename "$datatag$protoPayload.authenticationInfo.principalEmail" as username 
+            | timechart $count_type$ by username useother=false usenull=false
+            
+            <!-- |tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName!="" $datatag$resource.type!="" by _time, $datatag$protoPayload.serviceName, $datatag$protoPayload.authenticationInfo.principalEmail |rename "$datatag$protoPayload.authenticationInfo.principalEmail" as username | timechart count by username useother=false usenull=false -->
+            </query>
           <earliest>-4h@m</earliest>
           <latest>now</latest>
           <sampleRatio>1</sampleRatio>
         </search>
         <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">zero</option>
         <option name="charting.drilldown">none</option>
         <option name="refresh.display">progressbar</option>
       </chart>
@@ -64,10 +120,14 @@
       <title>GCP - Count of Events by User and Severity</title>
       <table>
         <search>
-          <query>|tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message "data.logName"="*logs/cloudaudit.googleapis.com%2Factivity*" by "data.protoPayload.authenticationInfo.principalEmail", data.severity | rename data.severity as severity, "data.protoPayload.authenticationInfo.principalEmail" as "UserName"
-|chart sum(count) by UserName, severity</query>
-          <earliest>$field2.earliest$</earliest>
-          <latest>$field2.latest$</latest>
+          <query>
+            $tstats_count$ `gcp_index` sourcetype=google:gcp:pubsub:message "$datatag$logName"="*logs/cloudaudit.googleapis.com%2Factivity*" $stats_count$ by "$datatag$protoPayload.authenticationInfo.principalEmail", $datatag$severity | rename $datatag$severity as severity, "$datatag$protoPayload.authenticationInfo.principalEmail" as "UserName"
+|chart sum(count) by UserName, severity
+            <!-- |tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message "$datatag$logName"="*logs/cloudaudit.googleapis.com%2Factivity*" by "$datatag$protoPayload.authenticationInfo.principalEmail", $datatag$severity | rename $datatag$severity as severity, "$datatag$protoPayload.authenticationInfo.principalEmail" as "UserName"
+|chart sum(count) by UserName, severity -->
+          </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
         <option name="count">20</option>
@@ -84,9 +144,12 @@
       <title>GCP - Operation Count by User</title>
       <table>
         <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message "logName"="*logs/cloudaudit.googleapis.com%2Factivity*" | rename data.protoPayload.authenticationInfo.principalEmail as Username | eval Username=if(Username=="", "Unknown", Username) | stats count by Username, data.protoPayload.request.@type | rename data.protoPayload.request.@type as "Event Type" | sort -count | rename count as Count | table Username, "Event Type", Count</query>
-          <earliest>-4h@m</earliest>
-          <latest>now</latest>
+          <query>
+            $tstats_count$ `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$logName="*logs/cloudaudit.googleapis.com%2Factivity*" $stats_count$ by $datatag$protoPayload.authenticationInfo.principalEmail,  $datatag$protoPayload.request.@type | rename $datatag$protoPayload.authenticationInfo.principalEmail as Username, $datatag$protoPayload.request.@type as "Event Type" | eval Username=if(Username=="", "Unknown", Username)  | sort -count | rename count as Count | table Username, "Event Type", Count
+            <!-- |tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$logName="*logs/cloudaudit.googleapis.com%2Factivity*" by $datatag$protoPayload.authenticationInfo.principalEmail,  $datatag$protoPayload.request.@type | rename $datatag$protoPayload.authenticationInfo.principalEmail as Username, $datatag$protoPayload.request.@type as "Event Type" | eval Username=if(Username=="", "Unknown", Username)  | sort -count | rename count as Count | table Username, "Event Type", Count -->
+            </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
         <option name="count">20</option>
@@ -105,9 +168,12 @@
       <title>GCP - ERROR Logs Count</title>
       <chart>
         <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message severity=*ERROR* | stats count by data.protoPayload.serviceName</query>
-          <earliest>$earliest$</earliest>
-          <latest>$latest$</latest>
+          <!--  | stats count -->
+          <query>$tstats_count$  `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$severity=*ERROR* $stats_count$ by $datatag$protoPayload.serviceName
+            <!-- |tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$severity=*ERROR*  by $datatag$protoPayload.serviceName -->
+            </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
         <option name="charting.chart">pie</option>
