@@ -1,0 +1,194 @@
+<dashboard>
+  <label>GCP App Setup</label>
+  
+  <row>
+    <panel>
+      <html>
+    <h2>
+          <strong>Dependencies: Add-Ons / Collection methods</strong>
+        </h2>
+<p>This GCP App supports data to be collected into Splunk via the following methods:</p>
+<p>1) Splunk Add-On for Google Cloud Platform (<a href="https://splunkbase.splunk.com/app/3088/">https://splunkbase.splunk.com/app/3088/</a>)</p>
+<p>All Data collection methods supported</p>
+<p>2) GCP DataFlow. <a href="https://cloud.google.com/blog/products/data-analytics/connect-to-splunk-with-a-dataflow-template">https://cloud.google.com/blog/products/data-analytics/connect-to-splunk-with-a-dataflow-template</a>
+        </p>
+<p>All Data collected supported. (pre-install the GCP Add-On advised)</p>
+<p>3) Cloud Functions <a href="https://github.com/splunk/gcp_functions">https://github.com/splunk/gcp_functions</a>
+        </p>
+<p>All Data collected supported. (pre-install the GCP Add-On)</p>
+<p>4) Splunk Infrastructure Monitoring Add-on (SIM) <a href="https://splunkbase.splunk.com/app/5247/">https://splunkbase.splunk.com/app/5247/</a>
+        </p>
+<p>All Metrics collected by SIM supported</p>
+<p>Follow the instructions for these collection methods before setting up this app.</p>
+<h2>
+          <strong>Macros</strong>
+        </h2>
+<p>The GCP app requires some initial setup of macros to work with your Splunk environment.</p>
+<p>Options:<br/>If you are collecting the GCP data via the GCP Add-On, then you will need to set the following :<br/>
+        </p>
+<table style="border-collapse: collapse; width: 50%;" border="1">
+<tbody>
+<tr>
+<td style="width: 23.7523%;">
+                <b>Macro</b>
+              </td>
+<td style="width: 32.5786%;">
+                <b>Value (and default)</b>
+              </td>
+<td style="width: 43.6691%;">
+                <b>Description</b>
+              </td>
+</tr>
+<tr>
+<td style="width: 23.7523%;">gcp_index</td>
+<td style="width: 32.5786%;">index=gcp_index</td>
+<td style="width: 43.6691%;">Sets the index where the GCP Data will be stored by the Add-On</td>
+</tr>
+<tr>
+<td style="width: 23.7523%;">datatag</td>
+<td style="width: 32.5786%;">addon</td>
+<td style="width: 43.6691%;">Adds "data." as a JSON wrapper for PubSub Data</td>
+</tr>
+<tr>
+<td style="width: 23.7523%;">metricstag</td>
+<td style="width: 32.5786%;">addon</td>
+<td style="width: 43.6691%;">Sets the dashboards to use event based metrics from the Add-On</td>
+</tr>
+<tr>
+<td style="width: 23.7523%;">gcp_metrics</td>
+<td style="width: 32.5786%;">index=gcp_metrics</td>
+<td style="width: 43.6691%;">Sets the event index where the add-on stores the metrics</td>
+</tr>
+</tbody>
+</table>
+<p>If you are using DataFlow to collect the data from PubSub, then change the following:</p>
+<table style="border-collapse: collapse; width: 50%;" border="1">
+<tbody>
+<tr>
+<td style="width: 23.7523%;">Macro</td>
+<td style="width: 32.5786%;">Value</td>
+<td style="width: 43.6691%;">Description</td>
+</tr>
+<tr>
+<td style="width: 23.7523%;">datatag</td>
+<td style="width: 32.5786%;">dataflow</td>
+<td style="width: 43.6691%;">The payload from PubSub isn't "wrapped" by "data."</td>
+</tr>
+</tbody>
+</table>
+<br/>
+<p>If you are using the SIM / SignalFX (Splunk Infrastructure Monitoring) to collect metrics from GCP, you will need to use and configure connections on the SIM Add-On - <a href="https://splunkbase.splunk.com/app/5247/">https://splunkbase.splunk.com/app/5247/</a>
+        </p>
+<p>Then set the following:</p>
+<table style="border-collapse: collapse; width: 50%;" border="1">
+<tbody>
+<tr>
+<td style="width: 23.7523%;">Macro</td>
+<td style="width: 32.5786%;">Value</td>
+<td style="width: 43.6691%;">Description</td>
+</tr>
+<tr>
+<td style="width: 23.7523%;">metricstag</td>
+<td style="width: 32.5786%;">sim</td>
+<td style="width: 43.6691%;">Sets the dashboards to use metrics collected from SIM / SignalFXbased</td>
+</tr>
+</tbody>
+</table>
+<p>If you are using Cloud Functions to collect PubSub Data then use the defaults per the Add-On.<br/>However, if you are collecting metrics into the metrics store using the Cloud Functions, use the following:</p>
+<table style="border-collapse: collapse; width: 50%;" border="1">
+<tbody>
+<tr>
+<td style="width: 23.7523%;">
+                <b>Macro</b>
+              </td>
+<td style="width: 32.5786%;">
+                <b>Value</b>
+              </td>
+<td style="width: 43.6691%;">
+                <b>Description</b>
+              </td>
+</tr>
+<tr>
+<td style="width: 23.7523%;">metricstag</td>
+<td style="width: 32.5786%;">metrics</td>
+<td style="width: 43.6691%;">Sets the dashboards to use metrics store</td>
+</tr>
+<tr>
+<td style="width: 23.7523%;">gcp_metrics</td>
+<td style="width: 32.5786%;">index=gcp_metrics</td>
+<td style="width: 43.6691%;">Ensure that this index is a METRICS index not event</td>
+</tr>
+</tbody>
+</table>
+<p/>
+<p>If you want to have fast searches using tstats, you will need to set the following:</p>
+<table style="border-collapse: collapse; width: 50%;" border="1">
+<tbody>
+<tr>
+<td style="width: 50%;">Macro</td>
+<td style="width: 50%;">Value (default)</td>
+</tr>
+<tr>
+<td style="width: 50%;">tstatstag</td>
+<td style="width: 50%;">usetstats</td>
+</tr>
+</tbody>
+</table>
+<p>Note also that you will need to apply props.conf and transforms.conf updates to your local GCP-Add-on settings to apply this. (see below)</p>
+<p>Setting this macro to "notstats" will use standard searches, but will slow down search performance, but will not require any changes to your GCP Add-On.</p>
+
+</html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Current Macro Settings:</title>
+      <table>
+        <search>
+          <query>| rest /servicesNS/-/-/admin/macros splunk_server=local | search title="gcp_index" OR title="datatag" OR title="gcp_metrics" OR title="tstatstag" OR title="metricstag" |table title, definition, author |rename title as Macro, definition as Setting ,author as Author</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+<p/>
+<h2>Props/Transforms</h2>
+<p>If you want to use tstats based searches for faster performance, you will need to apply these changes to your props.conf / transforms.conf in the local directory of the GCP Add-On.</p>
+<p>
+          <span style="text-decoration: underline;">props.conf:</span>
+        </p>
+<blockquote>
+<pre>[google:gcp:pubsub:message]<br/>INDEXED_EXTRACTIONS = json<br/>SHOULD_LINEMERGE = false<br/>LINE_BREAKER = ([\r\n]+)\{<br/>TIME_FORMAT = %Y-%m-%dT%H:%M:%S.%3N<br/>MAX_TIMESTAMP_LOOKAHEAD = 30<br/>TIME_PREFIX = \"timestamp\"\:\s+\"<br/>TRUNCATE = 0<br/>CHARSET=UTF-8<br/>TRANSFORMS-sourcetype_gcp_compute_vpc_flow_logs<br/>TRANSFORMS-gcp_set_meta = gcp_set_sourcetype, gcp_set_source, gcp_set_host
+<br/>[google:gcp:assets]<br/>AUTO_KV_JSON = false<br/>KV_MODE=none<br/>INDEXED_EXTRACTIONS = json<br/>LINE_BREAKER = ([\r\n]+)<br/>NO_BINARY_CHECK = true<br/>disabled = false<br/>TRANSFORMS-sourcetype_splunk_gcp_compute_instance=gcp_compute_instance
+[google:gcp:buckets:jsondata]<br/>KV_MODE = none<br/>INDEXED_EXTRACTIONS = json<br/>AUTO_KV_JSON = false
+[google:gcp:compute:instance]<br/>KV_MODE = none<br/>INDEXED_EXTRACTIONS = json<br/>AUTO_KV_JSON = false
+<br/>[google:gcp:compute:vpc_flows]<br/>KV_MODE = none<br/>INDEXED_EXTRACTIONS = json<br/>AUTO_KV_JSON = false</pre>
+</blockquote>
+<p>
+          <span style="text-decoration: underline;">transforms.conf</span>
+        </p>
+<blockquote>
+<pre>[gcp_set_sourcetype]<br/>REGEX = \"logName\"\:.+\/logs\/([^\.]+).+\%2F([^\"\,]+)<br/>FORMAT = sourcetype::google:gcp:$1:$2<br/>DEST_KEY = MetaData:Sourcetype
+[gcp_set_source]<br/>REGEX = \"logName\"\:\s?\"([^"]+)<br/>FORMAT = source::$1<br/>DEST_KEY = MetaData:Source
+[gcp_set_host]<br/>REGEX = \"logName\"\:\s?\"\w+\/([^\/]+)\/<br/>FORMAT = host::$1<br/>DEST_KEY = MetaData:Host
+[sourcetype_gcp_compute_vpc_flow_logs]<br/>REGEX = \"logName\"\:\s+\"\S*\/logs\/compute\.googleapis\.com\%2Fvpc_flows\"<br/>FORMAT = sourcetype::google:gcp:compute:vpc_flows<br/>DEST_KEY = MetaData:Sourcetype</pre>
+</blockquote>
+<p>Also, as some of the json in GCP's message payloads are large, you will need to apply this update to your limits.conf: ($SPLUNK_HOME$/etc/system/local/limits.conf)</p>
+<blockquote>
+<pre>[kv]
+limit = 0
+indexed_kv_limit = 0
+maxchars = 20480
+maxcols = 0
+max_extractor_time = 2000</pre>
+</blockquote>
+  </html>
+    </panel>
+  </row>
+</dashboard>
