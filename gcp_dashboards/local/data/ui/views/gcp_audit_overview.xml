@@ -1,6 +1,6 @@
 <form>
   <label>GCP Audit Overview</label>
-  <description>v1.2</description>
+  <description>v1.3</description>
   <search id="source_data_query">
     <query>
       |makeresults | eval addon="data."| eval dataflow="" 
@@ -52,6 +52,14 @@
       <label>Project</label>
       <choice value="*">ALL</choice>
       <initialValue>*</initialValue>
+      <fieldForLabel>project_id</fieldForLabel>
+      <fieldForValue>project_id</fieldForValue>
+      <search>
+        <query>$tstats_count$ `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName!="" $stats_count$ by $datatag$resource.labels.project_id | rename $datatag$resource.labels.project_id as project_id</query>
+        <earliest>$time.earliest$</earliest>
+        <latest>$time.latest$</latest>
+      </search>
+      <default>*</default>
     </input>
   </fieldset>
   <row>
@@ -60,7 +68,7 @@
       <chart>
         <search>
           <query>
-            $tstats_count$ `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName!=""  $datatag$resource.type!=""  $by_type$ | timechart $count_type$ by $datatag$resource.type useother=false usenull=false
+            $tstats_count$ `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName!=""  $datatag$resource.type!="" $datatag$resource.labels.project_id=$project_tok$ $by_type$ | timechart $count_type$ by $datatag$resource.type useother=false usenull=false
             
             <!-- |tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName != ""  $datatag$resource.type != "" by _time, $datatag$resource.type | timechart sum(count) by $datatag$resource.type useother=false usenull=false -->
           </query>
@@ -80,7 +88,7 @@
       <chart>
         <search>
           <query>
-                $tstats_count$ `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName!=""  $stats_count$ by source
+                $tstats_count$ `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName!="" $datatag$resource.labels.project_id=$project_tok$ $stats_count$ by source
             <!-- |tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName!=""  by source -->
           
           </query>
@@ -98,7 +106,7 @@
       <chart>
         <search>
           <query>
-            $tstats_count$ `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName!="" $datatag$resource.type!="" $by_email$
+            $tstats_count$ `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName!="" $datatag$resource.type!="" $datatag$resource.labels.project_id=$project_tok$ $by_email$
             |rename "$datatag$protoPayload.authenticationInfo.principalEmail" as username 
             | timechart $count_type$ by username useother=false usenull=false
             
@@ -121,7 +129,7 @@
       <table>
         <search>
           <query>
-            $tstats_count$ `gcp_index` sourcetype=google:gcp:pubsub:message "$datatag$logName"="*logs/cloudaudit.googleapis.com%2Factivity*" $stats_count$ by "$datatag$protoPayload.authenticationInfo.principalEmail", $datatag$severity | rename $datatag$severity as severity, "$datatag$protoPayload.authenticationInfo.principalEmail" as "UserName"
+            $tstats_count$ `gcp_index` sourcetype=google:gcp:pubsub:message "$datatag$logName"="*logs/cloudaudit.googleapis.com%2Factivity*" $datatag$resource.labels.project_id=$project_tok$ $stats_count$ by "$datatag$protoPayload.authenticationInfo.principalEmail", $datatag$severity | rename $datatag$severity as severity, "$datatag$protoPayload.authenticationInfo.principalEmail" as "UserName"
 |chart sum(count) by UserName, severity
             <!-- |tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message "$datatag$logName"="*logs/cloudaudit.googleapis.com%2Factivity*" by "$datatag$protoPayload.authenticationInfo.principalEmail", $datatag$severity | rename $datatag$severity as severity, "$datatag$protoPayload.authenticationInfo.principalEmail" as "UserName"
 |chart sum(count) by UserName, severity -->
@@ -145,7 +153,7 @@
       <table>
         <search>
           <query>
-            $tstats_count$ `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$logName="*logs/cloudaudit.googleapis.com%2Factivity*" $stats_count$ by $datatag$protoPayload.authenticationInfo.principalEmail,  $datatag$protoPayload.request.@type | rename $datatag$protoPayload.authenticationInfo.principalEmail as Username, $datatag$protoPayload.request.@type as "Event Type" | eval Username=if(Username=="", "Unknown", Username)  | sort -count | rename count as Count | table Username, "Event Type", Count
+            $tstats_count$ `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$logName="*logs/cloudaudit.googleapis.com%2Factivity*" $datatag$resource.labels.project_id=$project_tok$ $stats_count$ by $datatag$protoPayload.authenticationInfo.principalEmail,  $datatag$protoPayload.request.@type | rename $datatag$protoPayload.authenticationInfo.principalEmail as Username, $datatag$protoPayload.request.@type as "Event Type" | eval Username=if(Username=="", "Unknown", Username)  | sort -count | rename count as Count | table Username, "Event Type", Count
             <!-- |tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$logName="*logs/cloudaudit.googleapis.com%2Factivity*" by $datatag$protoPayload.authenticationInfo.principalEmail,  $datatag$protoPayload.request.@type | rename $datatag$protoPayload.authenticationInfo.principalEmail as Username, $datatag$protoPayload.request.@type as "Event Type" | eval Username=if(Username=="", "Unknown", Username)  | sort -count | rename count as Count | table Username, "Event Type", Count -->
             </query>
           <earliest>$time.earliest$</earliest>
@@ -169,7 +177,7 @@
       <chart>
         <search>
           <!--  | stats count -->
-          <query>$tstats_count$  `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$severity=*ERROR* $stats_count$ by $datatag$protoPayload.serviceName
+          <query>$tstats_count$  `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$severity=*ERROR* $datatag$resource.labels.project_id=$project_tok$ $stats_count$ by $datatag$protoPayload.serviceName
             <!-- |tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$severity=*ERROR*  by $datatag$protoPayload.serviceName -->
             </query>
           <earliest>$time.earliest$</earliest>
