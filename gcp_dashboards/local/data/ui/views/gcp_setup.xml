@@ -1,11 +1,12 @@
 <dashboard>
   <label>GCP App Setup</label>
-  
   <row>
     <panel>
       <html>
-    <h2>
-          <strong>Dependencies: Add-Ons / Collection methods</strong>
+    <h1>
+          <strong>Dependencies</strong> </h1>
+          <h2>
+          <strong>Add-Ons / Collection methods</strong>
         </h2>
 <p>This GCP App supports data to be collected into Splunk via the following methods:</p>
 <p>1) Splunk Add-On for Google Cloud Platform (<a href="https://splunkbase.splunk.com/app/3088/">https://splunkbase.splunk.com/app/3088/</a>)</p>
@@ -20,11 +21,14 @@
         </p>
 <p>All Metrics collected by SIM supported</p>
 <p>Follow the instructions for these collection methods before setting up this app.</p>
-<h2>
+<h1>
           <strong>Macros</strong>
-        </h2>
-<p>The GCP app requires some initial setup of macros to work with your Splunk environment.</p>
-<p>Options:<br/>If you are collecting the GCP data via the GCP Add-On, then you will need to set the following :<br/>
+        </h1>
+<p>The GCP app requires some initial setup of macros to work with your Splunk environment. Set the macro settings according to the tables below:</p>
+<br/>(Note below your current macro settings - if these are blank/empty, you will need to set them to the correct values before the dashboards work)
+
+<p><b>Splunk Add-On for Google Cloud Platform</b>
+<br/>If you are collecting the GCP data via the GCP Add-On, then you will need to set the following :<br/>
         </p>
 <table style="border-collapse: collapse; width: 50%;" border="1">
 <tbody>
@@ -61,13 +65,21 @@
 </tr>
 </tbody>
 </table>
-<p>If you are using DataFlow to collect the data from PubSub, then change the following:</p>
+<br/>
+<p><b>DataFlow</b>
+<br/>If you are using DataFlow to collect the data from PubSub, then change the following:</p>
 <table style="border-collapse: collapse; width: 50%;" border="1">
 <tbody>
 <tr>
-<td style="width: 23.7523%;">Macro</td>
-<td style="width: 32.5786%;">Value</td>
-<td style="width: 43.6691%;">Description</td>
+<td style="width: 23.7523%;">
+                <strong>Macro</strong>
+              </td>
+<td style="width: 32.5786%;">
+                <strong>Value</strong>
+              </td>
+<td style="width: 43.6691%;">
+                <strong>Description</strong>
+              </td>
 </tr>
 <tr>
 <td style="width: 23.7523%;">datatag</td>
@@ -77,24 +89,33 @@
 </tbody>
 </table>
 <br/>
-<p>If you are using the SIM / SignalFX (Splunk Infrastructure Monitoring) to collect metrics from GCP, you will need to use and configure connections on the SIM Add-On - <a href="https://splunkbase.splunk.com/app/5247/">https://splunkbase.splunk.com/app/5247/</a>
+<p><b>SIM / SignalFX</b>
+<br/>If you are using the SIM / SignalFX (Splunk Infrastructure Monitoring) to collect metrics from GCP, you will need to use and configure connections on the SIM Add-On - <a href="https://splunkbase.splunk.com/app/5247/">https://splunkbase.splunk.com/app/5247/</a>
         </p>
 <p>Then set the following:</p>
 <table style="border-collapse: collapse; width: 50%;" border="1">
 <tbody>
 <tr>
-<td style="width: 23.7523%;">Macro</td>
-<td style="width: 32.5786%;">Value</td>
-<td style="width: 43.6691%;">Description</td>
+<td style="width: 23.7523%;">
+                <strong>Macro</strong>
+              </td>
+<td style="width: 32.5786%;">
+                <strong>Value</strong>
+              </td>
+<td style="width: 43.6691%;">
+                <strong>Description</strong>
+              </td>
 </tr>
 <tr>
 <td style="width: 23.7523%;">metricstag</td>
 <td style="width: 32.5786%;">sim</td>
-<td style="width: 43.6691%;">Sets the dashboards to use metrics collected from SIM / SignalFXbased</td>
+<td style="width: 43.6691%;">Sets the dashboards to use metrics collected from SIM / SignalFX using the Add-On</td>
 </tr>
 </tbody>
 </table>
-<p>If you are using Cloud Functions to collect PubSub Data then use the defaults per the Add-On.<br/>However, if you are collecting metrics into the metrics store using the Cloud Functions, use the following:</p>
+<br/>
+<p><b>Cloud Functions</b>
+<br/>If you are using Cloud Functions to collect PubSub Data then use the defaults per the Add-On.<br/>However, if you are collecting metrics into the metrics store using the Cloud Functions, use the following:</p>
 <table style="border-collapse: collapse; width: 50%;" border="1">
 <tbody>
 <tr>
@@ -121,12 +142,18 @@
 </tbody>
 </table>
 <p/>
-<p>If you want to have fast searches using tstats, you will need to set the following:</p>
+<br/>
+<h2><b>Search Performance</b></h2>
+<p>If you want to have significantly faster searches using indexed json extractions with tstats, you will need to set the following:</p>
 <table style="border-collapse: collapse; width: 50%;" border="1">
 <tbody>
 <tr>
-<td style="width: 50%;">Macro</td>
-<td style="width: 50%;">Value (default)</td>
+<td style="width: 50%;">
+                <b>Macro</b>
+              </td>
+<td style="width: 50%;">
+                <b>Value (default)</b>
+              </td>
 </tr>
 <tr>
 <td style="width: 50%;">tstatstag</td>
@@ -142,10 +169,10 @@
   </row>
   <row>
     <panel>
-      <title>Current Macro Settings:</title>
       <table>
+        <title>Current Environment Macro Settings:</title>
         <search>
-          <query>| rest /servicesNS/-/-/admin/macros splunk_server=local | search title="gcp_index" OR title="datatag" OR title="gcp_metrics" OR title="tstatstag" OR title="metricstag" |table title, definition, author |rename title as Macro, definition as Setting ,author as Author</query>
+          <query>| rest /servicesNS/-/-/admin/macros splunk_server=local | search title="gcp_index" OR title="datatag" OR title="gcp_metrics" OR title="tstatstag" OR title="metricstag" |table title, definition, author |rename title as Macro, definition as Setting ,author as Owner</query>
           <earliest>-24h@h</earliest>
           <latest>now</latest>
         </search>
@@ -158,7 +185,7 @@
     <panel>
       <html>
 <p/>
-<h2>Props/Transforms</h2>
+<h2><b>Props/Transforms</b></h2>
 <p>If you want to use tstats based searches for faster performance, you will need to apply these changes to your props.conf / transforms.conf in the local directory of the GCP Add-On.</p>
 <p>
           <span style="text-decoration: underline;">props.conf:</span>

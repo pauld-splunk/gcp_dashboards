@@ -1,6 +1,6 @@
 <form>
   <label>GCP Single Instance Details</label>
-  <description>v2.0</description>
+  <description>v2.2</description>
   <init>
     <set token="minspan">60</set>
   </init>
@@ -138,8 +138,8 @@
     <input type="time" token="time" searchWhenChanged="true">
       <label>Select Timerange</label>
       <default>
-        <earliest>$time.earliest$</earliest>
-        <latest>$time.latest$</latest>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
       </default>
       <change>
         <eval token="form.secs_for_bin">if(isnull($time.latest$),$minspan$, if((round(relative_time(now(), $time.latest$)-relative_time(now(), $time.earliest$))/$time_resolution$)&lt;$minspan$,$minspan$,round(((relative_time(now(), $time.latest$)-relative_time(now(), $time.earliest$))/$time_resolution$)/$minspan$)*$minspan$))</eval>
@@ -257,7 +257,7 @@
 | spath output=disks path=resource.data.disks{}
 |rename resource.data.sourceImage as sourceImage
 |head 1
-| rex max_match=20 field=disks "\{\"autoDelete\":(?&lt;autoDelete&gt;\S*),\"boot\":(?&lt;boot&gt;\S*),\"deviceName\":\"(?&lt;deviceName&gt;\S*)\",\"diskSizeGb\":\"(?&lt;size&gt;\d+)\"\S+\"index\":(?&lt;diskNumber&gt;\d+),\"interface\":\"(?&lt;interface&gt;\S*)\",\S*\"mode\":\"(?&lt;mode&gt;\S+)\",\"source\S*\"type\":\"(?&lt;type&gt;\S+)\"\}"
+| rex max_match=20 field=disks "\{\"autoDelete\":(?&lt;autoDelete&gt;[^,]+),\"boot\":(?&lt;boot&gt;[^,]+),\"deviceName\":\"(?&lt;deviceName&gt;[^\"]+)\",\"diskSizeGb\":\"(?&lt;size&gt;\d+)\"\S+\"index\":(?&lt;diskNumber&gt;\d+),\"interface\":\"(?&lt;interface&gt;[^\"]+)\",\S*\"mode\":\"(?&lt;mode&gt;[^\"]+)\",\S*\"source\"\S*\"type\":\"(?&lt;type&gt;[^\"]+)\"\}"
 |table diskNumber,deviceName,boot,size,autoDelete,interface,mode,type</query>
           <earliest>-7h</earliest>
           <latest>now</latest>
@@ -298,12 +298,12 @@
         <default>avg</default>
       </input>
       <chart>
+        <search base="annotations" type="annotation"></search>
         <search base="mstatsBase">
           <query>| search metric_name="*instance/cpu/utilization" 
 | timechart $selected_cpu_aggregator$(_value) AS $selected_cpu_aggregator$ $secs_for_bin$
 | fields - _span*</query>
         </search>
-        <search base="annotations" type="annotation"></search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
         <option name="charting.axisTitleX.visibility">visible</option>
@@ -357,6 +357,7 @@
         <default>avg</default>
       </input>
       <chart>
+        <search base="disk_annotations" type="annotation"></search>
         <search base="mstatsBase">
           <query>| search metric_name="*instance/disk/*bytes_count" 
           |eval metric=replace(metric_name,"instance/disk/","") 
@@ -364,7 +365,6 @@
 | timechart eval($selected_netrec_aggregator$(_value)/1024/1024) AS Avg $secs_for_bin$ by metric
 | fields - _span*</query>
         </search>
-        <search base="disk_annotations" type="annotation"></search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
         <option name="charting.axisTitleX.visibility">visible</option>
@@ -418,7 +418,6 @@
         <default>avg</default>
       </input>
       <chart>
-        <search base="disk_annotations" type="annotation"></search>
         <search base="mstatsBase">
           <query>| search metric_name="*instance/disk/*ops_count" 
 |eval metric=replace(metric_name,"instance/disk/","")
@@ -426,6 +425,7 @@
 | timechart $selected_netsent_aggregator$(_value) AS Avg $secs_for_bin$ by metric
 | fields - _span*</query>
         </search>
+        <search base="disk_annotations" type="annotation"></search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
         <option name="charting.axisTitleX.visibility">visible</option>

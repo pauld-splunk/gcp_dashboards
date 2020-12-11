@@ -1,17 +1,55 @@
 <form>
+  <label>Containers Overview</label>
+  <description>v1.4</description>
+  
+  
+  <search id="source_data_query">
+    <query>
+      |makeresults | eval addon="data."| eval dataflow="" 
+      |eval datatag=`datatag`
+    </query>
+    <done>
+      <set token="datatag">$result.datatag$</set>
+    </done>
+  </search>
+  <search id="tstats_query">
+    <query>
+      |makeresults 
+      |eval usetstats="Yes" 
+      |eval notstats="No"
+      |eval tstatstag=`tstatstag`
+      
+      |eval tstats_dc_name=if(tstatstag=="Yes", "|tstats dc(name) where","")
+      
+      |eval stats_dc_name=if(tstatstag=="No","|stats dc(name) ","")
+      
+    </query>
+    <done>
+      <set token="tstats_dc_name">$result.tstats_dc_name$</set>
+      <set token="stats_dc_name">$result.stats_dc_name$</set>
+    </done>
+  </search>
+  
+  
   <search id="baseInfo">
     <query>
-    |tstats dc(name) where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="k8s.io/Node" by name,resource.data.metadata.name, resource.data.metadata.annotations.container.googleapis.com/instance_id,resource.data.metadata.labels.beta.kubernetes.io/instance-type, resource.data.metadata.labels.kubernetes.io/hostname, resource.data.metadata.labels.cloud.google.com/gke-nodepool, resource.data.status.nodeInfo.containerRuntimeVersion 
+      $tstats_dc_name$  `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="k8s.io/Node" $stats_dc_name$ by name,resource.data.metadata.name, resource.data.metadata.annotations.container.googleapis.com/instance_id,resource.data.metadata.labels.beta.kubernetes.io/instance-type, resource.data.metadata.labels.kubernetes.io/hostname, resource.data.metadata.labels.cloud.google.com/gke-nodepool, resource.data.status.nodeInfo.containerRuntimeVersion 
 | rename name as Name,resource.data.metadata.name as NodeName, resource.data.metadata.annotations.container.googleapis.com/instance_id as Instance_ID, resource.data.metadata.labels.beta.kubernetes.io/instance-type as InstanceType, resource.data.metadata.labels.kubernetes.io/hostname as HostName, resource.data.metadata.labels.cloud.google.com/gke-nodepool as NodePool, resource.data.status.nodeInfo.containerRuntimeVersion as containerRuntimeVersion
 | eval ProjectID=replace(Name,"^\S+projects\/(\S+)\/(zones|locations)\S*","\1")
 | eval Zone=replace(Name,"^\S+(zones|locations)\/(\S+)\/clusters\S*","\2")
 | eval ClusterName=replace(Name,"^\S+clusters\/(\S+)\/k8s\S*","\1")
+    <!-- |tstats dc(name) where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="k8s.io/Node" by name,resource.data.metadata.name, resource.data.metadata.annotations.container.googleapis.com/instance_id,resource.data.metadata.labels.beta.kubernetes.io/instance-type, resource.data.metadata.labels.kubernetes.io/hostname, resource.data.metadata.labels.cloud.google.com/gke-nodepool, resource.data.status.nodeInfo.containerRuntimeVersion 
+| rename name as Name,resource.data.metadata.name as NodeName, resource.data.metadata.annotations.container.googleapis.com/instance_id as Instance_ID, resource.data.metadata.labels.beta.kubernetes.io/instance-type as InstanceType, resource.data.metadata.labels.kubernetes.io/hostname as HostName, resource.data.metadata.labels.cloud.google.com/gke-nodepool as NodePool, resource.data.status.nodeInfo.containerRuntimeVersion as containerRuntimeVersion
+| eval ProjectID=replace(Name,"^\S+projects\/(\S+)\/(zones|locations)\S*","\1")
+| eval Zone=replace(Name,"^\S+(zones|locations)\/(\S+)\/clusters\S*","\2")
+| eval ClusterName=replace(Name,"^\S+clusters\/(\S+)\/k8s\S*","\1")
+
+-->
     </query>
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
   </search>
-  <label>Containers Overview</label>
-  <description>v1.3</description>
+  
   <fieldset submitButton="false">
     <input type="time" token="time">
       <label>Time</label>
@@ -114,7 +152,7 @@
       <title>Nodes - $cclustername$</title>
       <table>
         <search>
-          <query>|tstats dc(name) where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="k8s.io/Node"  
+          <query>$tstats_dc_name$  `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="k8s.io/Node"  $stats_dc_name$
           by name, resource.data.metadata.annotations.container.googleapis.com/instance_id, resource.data.metadata.labels.kubernetes.io/hostname,  resource.data.status.capacity.ephemeral-storage, resource.data.status.capacity.cpu, resource.data.status.capacity.memory, resource.data.status.capacity.pods, resource.data.status.allocatable.cpu,resource.data.status.allocatable.memory,resource.data.status.allocatable.pods, resource.data.status.allocatable.ephemeral-storage, resource.data.spec.podCIDR, resource.data.metadata.labels.beta.kubernetes.io/instance-type, resource.data.metadata.labels.cloud.google.com/gke-nodepool,resource.data.status.nodeInfo.containerRuntimeVersion
 |rename resource.data.metadata.annotations.container.googleapis.com/instance_id as "Instance ID", resource.data.metadata.labels.kubernetes.io/hostname as Hostname,  resource.data.status.capacity.ephemeral-storage as "Capacity:Ephemeral Storage", resource.data.status.capacity.cpu as "CPU Capacity", resource.data.status.capacity.memory as "Memory Capacity", resource.data.status.capacity.pods as "Capacity: Pods", resource.data.status.allocatable.cpu as "Allocatable CPU",resource.data.status.allocatable.memory as "Allocatable Memory",resource.data.status.allocatable.ephemeral-storage as "Allocatable Ephemeral Storage",resource.data.status.allocatable.pods as "Allocatable Pods", resource.data.spec.podCIDR as "pod CIDR", resource.data.metadata.labels.beta.kubernetes.io/instance-type as "Instance Type", resource.data.metadata.labels.cloud.google.com/gke-nodepool as NodePool, resource.data.status.nodeInfo.containerRuntimeVersion as "Container Runtime Version"
 | eval ProjectID=replace(name,"^\S+projects\/(\S+)\/zones\S*","\1")
@@ -136,7 +174,7 @@
       <title>Namespaces</title>
       <table>
         <search>
-          <query>|tstats dc(name) where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="k8s.io/Namespace" by name, resource.data.metadata.name, resource.data.status.phase
+          <query>$tstats_dc_name$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="k8s.io/Namespace" $stats_dc_name$ by name, resource.data.metadata.name, resource.data.status.phase
 |rename resource.data.metadata.name as Namespace, resource.data.status.phase as StatusPhase, name as Name
 | eval ProjectID=replace(Name,"^\S+projects\/(\S+)\/zones\S*","\1")
 | eval Zone=replace(Name,"^\S+zones\/(\S+)\/clusters\S*","\1")
@@ -156,7 +194,7 @@
       <title>Pods</title>
       <table>
         <search>
-          <query>|tstats dc(name) where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="k8s.io/Pod" by name, resource.data.metadata.name,  resource.data.metadata.namespace, resource.data.spec.nodeName, resource.data.spec.restartPolicy, resource.data.status.hostIP,resource.data.status.podIP, resource.data.status.phase, resource.data.metadata.labels.k8s-app
+          <query>$tstats_dc_name$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="k8s.io/Pod" $stats_dc_name$ by name, resource.data.metadata.name,  resource.data.metadata.namespace, resource.data.spec.nodeName, resource.data.spec.restartPolicy, resource.data.status.hostIP,resource.data.status.podIP, resource.data.status.phase, resource.data.metadata.labels.k8s-app
 |rename resource.data.metadata.name as Pod, resource.data.metadata.namespace as Namespace, resource.data.spec.nodeName as nodeName, resource.data.spec.restartPolicy as restartPolicy, resource.data.status.hostIP as hostIP,resource.data.status.podIP as podIP, resource.data.status.phase as StatusPhase, resource.data.metadata.labels.k8s-app as k8sApp
 | eval ProjectID=replace(name,"^\S+projects\/(\S+)\/zones\S*","\1")
 | eval Zone=replace(name,"^\S+zones\/(\S+)\/clusters\S*","\1")
@@ -176,7 +214,7 @@
       <title>Services</title>
       <table>
         <search>
-          <query>|tstats dc(name) where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata)  asset_type="k8s.io/Service" by name, resource.data.metadata.labels.kubernetes.io/name, resource.data.metadata.namespace, resource.data.spec.clusterIP, resource.data.spec.selector.k8s-app, resource.data.metadata.annotations.kubectl.kubernetes.io/last-applied-configuration
+          <query>$tstats_dc_name$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata)  asset_type="k8s.io/Service" $stats_dc_name$ by name, resource.data.metadata.labels.kubernetes.io/name, resource.data.metadata.namespace, resource.data.spec.clusterIP, resource.data.spec.selector.k8s-app, resource.data.metadata.annotations.kubectl.kubernetes.io/last-applied-configuration
 |rename resource.data.metadata.labels.kubernetes.io/name as Name, resource.data.metadata.namespace as Namespace, resource.data.spec.clusterIP as clusterIP, resource.data.spec.selector.k8s-app as k8s-app, resource.data.metadata.annotations.kubectl.kubernetes.io/last-applied-configuration as last-applied-configuration 
 | eval ProjectID=replace(name,"^\S+projects\/(\S+)\/zones\S*","\1")
 | eval Zone=replace(name,"^\S+zones\/(\S+)\/clusters\S*","\1")
