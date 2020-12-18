@@ -2,14 +2,14 @@
   <collection label ="Operational Views">
        <view name="gcp_infrastructure_activity"/>
        <view name="gcp_asset_inventory"/>
-       <view name="gcp_compute"/>
+       <view name="gcp_compute_overview"/>
        <view name="single_instance"/>
        <view name="gcp_storage_overview"/>
        <view name="gcp_individual_storage"/>
        <view name="gcp_containers_overview"/>
        <view name="gcp_container_details"/>
-       <view name="gcp_cloud_functions"/>	
-       <view name="cloud_function_details"/>
+       <view name="gcp_cloud_functions_overview"/>	
+       <view name="gcp_cloud_function_details"/>
        <view name="gcp_network_overview"/>
        <view name="gcp_gae_overview"/>
        <view name="gcp_bigquery_overview"/>
@@ -19,9 +19,9 @@
        <view name="gcp_iam_overview"/>
        <view name="gcp_audit_overview"/>
        <view name="gcp_audit_investigation"/>
-       <view name="gcp__security"/>
-       <view name="gcp_vpc_logs_dashboards_tstats"/>
-       <view name="gcp_vpc_ts"/>
+       <view name="gcp_security_overview_public_access"/>
+       <view name="gcp_vpc_overview"/>
+       <view name="gcp_vpc_traffic_overview"/>
   </collection>
   <collection label="Search">
         <view name="dashboards"/>

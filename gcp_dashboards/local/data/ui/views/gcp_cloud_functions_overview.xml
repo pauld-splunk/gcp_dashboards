@@ -1,5 +1,8 @@
-<!-- Cloud Functions Details v2.0 -->
+<!-- Cloud Functions Overview v2.0-->
 <form>
+  <label>GCP Cloud Functions Overview (SIM)</label>
+  <description>v2.0</description>
+
   <search id="metrics_source_query">
     <query>
       |makeresults 
@@ -10,7 +13,7 @@
       
       | eval base_info_search=
             if(metricstag=="metrics", 
-              "| mstats max(_value) as _value  WHERE `gcp_metrics` metric_name=\"cloudfunctions.googleapis.com/function/*\" AND   span=1h earliest=$time.earliest$ latest=$time.latest$ BY function_name, project_id,region, memory,status, trigger_metric_name | stats count by function_name,project_id,region, memory,status, trigger_metric_name",
+              "| mstats max(_value) as _value  WHERE `gcp_metrics` metric_name=\"cloudfunctions.googleapis.com/function/*\"  span=1h earliest=$time.earliest$ latest=$time.latest$ BY function_name, project_id,region, memory,status, trigger_metric_name | stats count by function_name,project_id,region, memory,status, trigger_metric_name",
             (if (metricstag=="sim", 
               "| sim flow query=\"data('function/execution_times', filter=filter('service', 'cloudfunctions')).publish()\" | stats count by function_name, project_id, region, memory, status, trigger_type | dedup function_name,project_id",
             (if (metricstag=="addon", "`gcp_metrics` sourcetype=google:gcp:monitoring | stats count by resource.labels.function_name, resource.labels.project_id, resource.labels.region, metric.labels.memory, metric.labels.status, metric.labels.trigger_type |rename resource.labels.function_name as function_name, resource.labels.project_id as project_id, resource.labels.region as region, metric.labels.memory as memory, metric.labels.status as status, metric.labels.trigger_type
@@ -18,7 +21,7 @@
       
       |eval fn_execution=
             if(metricstag=="metrics",
-              "| mstats avg(_value) as _value WHERE `gcp_metrics` metric_name=\"cloudfunctions.googleapis.com/function/execution_times\" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=$secs_for_bin$s BY function_name",
+              "| mstats avg(_value) as _value WHERE `gcp_metrics` metric_name=\"cloudfunctions.googleapis.com/function/execution_times\"  AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=$secs_for_bin$s BY function_name",
             (if (metricstag=="sim", 
               "| sim flow query=\"data('function/execution_times', filter=filter('service', 'cloudfunctions') and filter('project_id','$project_id_tok$') and filter('region','$zone_tok$') and filter('function_name','$function_tok$')).publish()\"",
             (if (metricstag=="addon",
@@ -26,7 +29,7 @@
       
       |eval fn_execution_count=
             if(metricstag=="metrics",
-              "| mstats avg(_value) as _value WHERE `gcp_metrics` metric_name=\"cloudfunctions.googleapis.com/function/execution_count\" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=$secs_for_bin$s BY function_name",
+              "| mstats avg(_value) as _value WHERE `gcp_metrics` metric_name=\"cloudfunctions.googleapis.com/function/execution_count\"  AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=$secs_for_bin$s BY function_name",
             (if (metricstag=="sim", 
               "| sim flow query=\"data('function/execution_count', filter=filter('service', 'cloudfunctions') and filter('project_id','$project_id_tok$') and filter('region','$zone_tok$') and filter('function_name','$function_tok$')).publish()\"",
             (if (metricstag=="addon",
@@ -35,7 +38,7 @@
       
       |eval fn_instances=
           if(metricstag=="metrics",
-            "| mstats avg(_value) as _value WHERE `gcp_metrics` metric_name=\"cloudfunctions.googleapis.com/function/active_instances\" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=$secs_for_bin$s BY function_name",
+            "| mstats avg(_value) as _value WHERE `gcp_metrics` metric_name=\"cloudfunctions.googleapis.com/function/active_instances\"  AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=$secs_for_bin$s BY function_name",
           (if (metricstag=="sim", 
             "| sim flow query=\"data('function/active_instances', filter=filter('service', 'cloudfunctions') and filter('project_id','$project_id_tok$') and filter('region','$zone_tok$') and filter('function_name','$function_tok$')).publish()\"",
           (if (metricstag=="addon",
@@ -44,7 +47,7 @@
       
       |eval fn_memory=
           if(metricstag=="metrics",
-            "| mstats avg(_value) as _value WHERE `gcp_metrics` metric_name=\"cloudfunctions.googleapis.com/function/user_memory_bytes\" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=$secs_for_bin$s BY function_name",
+            "| mstats avg(_value) as _value WHERE `gcp_metrics` metric_name=\"cloudfunctions.googleapis.com/function/user_memory_bytes\"  AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=$secs_for_bin$s BY function_name",
           (if (metricstag=="sim", 
             "| sim flow query=\"data('function/user_memory_bytes', filter=filter('service', 'cloudfunctions') and filter('project_id','$project_id_tok$') and filter('region','$zone_tok$') and filter('function_name','$function_tok$')).publish()\"",
           (if (metricstag=="addon",
@@ -53,12 +56,15 @@
       
       |eval fn_network=
           if(metricstag=="metrics",
-            "| mstats avg(_value) as _value WHERE `gcp_metrics` metric_name=\"cloudfunctions.googleapis.com/function/network_egress\" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=$secs_for_bin$s BY function_name",
+            "| mstats avg(_value) as _value WHERE `gcp_metrics` metric_name=\"cloudfunctions.googleapis.com/function/network_egress\"  AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=$secs_for_bin$s BY function_name",
           (if (metricstag=="sim", 
             "| sim flow query=\"data('function/network_egress', filter=filter('service', 'cloudfunctions') and filter('project_id','$project_id_tok$') and filter('region','$zone_tok$') and filter('function_name','$function_tok$')).publish()\"",
           (if (metricstag=="addon",
             "`gcp_metrics` sourcetype=google:gcp:monitoring resource.labels.project_id=$project_id_tok$ resource.labels.region=$zone_tok$ resource.labels.function_name=$function_tok$ metric.type=cloudfunctions.googleapis.com/function/network_egress
 |rename points{}.value.int64Value as _value resource.labels.function_name as function_name","")))))
+
+        
+             
 
     </query>
     <done>
@@ -80,13 +86,6 @@
       <set token="datatag">$result.datatag$</set>
     </done>
   </search>
-  <search id="baseHead">
-    <query>
-      |makeresults
-      |eval 
-      |eval base_search=if( 
-    </query>
-  </search>
   <search id="tstats_query">
     <query>
       |makeresults 
@@ -107,12 +106,7 @@
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
   </search>
-  <label>GCP Cloud Function Details (SIM)</label>
-  <description>v2.0</description>
-  <init>
-    <set token="minspan">30</set>
-    <set token="show_annotations">*</set>
-  </init>
+  
   <fieldset submitButton="false">
     <input type="time" token="time">
       <label></label>
@@ -151,32 +145,8 @@
         <query>search project_id IN ($project_id_tok$) AND region IN ($zone_tok$) |dedup function_name</query>
       </search>
       <choice value="*">ALL</choice>
-    </input>
-    <input type="dropdown" token="annotate_filter" searchWhenChanged="true">
-      <label>Annotation FIlter</label>
-      <choice value="*">ALL</choice>
-      <choice value="NOTICE">NOTICE</choice>
-      <choice value="INFO">INFO</choice>
-      <choice value="DEBUG">DEBUG</choice>
-      <choice value="ERROR">ERROR</choice>
-      <choice value="CRITICAL">CRITICAL</choice>
       <default>*</default>
       <initialValue>*</initialValue>
-    </input>
-    <input type="radio" token="events_tok" searchWhenChanged="true">
-      <label>Show Events</label>
-      <choice value="TRUE">Show</choice>
-      <choice value="FALSE">Hide</choice>
-      <change>
-        <condition match="($events_tok$ == &quot;TRUE&quot;)">
-          <set token="show_events_tok">SHOW</set>
-        </condition>
-        <condition match="($events_tok$ == &quot;FALSE&quot;)">
-          <unset token="show_events_tok"></unset>
-        </condition>
-      </change>
-      <default>FALSE</default>
-      <initialValue>FALSE</initialValue>
     </input>
     <input type="dropdown" token="time_resolution" searchWhenChanged="true">
       <label>Chart resolution</label>
@@ -195,59 +165,54 @@
       <label>secs_for_bin</label>
       <default>1200</default>
     </input>
-    <input type="checkbox" token="show_annotations_cb" searchWhenChanged="true">
-      <label>Annotations</label>
-      <choice value="On">On</choice>
-      <initialValue>On</initialValue>
-      <change>
-        <eval token="show_annotations">if(isnull($show_annotations_cb$),"somethingthatwouldnotreallybeinalogfileyoushouldthink","*")</eval>
-      </change>
-      <delimiter> </delimiter>
-    </input>
   </fieldset>
-  <row rejects="$function_tok$">
-    <panel>
-      <html>
-        <h1>PLEASE ENTER FUNCTION NAME</h1>
-      </html>
-    </panel>
-  </row>
   <row>
-    <panel depends="$function_tok$">
-      <title>Function</title>
+    <panel>
+      <title>Functions</title>
       <table>
         <search base="baseInfo">
           <query>search project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$)
 | dedup function_name, project_id, region
-| rename function_name as Function, project_id as Project,region as Zone, status as Status, memory as Memory, trigger_metric_name as Trigger
+| rename function_name as Function, project_id as Project,region as Zone, status as Status, memory as Memory, trigger_type as Trigger
 |table Project, Zone, Function, Memory, Status, Trigger</query>
         </search>
         <option name="count">20</option>
         <option name="dataOverlayMode">none</option>
-        <option name="drilldown">none</option>
+        <option name="drilldown">cell</option>
         <option name="percentagesRow">false</option>
         <option name="refresh.display">progressbar</option>
         <option name="rowNumbers">false</option>
         <option name="totalsRow">false</option>
         <option name="wrap">true</option>
+        <drilldown>
+          <link target="_blank">/app/gcp_dashboards/gcp_cloud_function_details?form.project_id_tok=$row.Project$&amp;form.function_tok=$row.Function$</link>
+        </drilldown>
       </table>
     </panel>
   </row>
   <row>
-    <panel depends="$function_tok$">
+    <panel>
+      <html>
+        <center>
+          <h1>Click on a function to see more details</h1>
+        </center>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
       <title>Execution Times (Milliseconds)</title>
       <chart>
         <search>
-          <query>
-                 $fn_execution$
-| eval ms=_value/1000000 
-| timechart avg(ms) as Milliseconds span=$secs_for_bin$s limit=10 useother=false BY function_name
-| fields - _span*</query>
+          <query>$fn_execution$
+| eval ms=_value/1000000
+| timechart avg(ms) as Milliseconds  limit=10 useother=false BY function_name
+</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
-        <search base="annotations" type="annotation"></search>&gt;<option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
         <option name="charting.axisTitleX.visibility">visible</option>
         <option name="charting.axisTitleY.visibility">visible</option>
@@ -274,6 +239,7 @@
         <option name="charting.layout.splitSeries">0</option>
         <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
         <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">seriesCompare</option>
         <option name="charting.legend.placement">right</option>
         <option name="charting.lineWidth">2</option>
         <option name="refresh.display">progressbar</option>
@@ -282,9 +248,7 @@
         <option name="trellis.size">medium</option>
       </chart>
     </panel>
-  </row>
-  <row>
-    <panel depends="$function_tok$">
+    <panel>
       <title>Execution Count</title>
       <chart>
         <search>
@@ -295,7 +259,6 @@
           <latest>$time.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
-        <search base="annotations" type="annotation"></search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
         <option name="charting.axisTitleX.visibility">visible</option>
@@ -323,6 +286,7 @@
         <option name="charting.layout.splitSeries">0</option>
         <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
         <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">seriesCompare</option>
         <option name="charting.legend.placement">right</option>
         <option name="charting.lineWidth">2</option>
         <option name="refresh.display">progressbar</option>
@@ -333,7 +297,7 @@
     </panel>
   </row>
   <row>
-    <panel depends="$function_tok$">
+    <panel>
       <title>Active Instances</title>
       <chart>
         <search>
@@ -344,56 +308,6 @@
           <latest>$time.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
-        <search base="annotations" type="annotation"></search>&gt;<option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
-        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
-        <option name="charting.axisTitleX.visibility">visible</option>
-        <option name="charting.axisTitleY.visibility">visible</option>
-        <option name="charting.axisTitleY2.visibility">visible</option>
-        <option name="charting.axisX.abbreviation">none</option>
-        <option name="charting.axisX.scale">linear</option>
-        <option name="charting.axisY.abbreviation">auto</option>
-        <option name="charting.axisY.includeZero">1</option>
-        <option name="charting.axisY.scale">linear</option>
-        <option name="charting.axisY2.abbreviation">none</option>
-        <option name="charting.axisY2.enabled">0</option>
-        <option name="charting.axisY2.scale">inherit</option>
-        <option name="charting.chart">line</option>
-        <option name="charting.chart.bubbleMaximumSize">50</option>
-        <option name="charting.chart.bubbleMinimumSize">10</option>
-        <option name="charting.chart.bubbleSizeBy">area</option>
-        <option name="charting.chart.nullValueMode">connect</option>
-        <option name="charting.chart.showDataLabels">none</option>
-        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
-        <option name="charting.chart.stackMode">default</option>
-        <option name="charting.chart.style">shiny</option>
-        <option name="charting.drilldown">none</option>
-        <option name="charting.gridLinesX.showMajorLines">1</option>
-        <option name="charting.layout.splitSeries">0</option>
-        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
-        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
-        <option name="charting.legend.placement">right</option>
-        <option name="charting.lineWidth">2</option>
-        <option name="refresh.display">progressbar</option>
-        <option name="trellis.enabled">0</option>
-        <option name="trellis.scales.shared">1</option>
-        <option name="trellis.size">medium</option>
-      </chart>
-    </panel>
-  </row>
-  <row>
-    <panel depends="$function_tok$">
-      <title>Memory (MB)</title>
-      <chart>
-        <search>
-          <query>$fn_memory$
-| eval mb=_value/1024/1024 
-| timechart avg(mb) as MB  limit=10 useother=false span=$secs_for_bin$s BY function_name
-| fields - _span*</query>
-          <earliest>$time.earliest$</earliest>
-          <latest>$time.latest$</latest>
-          <sampleRatio>1</sampleRatio>
-        </search>
-        <search base="annotations" type="annotation"></search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
         <option name="charting.axisTitleX.visibility">visible</option>
@@ -421,6 +335,7 @@
         <option name="charting.layout.splitSeries">0</option>
         <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
         <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">seriesCompare</option>
         <option name="charting.legend.placement">right</option>
         <option name="charting.lineWidth">2</option>
         <option name="refresh.display">progressbar</option>
@@ -429,21 +344,18 @@
         <option name="trellis.size">medium</option>
       </chart>
     </panel>
-  </row>
-  <row>
-    <panel depends="$function_tok$">
+    <panel>
       <title>Network Egress (MB)</title>
       <chart>
         <search>
           <query>$fn_network$
 | eval mb=_value/1024/1024 
-| timechart avg(mb) as MB  limit=10 useother=false span=$secs_for_bin$s BY function_name
+| timechart avg(mb) as MB  limit=10 useother=false BY function_name
 | fields - _span*</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
-        <search base="annotations" type="annotation"></search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
         <option name="charting.axisTitleX.visibility">visible</option>
@@ -471,6 +383,7 @@
         <option name="charting.layout.splitSeries">0</option>
         <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
         <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">seriesCompare</option>
         <option name="charting.legend.placement">right</option>
         <option name="charting.lineWidth">2</option>
         <option name="refresh.display">progressbar</option>
@@ -478,50 +391,6 @@
         <option name="trellis.scales.shared">1</option>
         <option name="trellis.size">medium</option>
       </chart>
-    </panel>
-  </row>
-  <row depends="$selected_function$">
-    <panel depends="$hide$">
-      <table>
-        <search id="eventBase">
-          <query>$tstatstag$ $show_annotations$ `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$resource.labels.function_name=$function_tok$ $datatag$logName=*$project_id_tok$* $tstats_post_tag$
-|rename $datatag$textPayload as textPayload $datatag$protoPayload.methodName as methodName $datatag$severity as severity
-|eval message=if(textPayload!="null",textPayload, methodName)
-|table _time, severity, message</query>
-          <earliest>$time.earliest$</earliest>
-          <latest>$time.latest$</latest>
-        </search>
-        <option name="drilldown">none</option>
-        <option name="refresh.display">progressbar</option>
-      </table>
-    </panel>
-  </row>
-  <row depends="$hide$">
-    <panel>
-      <table>
-        <search base="eventBase" id="annotations">
-          <query>|search severity=$annotate_filter$
-| eval annotation_label=severity
-            |eval annotation_category='message'
-            |top limit=1000 _time, annotation_label,annotation_category 
-            |table _time, annotation*</query>
-        </search>
-        <option name="drilldown">none</option>
-        <option name="refresh.display">progressbar</option>
-      </table>
-    </panel>
-  </row>
-  <row>
-    <panel depends="$show_events_tok$">
-      <event>
-        <title>Events</title>
-        <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message data.resource.labels.function_name=$function_tok$ data.logName=*$project_id_tok$*</query>
-          <earliest>$time.earliest$</earliest>
-          <latest>$time.latest$</latest>
-        </search>
-        <option name="list.drilldown">none</option>
-      </event>
     </panel>
   </row>
 </form>
