@@ -13,7 +13,7 @@
       <set token="tstats_post_midtag">$result.tstats_post_midtag$</set>
       <set token="tstats_post_endtag">$result.tstats_post_endtag$</set>
     </done>
-
+ </search>
   <row>
     <panel>
       <title>Request locations</title>

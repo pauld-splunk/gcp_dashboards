@@ -1,7 +1,7 @@
 <!-- gcp_compute v2.1-->
-<label>GCP Compute Engine Overview</label>
-  <description>v2.1</description>
 <form>
+  <label>GCP Compute Engine Overview</label>
+  <description>v2.1</description>
   <search id="source_data_query">
     <query>
       |makeresults | eval addon="$datatag$"| eval dataflow="" 

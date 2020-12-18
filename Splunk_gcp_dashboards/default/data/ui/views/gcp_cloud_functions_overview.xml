@@ -1,6 +1,6 @@
 <!-- Cloud Functions Overview v2.0-->
 <form>
-  <label>GCP Cloud Functions Overview (SIM)</label>
+  <label>GCP Cloud Functions Overview</label>
   <description>v2.0</description>
 
   <search id="metrics_source_query">
