@@ -5,11 +5,11 @@ Correlate other data sources with GCP Data to provide greater Operational or Sec
 Note - Metrics data can be collected in 3 ways depending on your requirements - GCP Add-On (Event), Cloud Functions (Event or Metrics Store), Splunk Infrastructure Monitoring Add-On.
 
 
-### Pre-requisites / Dependencies:
+## Pre-requisites / Dependencies:
 
 Install the Google Cloud Platform Add-on for the knowledge objects. https://splunkbase.splunk.com/app/3088/
 
-# Add-Ons / Collection methods
+### Add-Ons / Collection methods
 This GCP App supports data to be collected into Splunk via the following methods:
 
 1) Splunk Add-On for Google Cloud Platform (https://splunkbase.splunk.com/app/3088/)
@@ -35,13 +35,13 @@ You will need assets information via Cloud Functions (see https://github.com/spl
 
 ## Setup / Installation
 
-# Macros
+### Macros
 The GCP app requires some initial setup of macros to work with your Splunk environment. Set the macro settings according to the tables below:
 
 
 (Note below your current macro settings - if these are blank/empty, you will need to set them to the correct values before the dashboards work)
 
-# Splunk Add-On for Google Cloud Platform
+### Splunk Add-On for Google Cloud Platform
 If you are collecting the GCP data via the GCP Add-On, then you will need to set the following :
 
 <table>
@@ -50,10 +50,10 @@ If you are collecting the GCP data via the GCP Add-On, then you will need to set
                 <strong>Macro</strong>
               </td>
 <td>
-                <strong>Value (and default)</strong>>
+                <strong>Value (and default)</strong>
               </td>
 <td>
-                <strong>Description</strong>>
+                <strong>Description</strong>
               </td>
 </tr>
 <tr>
@@ -78,7 +78,7 @@ If you are collecting the GCP data via the GCP Add-On, then you will need to set
 </tr>
 </table>
 
-# DataFlow
+### DataFlow
 If you are using DataFlow to collect the data from PubSub, then change the following:
 <table>
 <tr>
@@ -99,7 +99,7 @@ If you are using DataFlow to collect the data from PubSub, then change the follo
 </tr>
 </table>
 
-# SIM / SignalFX
+### SIM / SignalFX
 If you are using the SIM / SignalFX (Splunk Infrastructure Monitoring) to collect metrics from GCP, you will need to use and configure connections on the SIM Add-On - https://splunkbase.splunk.com/app/5247/
 
 Then set the following:
@@ -121,17 +121,17 @@ Then set the following:
 </tr>
 </table>
 
-# Cloud Functions
+### Cloud Functions
 If you are using Cloud Functions to collect PubSub Data then use the defaults per the Add-On.
 However, if you are collecting metrics into the metrics store using the Cloud Functions, use the following:
 
 <table>
 <tr>
 <td>
-                <strong>Macro</strong>>
+                <strong>Macro</strong>
               </td>
 <td>
-                <strong>Value</strong>>
+                <strong>Value</strong>
               </td>
 <td>
                 <b>Description</b>
@@ -157,10 +157,10 @@ If you want to have significantly faster searches using indexed json extractions
 
 <tr>
 <td>
-                <strong>Macro</strong>>
+                <strong>Macro</strong>
               </td>
 <td>
-                <strong>Value (default)</strong>>
+                <strong>Value (default)</strong>
               </td>
 </tr>
 <tr>
@@ -175,10 +175,11 @@ Note also that you will need to apply props.conf and transforms.conf updates to 
 Setting this macro to "notstats" will use standard searches, but will slow down search performance, but will not require any changes to your GCP Add-On configuration.
 
 
-## Props/Transforms
+### Props/Transforms
+
 If you want to use tstats based searches for faster performance, you will need to apply these changes to your props.conf / transforms.conf in the local directory of the GCP Add-On.
 
-# props.conf
+**props.conf**
 
 <pre>
 [google:gcp:pubsub:message]
@@ -219,7 +220,7 @@ INDEXED_EXTRACTIONS = json
 AUTO_KV_JSON = false
 </pre>
 
-# transforms.conf
+**transforms.conf**
 <pre>
 [gcp_set_sourcetype]
 
@@ -243,7 +244,8 @@ FORMAT = sourcetype::google:gcp:compute:vpc_flows
 DEST_KEY = MetaData:Sourcetype
 </pre>
 
-# limits.conf
+
+##limits.conf
 As some of the json in GCP's message payloads are large, you will need to apply this update to your limits.conf: ($SPLUNK_HOME$/etc/system/local/limits.conf)
 
 <pre>
