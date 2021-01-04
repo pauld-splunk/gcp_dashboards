@@ -1,0 +1,346 @@
+<!-- gcp_storage_overview v1.4--><form>
+  <search id="source_data_query">
+    <query>
+      |makeresults | eval addon="data."| eval dataflow="" 
+      |eval datatag=`datatag`
+    </query>
+    <done>
+      <set token="datatag">$result.datatag$</set>
+    </done>
+  </search>
+  <search id="metrics_source_query">
+    <query>
+      |makeresults 
+      | eval addon="addon"
+      | eval metrics="metrics" 
+      | eval sim="sim"
+      | eval metricstag=`metricstag`
+      
+      | eval base_metrics_search=
+            if(metricstag=="metrics", 
+              "| mstats $selected_cpu_aggregator$(_value) prestats=true WHERE metric_name=\"compute.googleapis.com/instance/*\" AND `gcp_metrics` AND instance_id=$selected_instance$  earliest=$time.earliest$ latest=$time.latest$ $secs_for_bin$",
+            (if (metricstag=="sim", 
+              "| sim flow query=\"data('*', filter=filter('service', 'compute') and filter('instance_id','$selected_instance$')).publish()\" resolution=6000 ",
+            (if (metricstag=="addon", "`gcp_metrics` sourcetype=google:gcp:monitoring metric.type=\"compute.googleapis.com/instance*\" resource.labels.instance_id=$selected_instance$ earliest=$time.earliest$ latest=$time.latest$ | rename metric.type AS metric_name points{}.value.int64Value as int64Value points{}.value.doubleValue as doubleValue |eval _value=if(int64Value&gt;0, int64Value, doubleValue)","")))))
+ 
+    </query>
+    <done>
+      <set token="metrics_source">$result.metricstag$</set>
+      <set token="base_metrics_search">$result.base_metrics_search$</set>
+    </done>
+  </search>
+  <search id="tstats_query">
+    <query>
+      |makeresults 
+      |eval usetstats="Yes" 
+      |eval notstats="No"
+      |eval tstatstag=`tstatstag`
+      
+      |eval tstats_count=if(tstatstag=="Yes", "|tstats count where","")
+      |eval tstats_nulls=if(tstatstag=="Yes", "|tstats fillnull_value=\"-\" count where","")
+      
+      |eval tstats_dc_name=if(tstatstag=="Yes", "|tstats dc(name) where","")
+      |eval stats_dc_name=if(tstatstag=="No", "|stats dc(name) ","")
+      
+      |eval stats_count=if(tstatstag=="No", "|stats count ", "")
+      
+      
+      |eval tstats_by_base=if(tstatstag=="Yes"," by name,resource.data.id,resource.data.name,resource.data.type,resource.data.zone,resource.data.status,resource.data.sizeGb", "")
+      
+      |eval tstats_by_size=if(tstatstag=="Yes"," by name, resource.data.sizeGb,_time", "")
+      |eval tstats_by_type=if(tstatstag=="Yes","by name, resource.data.type", "")
+      
+      |eval tstats_gcs=if(tstatstag=="Yes", "|tstats fillnull_value=\"-\" count where","search ")
+      |eval table_gcs=if(tstatstag=="No", "|table "," by ")
+
+      
+    </query>
+    <done>
+      <set token="stats_count">$result.stats_count$</set>
+      <set token="tstats_count">$result.tstats_count$</set>
+      <set token="tstats_nulls">$result.tstats_nulls$</set>
+      <set token="tstats_dc_name">$result.tstats_dc_name$</set>
+      <set token="stats_dc_name">$result.stats_dc_name$</set>
+      <set token="count_type">$result.count_type$</set>
+      <set token="tstats_by_base">$result.tstats_by_base$</set>
+      <set token="tstats_by_id">$result.tstats_by_id$</set>
+      <set token="tstats_by_annotation">$result.tstats_by_annotation$</set>
+      <set token="tstats_by_size">$result.tstats_by_size$</set>
+      <set token="tstats_by_type">$result.tstats_by_type$</set>
+      <set token="tstats_gcs">$result.tstats_gcs$</set>
+      <set token="table_gcs">$result.table_gcs$</set>
+    </done>
+  </search>
+  <search id="baseInfo">
+    <query>
+      <!--
+      |tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata)  asset_type="compute.googleapis.com/Disk" by name,resource.data.id,resource.data.name,resource.data.type,resource.data.zone,resource.data.status,resource.data.sizeGb
+|dedup resource.data.id 
+|rename name as mProjectID, resource.data.type as mType, resource.data.zone as aZone, resource.data.id as ID, resource.data.name as Name, resource.data.status as Status, resource.data.sizeGb as Size 
+| eval Type=replace(mType,"^\S+diskTypes\/(\S+)","\1")
+| eval Zone=replace(aZone,"^\S+zones\/(\S+)","\1")
+| eval ProjectID= replace(mProjectID,"^\S+projects\/(\S+)\/zones\S*","\1")
+-->
+    $tstats_count$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata)  asset_type="compute.googleapis.com/Disk" $tstats_by_base$
+    |dedup resource.data.id 
+    |rename name as mProjectID, resource.data.type as mType, resource.data.zone as mZone, resource.data.id as ID
+| eval Type=replace(mType,"^\S+diskTypes\/(\S+)","\1")
+| eval Zone=replace(mZone,"^\S+zones\/(\S+)","\1")
+| eval ProjectID= replace(mProjectID,"^\S+projects\/(\S+)\/zones\S*","\1")
+|rename resource.data.name as Name, resource.data.status as Status, resource.data.sizeGb as Size 
+|table ProjectID, ID, Name, Zone, Size, Type, Status
+    </query>
+    <earliest>$time_tok.earliest$</earliest>
+    <latest>$time_tok.latest$</latest>
+  </search>
+  <search id="connectedDisks">
+    <query>`gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type="compute.googleapis.com/Instance" earliest=$time_tok.earliest$ latest=$time_tok.latest$
+|eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
+|eval Zone=replace(name,"^\S+zones\/(\S+)\/instances\/\S+","\1") 
+|search projectid IN ($project_id_tok$) Zone IN ($zone_tok$)
+|spath output=disklist path=resource.data.disks{}  
+|rex max_match=20 field=disklist "source\":\"https:\/\/www.googleapis.com\/compute\/v1\/projects\/(?&lt;diskval&gt;\S*)\","  
+|mvexpand diskval |table diskval |dedup diskval|stats count
+</query>
+    <done>
+      <set token="connected_storage">$result.count$</set>
+    </done>
+  </search>
+  <search id="unnatachedDisks">
+    <query>$tstats_dc_name$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk" earliest=$time_tok.earliest$ latest=$time_tok.latest$  $stats_dc_name$   by name
+            |eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
+            |eval Zone=replace(name,"^\S+zones\/(\S+)\/disks\/\S+","\1") 
+            |dedup name
+            |search projectid IN ($project_id_tok$) Zone IN ($zone_tok$)
+            |stats count|eval unattached=count-$connected_storage$|fields unattached
+      <!--|tstats dc(name) where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk" earliest=$time_tok.earliest$ latest=$time_tok.latest$ by name
+|eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
+|eval Zone=replace(name,"^\S+zones\/(\S+)\/disks\/\S+","\1") 
+|dedup name
+|search projectid IN ($project_id_tok$) Zone IN ($zone_tok$)
+|stats count|eval unattached=count-$connected_storage$|fields unattached
+-->
+    </query>
+    <done>
+      <set token="disconnected_storage">$result.unattached$</set>
+    </done>
+  </search>
+  <label>GCP Storage Overview</label>
+  <description>v1.4</description>
+  <fieldset submitButton="false" autoRun="true">
+    <input type="time" token="time_tok" searchWhenChanged="true">
+      <label>Time Range</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="dropdown" token="project_id_tok" searchWhenChanged="true">
+      <label>Project ID</label>
+      <choice value="*">ALL</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <fieldForLabel>ProjectID</fieldForLabel>
+      <fieldForValue>ProjectID</fieldForValue>
+      <search base="baseInfo">
+        <query>dedup ProjectID</query>
+      </search>
+    </input>
+    <input type="dropdown" token="zone_tok" searchWhenChanged="true">
+      <label>Zones</label>
+      <choice value="*">ALL</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <fieldForLabel>Zone</fieldForLabel>
+      <fieldForValue>Zone</fieldForValue>
+      <search base="baseInfo">
+        <query>search ProjectID IN ($project_id_tok$)|dedup Zone</query>
+      </search>
+    </input>
+    <input type="dropdown" token="instance_tok" searchWhenChanged="true">
+      <label>Storage</label>
+      <choice value="*">ALL</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+      <fieldForLabel>Name</fieldForLabel>
+      <fieldForValue>Name</fieldForValue>
+      <search base="baseInfo">
+        <query>search ProjectID IN ($project_id_tok$) AND Zone IN ($zone_tok$) |table Name</query>
+      </search>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Compute Instance Storage:</title>
+      <html>
+        <center>
+        <h1 style="background-color:MediumSeaGreen;">Connected Storage Instances: $connected_storage$</h1>
+        <h1 style="background-color:Tomato;">Disconnected Storage :$disconnected_storage$</h1>
+        </center>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Connected Compute Storage Instances by Zones</title>
+      <chart>
+        <search>
+          <query>`gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type="compute.googleapis.com/Instance" 
+|eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
+|eval Zone=replace(name,"^\S+zones\/(\S+)\/instances\/\S+","\1") 
+|search projectid IN ($project_id_tok$) Zone IN ($zone_tok$)
+|spath output=disklist path=resource.data.disks{}  
+| rex max_match=20 field=disklist "source\":\"https:\/\/www.googleapis.com\/compute\/v1\/projects\/(?&lt;diskval&gt;\S*)\","  
+|dedup diskval
+|eval count=mvcount(diskval)
+|stats count by Zone</query>
+          <earliest>-6h@m</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Compute Disk Instances by Size</title>
+      <chart>
+        <search>
+          <query>
+          $tstats_dc_name$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk" $tstats_by_size$
+          |rename resource.data.sizeGb as Size 
+          |eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
+          |search projectid IN ($project_id_tok$)
+          |eval Zone=replace(name,"^\S+zones\/(\S+)\/instances\/\S+","\1")
+          |search Zone IN ($zone_tok$)
+          |stats latest(name) latest(Size) by name
+          |stats count by latest(Size)
+          |rename latest(Size) as Size
+            <!-- |tstats dc(name) where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk" by name, resource.data.sizeGb,_time
+          |rename resource.data.sizeGb as Size 
+          |eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
+          |search projectid IN ($project_id_tok$)
+          |eval Zone=replace(name,"^\S+zones\/(\S+)\/instances\/\S+","\1")
+          |search Zone IN ($zone_tok$)
+          |stats latest(name) latest(Size) by name
+          |stats count by latest(Size)
+          |rename latest(Size) as Size -->
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Compute Disk Instances by Type</title>
+      <chart>
+        <search>
+          <query>$tstats_dc_name$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk" $tstats_by_type$
+|dedup name
+|eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
+|search projectid IN ($project_id_tok$)
+|eval Zone=replace(name,"^\S+zones\/(\S+)\/instances\/\S+","\1")
+|search Zone IN ($zone_tok$)
+|rename resource.data.type as sType 
+| eval Type=replace(sType,"\S+diskTypes\/(\S+)","\1")
+|stats count by Type</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Compute Disks</title>
+      <table>
+        <search base="baseInfo">
+          <query>search</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Unattached Compute Disks</title>
+      <table>
+        <search>
+          <query>| set diff
+[search `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type="compute.googleapis.com/Instance" 
+|eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
+|eval Zone=replace(name,"^\S+zones\/(\S+)\/instances\/\S+","\1")
+|search projectid IN ($project_id_tok$) Zone IN ($zone_tok$)
+|spath output=disklist path=resource.data.disks{}  
+|rex max_match=20 field=disklist "source\":\"https:\/\/www.googleapis.com\/compute\/v1\/projects\/(?&lt;diskName&gt;\S*)\","  
+|mvexpand diskName
+|dedup diskName
+|fields diskName
+|fields - _*
+]
+[search `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk"
+|eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
+|eval Zone=replace(name,"^\S+zones\/(\S+)\/disks\/\S+","\1")
+|search projectid IN ($project_id_tok$) Zone IN ($zone_tok$)
+|eval diskName=replace(name,"^\S+projects\/(\S+)","\1")
+|dedup diskName
+|fields diskName
+|fields - _*
+]</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Google Cloud Storage (GCS) Buckets</title>
+      <table>
+        <search>
+          <query>$tstats_nulls$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="storage.googleapis.com/Bucket" $table_gcs$ resource.data.id, resource.data.location, resource.data.locationType, resource.data.projectNumber, resource.data.storageClass, resource.data.retentionPolicy.retentionPeriod, resource.data.retentionPolicy.effectiveTime, resource.data.retentionPolicy.isLocked, ancestors{}
+| rename "ancestors{}" as ancestors
+|search ancestors=$project_id_tok$
+|rename resource.data.projectNumber as project_number
+| join project_number [ $tstats_gcs$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata)  asset_type=compute.googleapis.com/Project $table_gcs$ resource.parent, resource.data.name
+|rename resource.parent as parent resource.data.name as ProjectID
+|eval project_number=replace(parent,"\S+projects\/(\d+)","\1")
+|fields - count, - parent]
+|table ProjectID, resource.data.id, resource.data.location, resource.data.locationType, resource.data.storageClass, resource.data.retentionPolicy.retentionPeriod, resource.data.retentionPolicy.effectiveTime, resource.data.retentionPolicy.isLocked
+|rename resource.data.id as Bucket, resource.data.location as Location, resource.data.locationType as "Location Type", resource.data.storageClass as "Storage Class", resource.data.retentionPolicy.retentionPeriod as "Retention Period", resource.data.retentionPolicy.effectiveTime as "Retention Effective Time", resource.data.retentionPolicy.isLocked as "Retention Policy Locked"
+|dedup ProjectID Bucket
+            <!--|tstats fillnull_value="-" count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="storage.googleapis.com/Bucket" by resource.data.id, resource.data.location, resource.data.locationType, resource.data.projectNumber, resource.data.storageClass, resource.data.retentionPolicy.retentionPeriod, resource.data.retentionPolicy.effectiveTime, resource.data.retentionPolicy.isLocked
+|rename resource.data.projectNumber as project_number
+| join project_number [ |tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata)  asset_type=compute.googleapis.com/Project by resource.parent, resource.data.name
+|rename resource.parent as parent resource.data.name as ProjectID
+|eval project_number=replace(parent,"\S+projects\/(\d+)","\1")
+|fields - count, - parent]
+|search ProjectID=$project_id_tok$
+|table ProjectID, resource.data.id, resource.data.location, resource.data.locationType, resource.data.storageClass, resource.data.retentionPolicy.retentionPeriod, resource.data.retentionPolicy.effectiveTime, resource.data.retentionPolicy.isLocked
+|rename resource.data.location as Location, resource.data.locationType as "Location Type", resource.data.storageClass as "Storage Class", resource.data.retentionPolicy.retentionPeriod as "Retention Period", resource.data.retentionPolicy.effectiveTime as "Retention Effective Time", resource.data.retentionPolicy.isLocked as "Retention Policy Locked" -->
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>

@@ -1,6 +1,6 @@
 <form>
   <label>GCP Single Instance Details</label>
-  <description>v2.2</description>
+  <description>v2.3</description>
   <init>
     <set token="minspan">60</set>
   </init>
@@ -341,7 +341,7 @@
       </chart>
     </panel>
   </row>
-  <row>
+  <row depends="$selected_instance$">
     <panel>
       <title>Disk - MBytes (Read/Write)</title>
       <input type="dropdown" token="selected_netsent_aggregator">
@@ -463,7 +463,7 @@
       </chart>
     </panel>
   </row>
-  <row>
+  <row depends="$selected_instance$">
     <panel>
       <title>Network - Packets Count (Read/Write)</title>
       <input type="dropdown" token="selected_netsent_aggregator">
