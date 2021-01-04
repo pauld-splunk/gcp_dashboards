@@ -245,7 +245,7 @@ DEST_KEY = MetaData:Sourcetype
 </pre>
 
 
-##limits.conf
+## limits.conf
 As some of the json in GCP's message payloads are large, you will need to apply this update to your limits.conf: ($SPLUNK_HOME$/etc/system/local/limits.conf)
 
 <pre>
