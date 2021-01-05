@@ -45,58 +45,18 @@ The GCP app requires some initial setup of macros to work with your Splunk envir
 If you are collecting the GCP data via the GCP Add-On, then you will need to set the following :
 
 <table>
-<tr>
-<td>
-                <strong>Macro</strong>
-              </td>
-<td>
-                <strong>Value (and default)</strong>
-              </td>
-<td>
-                <strong>Description</strong>
-              </td>
-</tr>
-<tr>
-<td>gcp_index</td>
-<td>index=gcp_index</td>
-<td>Sets the index where the GCP Data will be stored by the Add-On</td>
-</tr>
-<tr>
-<td>datatag</td>
-<td>addon</td>
-<td>Adds "data." as a JSON wrapper for PubSub Data</td>
-</tr>
-<tr>
-<td>metricstag</td>
-<td>addon</td>
-<td>Sets the dashboards to use event based metrics from the Add-On</td>
-</tr>
-<tr>
-<td>gcp_metrics</td>
-<td>index=gcp_metrics</td>
-<td>Sets the event index where the add-on stores the metrics</td>
-</tr>
+<tr><td><strong>Macro</strong></td><td><strong>Value (and default)</strong></td><td><strong>Description</strong></td></tr>
+<tr><td>gcp_index</td><td>index=gcp_index</td><td>Sets the index where the GCP Data will be stored by the Add-On</td></tr>
+<tr><td>datatag</td><td>addon</td><td>Adds "data." as a JSON wrapper for PubSub Data</td></tr>
+<tr><td>metricstag</td><td>addon</td><td>Sets the dashboards to use event based metrics from the Add-On</td></tr>
+<tr><td>gcp_metrics</td><td>index=gcp_metrics</td><td>Sets the event index where the add-on stores the metrics</td></tr>
 </table>
 
 ### DataFlow
 If you are using DataFlow to collect the data from PubSub, then change the following:
 <table>
-<tr>
-<td>
-                <strong>Macro</strong>
-              </td>
-<td>
-                <strong>Value</strong>
-              </td>
-<td>
-                <strong>Description</strong>
-              </td>
-</tr>
-<tr>
-<td>datatag</td>
-<td>dataflow</td>
-<td>The payload from PubSub isn't "wrapped" by "data."</td>
-</tr>
+<tr><td><strong>Macro</strong></td><td><strong>Value</strong></td><td><strong>Description</strong></td></tr>
+<tr><td>datatag</td><td>dataflow</td><td>The payload from PubSub isn't "wrapped" by "data."</td></tr>
 </table>
 
 ### SIM / SignalFX
@@ -104,21 +64,8 @@ If you are using the SIM / SignalFX (Splunk Infrastructure Monitoring) to collec
 
 Then set the following:
 <table>
-<tr>
-<td><strong>Macro</strong>
-              </td>
-<td>
-                <strong>Value</strong>
-              </td>
-<td>
-                <strong>Description</strong>
-              </td>
-</tr>
-<tr>
-<td>metricstag</td>
-<td>sim</td>
-<td>Sets the dashboards to use metrics collected from SIM / SignalFX using the Add-On</td>
-</tr>
+<tr><td><strong>Macro</strong></td><td><strong>Value</strong></td><td><strong>Description</strong></td></tr>
+<tr><td>metricstag</td><td>sim</td><td>Sets the dashboards to use metrics collected from SIM / SignalFX using the Add-On</td></tr>
 </table>
 
 ### Cloud Functions
@@ -126,48 +73,17 @@ If you are using Cloud Functions to collect PubSub Data then use the defaults pe
 However, if you are collecting metrics into the metrics store using the Cloud Functions, use the following:
 
 <table>
-<tr>
-<td>
-                <strong>Macro</strong>
-              </td>
-<td>
-                <strong>Value</strong>
-              </td>
-<td>
-                <b>Description</b>
-              </td>
-</tr>
-<tr>
-<td>metricstag</td>
-<td>metrics</td>
-<td>Sets the dashboards to use metrics store</td>
-</tr>
-<tr>
-<td>gcp_metrics</td>
-<td>index=gcp_metrics</td>
-<td>Ensure that this index is a METRICS index not event</td>
-</tr>
-
+<tr><td><strong>Macro</strong></td><td><strong>Value</strong></td><td><b>Description</b></td></tr>
+<tr><td>metricstag</td><td>metrics</td><td>Sets the dashboards to use metrics store</td></tr>
+<tr><td>gcp_metrics</td><td>index=gcp_metrics</td><td>Ensure that this index is a METRICS index not event</td></tr>
 </table>
 
 ## Search Performance
 If you want to have significantly faster searches using indexed json extractions with tstats, you will need to set the following:
 
 <table>
-
-<tr>
-<td>
-                <strong>Macro</strong>
-              </td>
-<td>
-                <strong>Value (default)</strong>
-              </td>
-</tr>
-<tr>
-<td>tstatstag</td>
-<td>usetstats</td>
-</tr>
-
+<tr><td><strong>Macro</strong></td><td><strong>Value (default)</strong></td></tr>
+<tr><td>tstatstag</td><td>usetstats</td></tr>
 </table>
 
 Note also that you will need to apply props.conf and transforms.conf updates to your local GCP-Add-on settings to apply this. (see below).
@@ -256,3 +172,9 @@ maxchars = 20480
 maxcols = 0
 max_extractor_time = 2000
 </pre>
+
+# Release Notes
+
+## Version 1.0 Jan 2021
+
+Initial release
