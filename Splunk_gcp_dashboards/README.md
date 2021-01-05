@@ -68,7 +68,7 @@ Then set the following:
 <tr><td>metricstag</td><td>sim</td><td>Sets the dashboards to use metrics collected from SIM / SignalFX using the Add-On</td></tr>
 </table>
 
-### Cloud Functions
+## Cloud Functions
 
 If you are using Cloud Functions to collect PubSub Data then use the defaults per the Add-On.
 However, if you are collecting metrics into the metrics store using the Cloud Functions, use the following:
