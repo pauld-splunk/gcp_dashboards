@@ -28,7 +28,7 @@
 <br/>(Note below your current macro settings - if these are blank/empty, you will need to set them to the correct values before the dashboards work)
 
 <p><b>Splunk Add-On for Google Cloud Platform</b>
-<br/>If you are collecting the GCP data via the GCP Add-On, then you will need to set the following :<br/>
+<br/>If you are collecting the GCP Pub-Sub data via the GCP Add-On, and also collecting metrics via the Add-On, then you will need to set the following :<br/>
         </p>
 <table style="border-collapse: collapse; width: 50%;" border="1">
 <tbody>
@@ -65,9 +65,10 @@
 </tr>
 </tbody>
 </table>
+(note that if you are collecting metrics via Cloud Functions into Metrics store or using SIM, then the two metrics macros need to be set per the instructions below)
 <br/>
 <p><b>DataFlow</b>
-<br/>If you are using DataFlow to collect the data from PubSub, then change the following:</p>
+<br/>If you are using DataFlow (without transformations) to collect the data from PubSub, then change the following:</p>
 <table style="border-collapse: collapse; width: 50%;" border="1">
 <tbody>
 <tr>
@@ -115,7 +116,9 @@
 </table>
 <br/>
 <p><b>Cloud Functions</b>
-<br/>If you are using Cloud Functions to collect PubSub Data then use the defaults per the Add-On.<br/>However, if you are collecting metrics into the metrics store using the Cloud Functions, use the following:</p>
+<br/>PubSub: Cloud Functions can send data in either Add-On or DataFlow formats - refer to the function documentation for details, and set the macros accordingly.
+<br/>Metrics: Cloud Functions can send metrics in either Add-On format (event index) or into Metrics Store. If you are collecting metrics into the event index, use the same settings as the Add-On, otherwise if using the metrics store, use the following:
+</p>
 <table style="border-collapse: collapse; width: 50%;" border="1">
 <tbody>
 <tr>

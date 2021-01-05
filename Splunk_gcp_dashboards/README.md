@@ -4,6 +4,9 @@ This application template provides visualizations, reports, and searches for Goo
 Correlate other data sources with GCP Data to provide greater Operational or Security Intelligence.
 Note - Metrics data can be collected in 3 ways depending on your requirements - GCP Add-On (Event), Cloud Functions (Event or Metrics Store), Splunk Infrastructure Monitoring Add-On.
 
+Each dashboard has the flexibility to allow for different collection and indexing methods. The reason for the need for this flexibility is that the format of the json (the data collected from PubSub differs between the Add-on and DataFlow with an additional "data." prefix for json content). Also, for performance reasons, it may be beneficial to use indexed extractions for the json content, which will allow for faster searches with tstats - the dashboards can be configured to use either standard and tstats searches. (see below for setup instructions)
+Where metrics are required, it is possible to use metrics collected via the Add-On, Cloud functions (into metrics store), or by pulling from Splunk Infrastructure Monitoring using the SIM Add-On.
+
 
 ## Pre-requisites / Dependencies:
 
@@ -39,10 +42,10 @@ You will need assets information via Cloud Functions (see https://github.com/spl
 The GCP app requires some initial setup of macros to work with your Splunk environment. Set the macro settings according to the tables below:
 
 
-(Note below your current macro settings - if these are blank/empty, you will need to set them to the correct values before the dashboards work)
+(Note that the current macro settings for the app can be viewed on the "setup" page on the App - if these are blank/empty, you will need to set them to the correct values before the dashboards work)
 
 ### Splunk Add-On for Google Cloud Platform
-If you are collecting the GCP data via the GCP Add-On, then you will need to set the following :
+If you are collecting the GCP Pub-Sub data via the GCP Add-On, and also collecting metrics via the Add-On, then you will need to set the following :
 
 <table>
 <tr><td><strong>Macro</strong></td><td><strong>Value (and default)</strong></td><td><strong>Description</strong></td></tr>
@@ -51,9 +54,10 @@ If you are collecting the GCP data via the GCP Add-On, then you will need to set
 <tr><td>metricstag</td><td>addon</td><td>Sets the dashboards to use event based metrics from the Add-On</td></tr>
 <tr><td>gcp_metrics</td><td>index=gcp_metrics</td><td>Sets the event index where the add-on stores the metrics</td></tr>
 </table>
+(note that if you are collecting metrics via Cloud Functions into Metrics store or using SIM, then the two metrics macros need to be set per the instructions below)
 
 ### DataFlow
-If you are using DataFlow to collect the data from PubSub, then change the following:
+If you are using DataFlow (without transformations) to collect the data from PubSub, then change the following:
 <table>
 <tr><td><strong>Macro</strong></td><td><strong>Value</strong></td><td><strong>Description</strong></td></tr>
 <tr><td>datatag</td><td>dataflow</td><td>The payload from PubSub isn't "wrapped" by "data."</td></tr>
@@ -70,8 +74,8 @@ Then set the following:
 
 ### Cloud Functions
 
-If you are using Cloud Functions to collect PubSub Data then use the defaults per the Add-On.
-However, if you are collecting metrics into the metrics store using the Cloud Functions, use the following:
+PubSub: Cloud Functions can send data in either Add-On or DataFlow formats - refer to the function documentation for details, and set the macros accordingly.
+Metrics: Cloud Functions can send metrics in either Add-On format (event index) or into Metrics Store. If you are collecting metrics into the event index, use the same settings as the Add-On, otherwise if using the metrics store, use the following:
 
 <table>
 <tr><td><strong>Macro</strong></td><td><strong>Value</strong></td><td><b>Description</b></td></tr>
