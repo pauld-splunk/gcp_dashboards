@@ -4,7 +4,7 @@ This application template provides visualizations, reports, and searches for Goo
 Correlate other data sources with GCP Data to provide greater Operational or Security Intelligence.
 Note - Metrics data can be collected in 3 ways depending on your requirements - GCP Add-On (Event), Cloud Functions (Event or Metrics Store), Splunk Infrastructure Monitoring Add-On.
 
-Each dashboard has the flexibility to allow for different collection and indexing methods. The reason for the need for this flexibility is that the format of the json (the data collected from PubSub differs between the Add-on and DataFlow with an additional "data." prefix for json content). Also, for performance reasons, it may be beneficial to use indexed extractions for the json content, which will allow for faster searches with tstats - the dashboards can be configured to use either standard and tstats searches. (see below for setup instructions)
+Each dashboard has the flexibility to allow for different collection and indexing methods. The reason for the need for this flexibility is that the format of the json data collected from PubSub differs between the Add-on and DataFlow - an additional "data." prefix layer is present with json content from the Add-On. Also, for performance reasons, it may be beneficial to use indexed extractions for the json content, which will allow for faster searches with tstats - the dashboards can be configured to use either standard and tstats searches. (see below for setup instructions)
 Where metrics are required, it is possible to use metrics collected via the Add-On, Cloud functions (into metrics store), or by pulling from Splunk Infrastructure Monitoring using the SIM Add-On.
 
 
