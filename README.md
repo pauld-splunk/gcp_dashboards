@@ -24,5 +24,5 @@ indexed_kv_limit = 0
 maxchars = 20480
 maxcols = 0
 max_extractor_time = 2000
-<pre>
+</pre>
 
