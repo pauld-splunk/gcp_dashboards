@@ -1,6 +1,7 @@
+<!-- v1.4-->
 <form>
   <label>GCP Containers Metrics</label>
-  <description>v1.4</description>
+
   <init>
     <set token="minspan">60</set>
     <set token="show_annotations">*</set>

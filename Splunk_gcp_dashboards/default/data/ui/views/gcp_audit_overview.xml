@@ -1,6 +1,7 @@
+<!-- v1.3-->
 <form>
   <label>GCP Audit Overview</label>
-  <description>v1.3</description>
+  
   <search id="source_data_query">
     <query>
       |makeresults | eval addon="data."| eval dataflow="" 

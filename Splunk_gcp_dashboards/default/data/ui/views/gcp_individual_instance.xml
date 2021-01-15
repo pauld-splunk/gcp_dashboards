@@ -1,6 +1,7 @@
+<!-- v2.3-->
 <form>
   <label>GCP Single Instance Details</label>
-  <description>v2.3</description>
+  
   <init>
     <set token="minspan">60</set>
   </init>

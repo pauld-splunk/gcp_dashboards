@@ -1,6 +1,7 @@
+<!-- v2.2-->
 <form>
   <label>GCP Audit Investigation</label>
-  <description>v2.2</description>
+  
   <init>
     <set token="minspan">1</set>
     <set token="show_annotations">*</set>

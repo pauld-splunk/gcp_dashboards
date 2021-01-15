@@ -1,7 +1,7 @@
 <!-- Cloud Functions Overview v2.1-->
 <form>
   <label>GCP Cloud Functions Overview</label>
-  <description>v2.1</description>
+  
 
   <search id="metrics_source_query">
     <query>

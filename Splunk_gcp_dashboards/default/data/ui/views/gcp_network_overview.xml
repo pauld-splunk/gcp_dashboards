@@ -1,6 +1,7 @@
+<!-- v1.3-->
 <form>
   <label>GCP Network Overview</label>
-  <description>v 1.3</description>
+
   <search id="tstats_query">
     <query>
       |makeresults 

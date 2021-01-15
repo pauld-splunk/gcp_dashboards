@@ -1,6 +1,7 @@
+<!-- v1.4-->
 <form>
    <label>GCP VPC Overview Dashboard</label>
-  <description>v1.4</description>
+
   <search id="base_vpc">
     <query>
     |tstats count  fillnull_value="-null-" where `gcp_index` (sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:compute:vpc_flows) by _time, data.logName,data.resource.labels.project_id, data.resource.labels.location, data.jsonPayload.src_vpc.vpc_name, data.resource.labels.subnetwork_name, data.jsonPayload.src_instance.vm_name, data.jsonPayload.connection.src_ip,  data.jsonPayload.dest_vpc.vpc_name, data.jsonPayload.dest_instance.vm_name, data.jsonPayload.connection.dest_ip, data.jsonPayload.bytes_sent, data.jsonPayload.packets_sent

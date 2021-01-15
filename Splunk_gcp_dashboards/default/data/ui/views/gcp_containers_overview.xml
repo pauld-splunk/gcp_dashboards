@@ -1,9 +1,7 @@
+<!-- v1.4-->
 <form>
   <label>Containers Overview</label>
-  <description>v1.4</description>
-  
-  
-  <search id="source_data_query">
+    <search id="source_data_query">
     <query>
       |makeresults | eval addon="data."| eval dataflow="" 
       |eval datatag=`datatag`

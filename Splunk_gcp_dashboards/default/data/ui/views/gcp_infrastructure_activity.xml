@@ -1,4 +1,5 @@
-<!-- infrastructure activity v1.9 --><form>
+<!-- infrastructure activity v1.9 -->
+<form>
   <init>
     <set token="minspan">1</set>
   </init>

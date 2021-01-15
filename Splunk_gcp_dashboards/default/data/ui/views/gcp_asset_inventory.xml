@@ -1,7 +1,7 @@
 <!-- v1.5-->
 <form>
   <label>GCP Asset Inventory</label>
-  <description>v1.5</description>
+  
   
   <search id="tstats_query">
     <query>

@@ -1,7 +1,6 @@
 <!-- gcp_compute v2.2-->
 <form>
   <label>GCP Compute Engine Overview</label>
-  <description>v2.2</description>
 
   <search id="source_data_query">
     <query>

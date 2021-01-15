@@ -1,6 +1,6 @@
 <!-- gcp individual storage v1.3--><form>
   <label>GCP Individual Storage</label>
-  <description>v1.3</description>
+ 
   <search id="source_data_query">
     <query>
       |makeresults | eval addon="data."| eval dataflow="" 

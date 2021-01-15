@@ -1,6 +1,7 @@
+<!-- v1.0-->
 <form>
   <label>BigQuery Overview</label>
-  <description>v1.0</description>
+  
   <search id="source_data_query">
     <query>
       |makeresults | eval addon="data."| eval dataflow="" 

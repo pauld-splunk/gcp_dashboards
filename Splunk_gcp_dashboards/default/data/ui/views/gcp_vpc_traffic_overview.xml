@@ -1,6 +1,7 @@
+<!--v1.1-->
 <form>
   <label>GCP VPC Traffic Overview</label>
-  <description>v1.1</description>
+  
   <fieldset submitButton="false">
     <input type="time" token="field1">
       <label></label>
