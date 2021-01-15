@@ -1,7 +1,7 @@
-<!-- Cloud Functions Overview v2.0-->
+<!-- Cloud Functions Overview v2.1-->
 <form>
   <label>GCP Cloud Functions Overview</label>
-  <description>v2.0</description>
+  <description>v2.1</description>
 
   <search id="metrics_source_query">
     <query>
@@ -185,7 +185,7 @@
         <option name="totalsRow">false</option>
         <option name="wrap">true</option>
         <drilldown>
-          <link target="_blank">/app/gcp_dashboards/gcp_cloud_function_details?form.project_id_tok=$row.Project$&amp;form.function_tok=$row.Function$</link>
+          <link target="_blank">/app/Splunk_gcp_dashboards/gcp_cloud_function_details?form.project_id_tok=$row.Project$&amp;form.function_tok=$row.Function$</link>
         </drilldown>
       </table>
     </panel>

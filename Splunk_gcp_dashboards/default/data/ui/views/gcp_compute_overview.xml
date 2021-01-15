@@ -1,7 +1,7 @@
-<!-- gcp_compute v2.1-->
+<!-- gcp_compute v2.2-->
 <form>
   <label>GCP Compute Engine Overview</label>
-  <description>v2.1</description>
+  <description>v2.2</description>
 
   <search id="source_data_query">
     <query>
@@ -197,7 +197,7 @@
         <option name="drilldown">cell</option>
         <option name="refresh.display">progressbar</option>
         <drilldown>
-          <link target="_blank">/app/gcp_dashboards/gcp_individual_instance?form.selected_instance=$click.value$</link>
+          <link target="_blank">/app/Splunk_gcp_dashboards/gcp_individual_instance?form.selected_instance=$click.value$</link>
         </drilldown>
       </table>
     </panel>
