@@ -1,5 +1,7 @@
 <!-- infrastructure activity v1.9 -->
 <form>
+  <label>GCP Infrastructure Activity</label>
+  
   <init>
     <set token="minspan">1</set>
   </init>
@@ -169,8 +171,7 @@ $datatag$protoPayload.methodName, $datatag$resource.type, $datatag$timestamp, $d
       <set token="deletes_tok">$result.count$</set>
     </done>
   </search>
-  <label>GCP Infrastructure Activity</label>
-  <description>v1.9</description>
+  
   <fieldset submitButton="false"></fieldset>
   <row>
     <panel>
