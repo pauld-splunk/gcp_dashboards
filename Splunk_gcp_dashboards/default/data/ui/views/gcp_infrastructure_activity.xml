@@ -1,4 +1,4 @@
-<!-- infrastructure activity v1.9 -->
+<!-- infrastructure activity v1.10 -->
 <form>
   <label>GCP Infrastructure Activity</label>
   
@@ -56,7 +56,7 @@ $datatag$protoPayload.methodName, $datatag$resource.type, $datatag$timestamp, $d
     </done>
   </search>
   <search id="projects">
-    <query>$tstats_nulls$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata OR sourcetype=google:gcp:compute:instance) $stats_count$ by name, resource.parent
+    <query>$tstats_nulls$ `gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata OR sourcetype=google:gcp:compute:instance) $stats_count$ by name, resource.parent
 |rex max_match=1 field=name "\S+\/projects\/(?&lt;projectid&gt;\S+)\/(zones|regions|global|topics|subscriptions|serviceAccounts)\/\S*"
 |rename resource.parent as parent
 |rex max_match=1 field=parent "\S*\/projects\/(?&lt;id&gt;\d*)"
@@ -73,7 +73,7 @@ $datatag$protoPayload.methodName, $datatag$resource.type, $datatag$timestamp, $d
     </done>
   </search>
   <search id="topLevelAssets">
-    <query>$tstats_dc_name$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata OR sourcetype=google:gcp:compute:instance) $stats_dc_name$ by ancestors{}, asset_type | rename ancestors{} as ancestors</query>
+    <query>$tstats_dc_name$ `gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata OR sourcetype=google:gcp:compute:instance) $stats_dc_name$ by ancestors{}, asset_type | rename ancestors{} as ancestors</query>
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
   </search>
@@ -132,7 +132,7 @@ $datatag$protoPayload.methodName, $datatag$resource.type, $datatag$timestamp, $d
     </done>
   </search>
   <search id="containersclusters">
-    <query>$tstats_count$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="k8s.io/Node" $stats_count$ by name, ancestors{}
+    <query>$tstats_count$ `gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="k8s.io/Node" $stats_count$ by name, ancestors{}
 |rename ancestors{} as ancestors 
 |search ancestors=*$projectNumber$
 |eval ClusterName=replace(name,"(^\S+clusters\/\S+)\/k8s\S*","\1") | stats dc(ClusterName) | rename dc(ClusterName) as number

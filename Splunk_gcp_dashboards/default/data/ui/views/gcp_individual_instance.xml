@@ -1,4 +1,4 @@
-<!-- v2.3-->
+<!-- v2.4-->
 <form>
   <label>GCP Single Instance Details</label>
   
@@ -82,7 +82,7 @@
     | eval machineType=replace(mType,"^\S+machineTypes\/(\S+)","\1")
     | eval OS= replace(license,"^\S+licenses\/(\S+)","\1")
     -->
-    $tstats_nulls$ resource.data.id=$selected_instance$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type="compute.googleapis.com/Instance" earliest=-24h@h latest=now 
+    $tstats_nulls$ resource.data.id=$selected_instance$ `gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type="compute.googleapis.com/Instance" earliest=-24h@h latest=now 
     $tstats_by_base$
     |rename name as fullName, resource.data.zone as fullZone, resource.data.machineType as mType, resource.data.disks{}.licenses{} as license
     | stats count by fullName, resource.data.id, resource.data.name, mType, resource.data.cpuPlatform, fullZone, resource.data.status, resource.data.deletionProtection, resource.data.selfLink, license
@@ -120,7 +120,7 @@
     </done>
   </search>
   <search id="baseDisk">
-    <query>$tstats_count$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) resource.data.users{}=$selfLink$ by resource.data.id | rename resource.data.id as ids|eval ids=ids+" ,"|fields - count|stats values(ids) as ids|nomv ids
+    <query>$tstats_count$ `gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) resource.data.users{}=$selfLink$ by resource.data.id | rename resource.data.id as ids|eval ids=ids+" ,"|fields - count|stats values(ids) as ids|nomv ids
 |eval ids=rtrim(ids," ,")
       </query>
     <done>
@@ -252,7 +252,7 @@
       <table>
         <title>Disk</title>
         <search>
-          <query>`gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance)
+          <query>`gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance)
     asset_type="compute.googleapis.com/Instance"
     resource.data.id=$selected_instance$
 | spath output=disks path=resource.data.disks{}
@@ -269,7 +269,7 @@
       <table>
         <title>Network</title>
         <search>
-          <query>`gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type="compute.googleapis.com/Instance"  resource.data.id=$selected_instance$
+          <query>`gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type="compute.googleapis.com/Instance"  resource.data.id=$selected_instance$
 |head 1
 | spath output=networkInterface path=resource.data.networkInterfaces{}
 | rex max_match=4 field=networkInterface "\S*\"name\":\"(?&lt;ConfigName&gt;[^\"]+)\",\"natIP\":\"(?&lt;externalIP&gt;\d+.\d+.\d+.\d+)\",.*\"name\":\"(?&lt;NICname&gt;\S+)\",\"network\":.*\"networkIP\":\"(?&lt;internalIP&gt;\d+.\d+.\d+.\d+)\""

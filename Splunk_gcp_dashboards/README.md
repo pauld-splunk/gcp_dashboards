@@ -1,3 +1,4 @@
+<! --- Version 1.1 -->
 # GCP Application Template for Splunk
 
 This application template provides visualizations, reports, and searches for Google Cloud Platform data gathered utilizing the [Splunk Add-on for Google Cloud Platform]( https://splunkbase.splunk.com/app/3088/), Cloud Functions (see https://github.com/splunk/gcp_functions) or GCP DataFlow Splunk Template. The purpose of this application template is to provide a starting point for various use cases involving GCP data.  Add to, delete from, and modify this template to fit your own requirements.
@@ -49,10 +50,11 @@ If you are collecting the GCP Pub-Sub data via the GCP Add-On, and also collecti
 
 <table>
 <tr><td><strong>Macro</strong></td><td><strong>Value (and default)</strong></td><td><strong>Description</strong></td></tr>
-<tr><td>gcp_index</td><td>index=gcp_index</td><td>Sets the index where the GCP Data will be stored by the Add-On</td></tr>
+<tr><td>gcp_index</td><td>index=gcp</td><td>Sets the index where the GCP Data will be stored by the Add-On</td></tr>
 <tr><td>datatag</td><td>addon</td><td>Adds "data." as a JSON wrapper for PubSub Data</td></tr>
 <tr><td>metricstag</td><td>addon</td><td>Sets the dashboards to use event based metrics from the Add-On</td></tr>
 <tr><td>gcp_metrics</td><td>index=gcp_metrics</td><td>Sets the event index where the add-on stores the metrics</td></tr>
+<tr><td>gcp_assets_index</td><td>index=gcp</td><td>Sets the event index where the asset information is stored</td></tr>
 </table>
 (note that if you are collecting metrics via Cloud Functions into Metrics store or using SIM, then the two metrics macros need to be set per the instructions below)
 
@@ -87,13 +89,13 @@ Metrics: Cloud Functions can send metrics in either Add-On format (event index) 
 If you want to have significantly faster searches using indexed json extractions with tstats, you will need to set the following:
 
 <table>
-<tr><td><strong>Macro</strong></td><td><strong>Value (default)</strong></td></tr>
-<tr><td>tstatstag</td><td>usetstats</td></tr>
+<tr><td><strong>Macro</strong></td><td><strong>Value</strong></td><td><strong>Default</strong></td></tr>
+<tr><td>tstatstag</td><td>usetstats</td><td><strong>notstats</strong></td></tr>
 </table>
 
 Note also that you will need to apply props.conf and transforms.conf updates to your local GCP-Add-on settings to apply this. (see below).
 
-Setting this macro to "notstats" will use standard searches, but will slow down search performance, but will not require any changes to your GCP Add-On configuration.
+Default setting will be that this macro is set to "notstats", which will use standard searches, but will slow down search performance, but will not require any changes to your GCP Add-On configuration.
 
 
 ### Props/Transforms
@@ -112,9 +114,6 @@ TIME_FORMAT = %Y-%m-%dT%H:%M:%S.%3N
 MAX_TIMESTAMP_LOOKAHEAD = 30
 TIME_PREFIX = \"timestamp\"\:\s+\"
 TRUNCATE = 0
-CHARSET=UTF-8
-TRANSFORMS-sourcetype_gcp_compute_vpc_flow_logs
-TRANSFORMS-gcp_set_meta = gcp_set_sourcetype, gcp_set_source, gcp_set_host
 
 [google:gcp:assets]
 AUTO_KV_JSON = false
@@ -143,22 +142,6 @@ AUTO_KV_JSON = false
 
 **transforms.conf**
 <pre>
-[gcp_set_sourcetype]
-
-REGEX = \"logName\"\:.+\/logs\/([^\.]+).+\%2F([^\"\,]+)
-FORMAT = sourcetype::google:gcp:$1:$2
-DEST_KEY = MetaData:Sourcetype
-
-[gcp_set_source]
-REGEX = \"logName\"\:\s?\"([^"]+)
-FORMAT = source::$1
-DEST_KEY = MetaData:Source
-
-[gcp_set_host]
-REGEX = \"logName\"\:\s?\"\w+\/([^\/]+)\/
-FORMAT = host::$1
-DEST_KEY = MetaData:Host
-
 [sourcetype_gcp_compute_vpc_flow_logs]
 REGEX = \"logName\"\:\s+\"\S*\/logs\/compute\.googleapis\.com\%2Fvpc_flows\"
 FORMAT = sourcetype::google:gcp:compute:vpc_flows
@@ -183,3 +166,12 @@ max_extractor_time = 2000
 ## Version 1.0 Jan 2021
 
 Initial release
+
+## Version 1.1 
+
+Update to VPC dashboards to align with other dashboards with datatags
+Update adding additional index for assets - gcp_assets_index
+Update to default setting of usetstats macro - default is NOT to use this, i.e. the dashboards work without changing the default add-on sourcetype settings
+
+Documentation update to transforms.conf and props.conf descriptions in the documentation: remove unused changes/ fix to props definitions which causes error
+

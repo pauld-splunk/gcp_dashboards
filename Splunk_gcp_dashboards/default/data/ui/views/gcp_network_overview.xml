@@ -1,4 +1,4 @@
-<!-- v1.3-->
+<!-- v1.4-->
 <form>
   <label>GCP Network Overview</label>
 
@@ -46,7 +46,7 @@
       <fieldForLabel>projectid</fieldForLabel>
       <fieldForValue>projectid</fieldForValue>
       <search>
-        <query>$tstats_simple$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Network" $stats_count$ by name
+        <query>$tstats_simple$ `gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Network" $stats_count$ by name
 |eval projectid=replace(name,"\S+projects\/(\S+)\/global\S+","\1")
 |stats count by projectid
           <!-- |tstats count where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Network" by resource.data.id, name, resource.data.routingConfig.routingMode, resource.data.subnetworks{}
@@ -61,7 +61,7 @@
       <title>VPCs</title>
       <table>
         <search>
-          <query>$tstats_simple$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Network" $stats_count$ by resource.data.id, name, resource.data.routingConfig.routingMode, resource.data.subnetworks{}
+          <query>$tstats_simple$ `gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Network" $stats_count$ by resource.data.id, name, resource.data.routingConfig.routingMode, resource.data.subnetworks{}
 |eval projectid=replace(name,"\S+projects\/(\S+)\/global\S+","\1")
 |eval vpcname=replace(name,"\S+\/networks\/(\S+)","\1")
 
@@ -91,7 +91,7 @@
       <title>SubNets</title>
       <table>
         <search>
-          <query>$tstats_simple$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Subnetwork" $stats_count$ by resource.data.network, resource.location, resource.data.name, resource.data.ipCidrRange, resource.data.gatewayAddress
+          <query>$tstats_simple$ `gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Subnetwork" $stats_count$ by resource.data.network, resource.location, resource.data.name, resource.data.ipCidrRange, resource.data.gatewayAddress
 |rename resource.data.network as network
 |eval projectid=replace(network,"\S+projects\/(\S+)\/global\S+","\1")
 |eval vpcname=replace(network,"\S+\/networks\/(\S+)","\1")
@@ -111,7 +111,7 @@
       <title>Network Routes</title>
       <table>
         <search>
-          <query>$tstats_simple$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Route" $stats_count$  by resource.data.id, name, resource.data.network, resource.data.nextHopNetwork, resource.data.priority, resource.data.destRange, resource.data.description
+          <query>$tstats_simple$ `gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Route" $stats_count$  by resource.data.id, name, resource.data.network, resource.data.nextHopNetwork, resource.data.priority, resource.data.destRange, resource.data.description
 |eval ProjectID=replace(name,"\S+projects\/(\S+)\/global\S+","\1")
 |search ProjectID=$project_tok$
 |rename name as Name, resource.data.network as VPC, resource.data.nextHopNetwork as "Next Hop Network", resource.data.priority as Priority, resource.data.destRange as "Dest Range", resource.data.description as Description
@@ -136,7 +136,7 @@
       <title>Firewalls</title>
       <table>
         <search>
-          <query>`gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type=compute.googleapis.com/Firewall
+          <query>`gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type=compute.googleapis.com/Firewall
 |spath output=data path=resource.data
 |eval projectid=replace(name,"\S+projects\/(\S+)\/global\S+","\1")
 |search projectid=$project_tok$

@@ -1,4 +1,4 @@
-
+<!-- v1.2 -->
 <form>
   <label>GCP Single Instance Details</label>
   <description>v1.1</description>
@@ -9,7 +9,7 @@
     <query>| tstats count fillnull_value=true
     where 
     resource.data.id=$selected_instance$
-    `gcp_index` 
+    `gcp_assets_index` 
     sourcetype="google:gcp:assets" 
     asset_type="compute.googleapis.com/Instance" 
     earliest=-24h@h latest=now by 
@@ -69,7 +69,7 @@
     </done>
   </search>
   <search id="baseDisk">
-    <query>|tstats count where `gcp_index` sourcetype="google:gcp:assets" resource.data.user{}=$selfLink$ by resource.data.id | rename resource.data.id as ids|eval ids=ids+" ,"|fields - count|stats values(ids) as ids|nomv ids
+    <query>|tstats count where `gcp_assets_index` sourcetype="google:gcp:assets" resource.data.user{}=$selfLink$ by resource.data.id | rename resource.data.id as ids|eval ids=ids+" ,"|fields - count|stats values(ids) as ids|nomv ids
 |eval ids=rtrim(ids," ,")
       </query>
     <done>
@@ -198,7 +198,7 @@
       <table>
         <title>Disk</title>
         <search>
-          <query>`gcp_index` 
+          <query>`gcp_assets_index` 
     sourcetype="google:gcp:assets" 
     asset_type="compute.googleapis.com/Instance"
     resource.data.id=$selected_instance$
@@ -216,7 +216,7 @@
       <table>
         <title>Network</title>
         <search>
-          <query>`gcp_index` 
+          <query>`gcp_assets_index` 
     sourcetype="google:gcp:assets" 
     asset_type="compute.googleapis.com/Instance"
     resource.data.id=$selected_instance$

@@ -1,4 +1,4 @@
-<!-- gcp individual storage v1.3--><form>
+<!-- gcp individual storage v1.4--><form>
   <label>GCP Individual Storage</label>
  
   <search id="source_data_query">
@@ -42,7 +42,7 @@
       
       |eval tstats_by_base=if(tstatstag=="No", "|table  ", "by ")
 
-      |eval tstats_join=if(tstatstag=="Yes","| join ID [|tstats fillnull_value=\"-\" count where `gcp_index` (sourcetype=google:gcp:assets OR sourcetype=google:gcp:buckets:jsondata) asset_type=\"compute.googleapis.com/Disk\"  earliest=$time_tok.earliest$ latest=$time_tok.latest$  by  resource.data.id, resource.data.guestOsFeatures{}.type | rename resource.data.id as ID, resource.data.guestOsFeatures{}.type as GuestB |dedup ID, GuestB] | eval GuestOSFeatures=if(GuestOSFeatures==GuestB, if(GuestB==\"-\",\"-\",\"X\"), GuestOSFeatures.\", \".GuestB) |search GuestOSFeatures!=\"X\"
+      |eval tstats_join=if(tstatstag=="Yes","| join ID [|tstats fillnull_value=\"-\" count where `gcp_assets_index` (sourcetype=google:gcp:assets OR sourcetype=google:gcp:buckets:jsondata) asset_type=\"compute.googleapis.com/Disk\"  earliest=$time_tok.earliest$ latest=$time_tok.latest$  by  resource.data.id, resource.data.guestOsFeatures{}.type | rename resource.data.id as ID, resource.data.guestOsFeatures{}.type as GuestB |dedup ID, GuestB] | eval GuestOSFeatures=if(GuestOSFeatures==GuestB, if(GuestB==\"-\",\"-\",\"X\"), GuestOSFeatures.\", \".GuestB) |search GuestOSFeatures!=\"X\"
 |fields - GuestB", "")
       
     </query>
@@ -59,7 +59,7 @@
   </search>
   <search id="baseInfo">
     <query>
-      $tstats_nulls$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk"  earliest=$time_tok.earliest$ latest=$time_tok.latest$  $tstats_by_base$ resource.data.id ,name, resource.data.name, resource.data.sizeGb, resource.data.type, resource.data.sourceImage, resource.data.guestOsFeatures{}.type, resource.data.users{}
+      $tstats_nulls$ `gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk"  earliest=$time_tok.earliest$ latest=$time_tok.latest$  $tstats_by_base$ resource.data.id ,name, resource.data.name, resource.data.sizeGb, resource.data.type, resource.data.sourceImage, resource.data.guestOsFeatures{}.type, resource.data.users{}
 |rename resource.data.users{} as Instance
 |eval ProjectID=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
 |eval Zone=replace(name,"^\S+zones\/(\S+)\/disks\/\S+","\1") 
