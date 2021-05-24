@@ -54,7 +54,7 @@ If you are collecting the GCP Pub-Sub data via the GCP Add-On, and also collecti
 <tr><td>datatag</td><td>addon</td><td>Adds "data." as a JSON wrapper for PubSub Data</td></tr>
 <tr><td>metricstag</td><td>addon</td><td>Sets the dashboards to use event based metrics from the Add-On</td></tr>
 <tr><td>gcp_metrics</td><td>index=gcp_metrics</td><td>Sets the event index where the add-on stores the metrics</td></tr>
-<tr><td>gcp_assets_index</td><td>index=gcp</td><td>Sets the event index where the asset information is stored</td></tr>
+<tr><td>gcp_assets_index</td><td>`gcp_index`</td><td>Sets the event index where the asset information is stored. Default is set as the value for the gcp_index macro to be backward compatible</td></tr>
 </table>
 (note that if you are collecting metrics via Cloud Functions into Metrics store or using SIM, then the two metrics macros need to be set per the instructions below)
 
@@ -81,21 +81,23 @@ Metrics: Cloud Functions can send metrics in either Add-On format (event index) 
 
 <table>
 <tr><td><strong>Macro</strong></td><td><strong>Value</strong></td><td><b>Description</b></td></tr>
+<tr><td>gcp_index</td><td>index=gcp</td><td>Sets the index where the GCP Data will be stored</td></tr>
 <tr><td>metricstag</td><td>metrics</td><td>Sets the dashboards to use metrics store</td></tr>
 <tr><td>gcp_metrics</td><td>index=gcp_metrics</td><td>Ensure that this index is a METRICS index not event</td></tr>
+<tr><td>gcp_assets_index</td><td>`gcp_index`</td><td>Sets the event index where the asset information is stored. Default is set as the value for the gcp_index macro to be backward compatible</td></tr>
 </table>
 
 ## Search Performance
 If you want to have significantly faster searches using indexed json extractions with tstats, you will need to set the following:
 
 <table>
-<tr><td><strong>Macro</strong></td><td><strong>Value</strong></td><td><strong>Default</strong></td></tr>
-<tr><td>tstatstag</td><td>usetstats</td><td><strong>notstats</strong></td></tr>
+<tr><td><strong>Macro</strong></td><td><strong>Value</strong></td></tr>
+<tr><td>tstatstag</td><td>usetstats</td></tr>
 </table>
 
 Note also that you will need to apply props.conf and transforms.conf updates to your local GCP-Add-on settings to apply this. (see below).
 
-Default setting will be that this macro is set to "notstats", which will use standard searches, but will slow down search performance, but will not require any changes to your GCP Add-On configuration.
+Default setting will be that this macro is set to "notstats", which will use standard searches, but will provide slower search performance, but will not require any changes to your GCP Add-On configuration.
 
 
 ### Props/Transforms
@@ -106,7 +108,8 @@ If you want to use tstats based searches for faster performance, you will need t
 
 <pre>
 [google:gcp:pubsub:message]
-
+AUTO_KV_JSON = false
+KV_MODE=none
 INDEXED_EXTRACTIONS = json
 SHOULD_LINEMERGE = false
 LINE_BREAKER = ([\r\n]+)\{
@@ -114,6 +117,12 @@ TIME_FORMAT = %Y-%m-%dT%H:%M:%S.%3N
 MAX_TIMESTAMP_LOOKAHEAD = 30
 TIME_PREFIX = \"timestamp\"\:\s+\"
 TRUNCATE = 0
+TRANSFORMS-gcp_sourcetype_gcp_compute_vpc_flow_logs=sourcetype_gcp_compute_vpc_flow_logs
+
+[google:gcp:compute:vpc_flows]
+INDEXED_EXTRACTIONS = json
+AUTO_KV_JSON = false
+KV_MODE = none
 
 [google:gcp:assets]
 AUTO_KV_JSON = false
@@ -134,10 +143,7 @@ KV_MODE = none
 INDEXED_EXTRACTIONS = json
 AUTO_KV_JSON = false
 
-[google:gcp:compute:vpc_flows]
-KV_MODE = none
-INDEXED_EXTRACTIONS = json
-AUTO_KV_JSON = false
+
 </pre>
 
 **transforms.conf**
@@ -167,11 +173,13 @@ max_extractor_time = 2000
 
 Initial release
 
-## Version 1.1 
+## Version 1.1 (minor updates)
 
-Update to VPC dashboards to align with other dashboards with datatags
-Update adding additional index for assets - gcp_assets_index
+Update to VPC & "Security Overview: Public Access" dashboards to align with other dashboards with datatags (compatability with Dataflow)
+Update adding additional index for assets - gcp_assets_index. Backwards compatible
 Update to default setting of usetstats macro - default is NOT to use this, i.e. the dashboards work without changing the default add-on sourcetype settings
-
 Documentation update to transforms.conf and props.conf descriptions in the documentation: remove unused changes/ fix to props definitions which causes error
+Added Service Account Activity External members access activity to IAM Activity Dashboard
+Added VMs created by Default Service Account into IAM Activity Dashboard
+Added Live Migrated Hosts to Compute Engine Overview
 

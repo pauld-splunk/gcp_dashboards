@@ -1,4 +1,4 @@
-<!-- v1.2-->
+<!-- v1.3-->
 <dashboard>
   <label>GCP App Setup</label>
   <row>
@@ -28,10 +28,11 @@
 <p>The GCP app requires some initial setup of macros to work with your Splunk environment. Set the macro settings according to the tables below:</p>
 <br/>(Note below your current macro settings - if these are blank/empty, you will need to set them to the correct values before the dashboards work)
 
-<p><b>Splunk Add-On for Google Cloud Platform</b>
+<p>
+          <b>Splunk Add-On for Google Cloud Platform</b>
 <br/>If you are collecting the GCP Pub-Sub data via the GCP Add-On, and also collecting metrics via the Add-On, then you will need to set the following :<br/>
         </p>
-<table style="border-collapse: collapse; width: 50%;" border="1">
+<table style="border-collapse: collapse; width: 80%;" border="1">
 <tbody>
 <tr>
 <td style="width: 23.7523%;">
@@ -64,13 +65,19 @@
 <td style="width: 32.5786%;">index=gcp_metrics</td>
 <td style="width: 43.6691%;">Sets the event index where the add-on stores the metrics</td>
 </tr>
+<tr>
+<td style="width: 23.7523%;">gcp_assets_index</td>
+<td style="width: 32.5786%;">`gcp_index`</td>
+<td style="width: 43.6691%;">Sets the event index where the asset information is stored. Default is set as the value for the gcp_index macro to be backward compatible</td>
+            </tr>
 </tbody>
 </table>
 (note that if you are collecting metrics via Cloud Functions into Metrics store or using SIM, then the two metrics macros need to be set per the instructions below)
 <br/>
-<p><b>DataFlow</b>
+<p>
+          <b>DataFlow</b>
 <br/>If you are using DataFlow (without transformations) to collect the data from PubSub, then change the following:</p>
-<table style="border-collapse: collapse; width: 50%;" border="1">
+<table style="border-collapse: collapse; width: 80%;" border="1">
 <tbody>
 <tr>
 <td style="width: 23.7523%;">
@@ -84,6 +91,11 @@
               </td>
 </tr>
 <tr>
+<td style="width: 23.7523%;">gcp_index</td>
+<td style="width: 32.5786%;">index=gcp_index</td>
+<td style="width: 43.6691%;">Sets the index where the GCP Data will be stored by the Add-On</td>
+</tr>
+<tr>
 <td style="width: 23.7523%;">datatag</td>
 <td style="width: 32.5786%;">dataflow</td>
 <td style="width: 43.6691%;">The payload from PubSub isn't "wrapped" by "data."</td>
@@ -91,11 +103,12 @@
 </tbody>
 </table>
 <br/>
-<p><b>SIM / SignalFX</b>
+<p>
+          <b>SIM / SignalFX</b>
 <br/>If you are using the SIM / SignalFX (Splunk Infrastructure Monitoring) to collect metrics from GCP, you will need to use and configure connections on the SIM Add-On - <a href="https://splunkbase.splunk.com/app/5247/">https://splunkbase.splunk.com/app/5247/</a>
         </p>
 <p>Then set the following:</p>
-<table style="border-collapse: collapse; width: 50%;" border="1">
+<table style="border-collapse: collapse; width: 80%;" border="1">
 <tbody>
 <tr>
 <td style="width: 23.7523%;">
@@ -116,11 +129,12 @@
 </tbody>
 </table>
 <br/>
-<p><b>Cloud Functions</b>
+<p>
+          <b>Cloud Functions</b>
 <br/>PubSub: Cloud Functions can send data in either Add-On or DataFlow formats - refer to the function documentation for details, and set the macros accordingly.
 <br/>Metrics: Cloud Functions can send metrics in either Add-On format (event index) or into Metrics Store. If you are collecting metrics into the event index, use the same settings as the Add-On, otherwise if using the metrics store, use the following:
 </p>
-<table style="border-collapse: collapse; width: 50%;" border="1">
+<table style="border-collapse: collapse; width: 80%;" border="1">
 <tbody>
 <tr>
 <td style="width: 23.7523%;">
@@ -134,6 +148,11 @@
               </td>
 </tr>
 <tr>
+<td style="width: 23.7523%;">gcp_index</td>
+<td style="width: 32.5786%;">index=gcp_index</td>
+<td style="width: 43.6691%;">Sets the index where the GCP Data will be stored by the Add-On</td>
+</tr>
+<tr>
 <td style="width: 23.7523%;">metricstag</td>
 <td style="width: 32.5786%;">metrics</td>
 <td style="width: 43.6691%;">Sets the dashboards to use metrics store</td>
@@ -143,13 +162,20 @@
 <td style="width: 32.5786%;">index=gcp_metrics</td>
 <td style="width: 43.6691%;">Ensure that this index is a METRICS index not event</td>
 </tr>
+<tr>
+<td style="width: 23.7523%;">gcp_assets_index</td>
+<td style="width: 32.5786%;">`gcp_index`</td>
+<td style="width: 43.6691%;">Sets the event index where the asset information is stored. Default is set as the value for the gcp_index macro to be backward compatible</td>
+            </tr>
 </tbody>
 </table>
 <p/>
 <br/>
-<h2><b>Search Performance</b></h2>
+<h2>
+          <b>Search Performance</b>
+        </h2>
 <p>If you want to have significantly faster searches using indexed json extractions with tstats, you will need to set the following:</p>
-<table style="border-collapse: collapse; width: 50%;" border="1">
+<table style="border-collapse: collapse; width: 80%;" border="1">
 <tbody>
 <tr>
 <td style="width: 50%;">
@@ -166,7 +192,7 @@
 </tbody>
 </table>
 <p>Note also that you will need to apply props.conf and transforms.conf updates to your local GCP-Add-on settings to apply this. (see below)</p>
-<p>Setting this macro to "notstats" will use standard searches, but will slow down search performance, but will not require any changes to your GCP Add-On.</p>
+<p>Setting this macro to "notstats" will use standard searches, but will slow down search performance, but will not require any changes to your GCP Add-On. This is the "default" setting</p>
 
 </html>
     </panel>
@@ -176,7 +202,7 @@
       <table>
         <title>Current Environment Macro Settings:</title>
         <search>
-          <query>| rest /servicesNS/-/-/admin/macros splunk_server=local | search title="gcp_index" OR title="gcp_assets_index" OR title="datatag" OR title="gcp_metrics" OR title="tstatstag" OR title="metricstag" |table title, definition, author |rename title as Macro, definition as Setting ,author as Owner</query>
+          <query>| rest /servicesNS/-/-/admin/macros splunk_server=local | search title="gcp_index" OR title="datatag" OR title="gcp_metrics" OR title="tstatstag" OR title="metricstag" OR title="gcp_assets_index"|table title, definition, author |rename title as Macro, definition as Setting ,author as Owner</query>
           <earliest>-24h@h</earliest>
           <latest>now</latest>
         </search>
@@ -189,26 +215,68 @@
     <panel>
       <html>
 <p/>
-<h2><b>Props/Transforms</b></h2>
+<h2>
+          <b>Props/Transforms</b>
+        </h2>
 <p>If you want to use tstats based searches for faster performance, you will need to apply these changes to your props.conf / transforms.conf in the local directory of the GCP Add-On.</p>
 <p>
           <span style="text-decoration: underline;">props.conf:</span>
         </p>
 <blockquote>
-<pre>[google:gcp:pubsub:message]<br/>INDEXED_EXTRACTIONS = json<br/>SHOULD_LINEMERGE = false<br/>LINE_BREAKER = ([\r\n]+)\{<br/>TIME_FORMAT = %Y-%m-%dT%H:%M:%S.%3N<br/>MAX_TIMESTAMP_LOOKAHEAD = 30<br/>TIME_PREFIX = \"timestamp\"\:\s+\"<br/>TRUNCATE = 0<br/>CHARSET=UTF-8<br/>TRANSFORMS-sourcetype_gcp_compute_vpc_flow_logs<br/>TRANSFORMS-gcp_set_meta = gcp_set_sourcetype, gcp_set_source, gcp_set_host
-<br/>[google:gcp:assets]<br/>AUTO_KV_JSON = false<br/>KV_MODE=none<br/>INDEXED_EXTRACTIONS = json<br/>LINE_BREAKER = ([\r\n]+)<br/>NO_BINARY_CHECK = true<br/>disabled = false<br/>TRANSFORMS-sourcetype_splunk_gcp_compute_instance=gcp_compute_instance
-[google:gcp:buckets:jsondata]<br/>KV_MODE = none<br/>INDEXED_EXTRACTIONS = json<br/>AUTO_KV_JSON = false
-[google:gcp:compute:instance]<br/>KV_MODE = none<br/>INDEXED_EXTRACTIONS = json<br/>AUTO_KV_JSON = false
-<br/>[google:gcp:compute:vpc_flows]<br/>KV_MODE = none<br/>INDEXED_EXTRACTIONS = json<br/>AUTO_KV_JSON = false</pre>
+<pre>[google:gcp:pubsub:message]
+AUTO_KV_JSON = false
+KV_MODE = none
+INDEXED_EXTRACTIONS = json
+SHOULD_LINEMERGE = false
+LINE_BREAKER = ([\r\n]+)\{
+TIME_FORMAT = %Y-%m-%dT%H:%M:%S.%3N
+MAX_TIMESTAMP_LOOKAHEAD = 30
+TIME_PREFIX = \"timestamp\"\:\s+\"
+TRUNCATE = 0
+CHARSET=UTF-8
+TRANSFORMS-gcp_sourcetype_gcp_compute_vpc_flow_logs=sourcetype_gcp_compute_vpc_flow_logs<br/>
+[google:gcp:compute:vpc_flows]
+INDEXED_EXTRACTIONS = json
+AUTO_KV_JSON = false
+KV_MODE = none<br/>
+[google:gcp:assets]
+AUTO_KV_JSON = false
+KV_MODE=none
+INDEXED_EXTRACTIONS = json
+LINE_BREAKER = ([\r\n]+)
+NO_BINARY_CHECK = true
+disabled = false
+TRANSFORMS-sourcetype_splunk_gcp_compute_instance=gcp_compute_instance<br/>
+[google:gcp:buckets:jsondata]
+KV_MODE = none
+INDEXED_EXTRACTIONS = json
+AUTO_KV_JSON = false<br/>
+[google:gcp:compute:instance]
+KV_MODE = none
+INDEXED_EXTRACTIONS = json
+AUTO_KV_JSON = false
+</pre>
 </blockquote>
 <p>
           <span style="text-decoration: underline;">transforms.conf</span>
         </p>
 <blockquote>
-<pre>[gcp_set_sourcetype]<br/>REGEX = \"logName\"\:.+\/logs\/([^\.]+).+\%2F([^\"\,]+)<br/>FORMAT = sourcetype::google:gcp:$1:$2<br/>DEST_KEY = MetaData:Sourcetype
-[gcp_set_source]<br/>REGEX = \"logName\"\:\s?\"([^"]+)<br/>FORMAT = source::$1<br/>DEST_KEY = MetaData:Source
-[gcp_set_host]<br/>REGEX = \"logName\"\:\s?\"\w+\/([^\/]+)\/<br/>FORMAT = host::$1<br/>DEST_KEY = MetaData:Host
-[sourcetype_gcp_compute_vpc_flow_logs]<br/>REGEX = \"logName\"\:\s+\"\S*\/logs\/compute\.googleapis\.com\%2Fvpc_flows\"<br/>FORMAT = sourcetype::google:gcp:compute:vpc_flows<br/>DEST_KEY = MetaData:Sourcetype</pre>
+<pre>[gcp_set_sourcetype]
+REGEX = \"logName\"\:.+\/logs\/([^\.]+).+\%2F([^\"\,]+)
+FORMAT = sourcetype::google:gcp:$1:$2
+DEST_KEY = MetaData:Sourcetype<br/>
+[gcp_set_source]
+REGEX = \"logName\"\:\s?\"([^"]+)
+FORMAT = source::$1
+DEST_KEY = MetaData:Source<br/>
+[gcp_set_host]
+REGEX = \"logName\"\:\s?\"\w+\/([^\/]+)\/
+FORMAT = host::$1
+DEST_KEY = MetaData:Host
+[sourcetype_gcp_compute_vpc_flow_logs]
+REGEX = \"logName\"\:\s+\"\S*\/logs\/compute\.googleapis\.com\%2Fvpc_flows\"
+FORMAT = sourcetype::google:gcp:compute:vpc_flows
+DEST_KEY = MetaData:Sourcetype</pre>
 </blockquote>
 <p>Also, as some of the json in GCP's message payloads are large, you will need to apply this update to your limits.conf: ($SPLUNK_HOME$/etc/system/local/limits.conf)</p>
 <blockquote>
