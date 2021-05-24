@@ -1,4 +1,4 @@
-<!-- gcp_compute v2.3-->
+<!-- gcp_compute v2.4-->
 <form>
   <label>GCP Compute Engine Overview</label>
 
@@ -166,7 +166,7 @@
       <title>Operations</title>
       <chart>
         <search>
-          <query>|tstats count where (index=gcp_json OR index=gcp) sourcetype="google:gcp:pubsub:message" "$datatag$logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" "$datatag$resource.type"=gce_instance by _time, $datatag$protoPayload.resourceName,$datatag$protoPayload.methodName, $datatag$protoPayload.response.operationType, $datatag$resource.labels.project_id, $datatag$resource.labels.zone
+          <query>|tstats count where `gcp_index` sourcetype="google:gcp:pubsub:message" "$datatag$logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" "$datatag$resource.type"=gce_instance by _time, $datatag$protoPayload.resourceName,$datatag$protoPayload.methodName, $datatag$protoPayload.response.operationType, $datatag$resource.labels.project_id, $datatag$resource.labels.zone
 |rename $datatag$protoPayload.methodName as methodName $datatag$protoPayload.resourceName as name, $datatag$resource.labels.project_id as projectid, $datatag$resource.labels.zone as zone
           |search  projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
 |rename $datatag$protoPayload.response.operationType as Action

@@ -178,6 +178,7 @@ Initial release
 Update to VPC & "Security Overview: Public Access" dashboards to align with other dashboards with datatags (compatability with Dataflow)
 Update adding additional index for assets - gcp_assets_index. Backwards compatible
 Update to default setting of usetstats macro - default is NOT to use this, i.e. the dashboards work without changing the default add-on sourcetype settings
+Bugfix to Compute Engine Overview
 Documentation update to transforms.conf and props.conf descriptions in the documentation: remove unused changes/ fix to props definitions which causes error
 Added Service Account Activity External members access activity to IAM Activity Dashboard
 Added VMs created by Default Service Account into IAM Activity Dashboard
