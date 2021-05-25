@@ -2,7 +2,7 @@
 <form>
   <search id="baseInfo">
     <query>
-      | mstats max(_value) as Avg  WHERE metric_name="cloudfunctions.googleapis.com/function/execution_times" AND index="gcp_metrics"  span=1h earliest=-24h BY function_name, project_id,region, memory,status, trigger_metric_name
+      | mstats max(_value) as Avg  WHERE metric_name="cloudfunctions.googleapis.com/function/execution_times" AND `gcp_metrics`  span=1h earliest=-24h BY function_name, project_id,region, memory,status, trigger_metric_name
 | dedup function_name,project_id
     </query>
   </search>
@@ -87,7 +87,7 @@
       <title>Execution Times (Milliseconds)</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) as Avg WHERE metric_name="cloudfunctions.googleapis.com/function/execution_times" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=1m BY function_name
+          <query>| mstats avg(_value) as Avg WHERE metric_name="cloudfunctions.googleapis.com/function/execution_times" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=1m BY function_name
 | eval ms=Avg/1000000 
 | timechart avg(ms) as Milliseconds  limit=10 useother=false BY function_name
 | fields - _span*</query>
@@ -135,7 +135,7 @@
       <title>Execution Count</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) as Avg WHERE metric_name="cloudfunctions.googleapis.com/function/execution_count" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=1m BY function_name
+          <query>| mstats avg(_value) as Avg WHERE metric_name="cloudfunctions.googleapis.com/function/execution_count" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=1m BY function_name
 | timechart avg(Avg) as Count  limit=10 useother=false BY function_name
 | fields - _span*</query>
           <earliest>$time.earliest$</earliest>
@@ -184,7 +184,7 @@
       <title>Active Instances</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) as Avg WHERE metric_name="cloudfunctions.googleapis.com/function/active_instances" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=1m BY function_name
+          <query>| mstats avg(_value) as Avg WHERE metric_name="cloudfunctions.googleapis.com/function/active_instances" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=1m BY function_name
 | timechart avg(Avg) as Count  limit=10 useother=false BY function_name
 | fields - _span*</query>
           <earliest>$time.earliest$</earliest>
@@ -231,7 +231,7 @@
       <title>Network Egress (MB)</title>
       <chart>
         <search>
-          <query>| mstats avg(_value) as Avg WHERE metric_name="cloudfunctions.googleapis.com/function/network_egress" AND index="gcp_metrics" AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=1m BY function_name
+          <query>| mstats avg(_value) as Avg WHERE metric_name="cloudfunctions.googleapis.com/function/network_egress" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=1m BY function_name
 | eval mb=Avg/1024/1024 
 | timechart avg(mb) as MB  limit=10 useother=false BY function_name
 | fields - _span*</query>
