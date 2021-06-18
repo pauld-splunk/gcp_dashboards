@@ -1,4 +1,4 @@
-<!-- v1.5-->
+<!-- v1.7-->
 <form>
   <label>GCP VPC Overview Dashboard</label>
   <search id="source_data_query">
@@ -10,9 +10,32 @@
       <set token="datatag">$result.datatag$</set>
     </done>
   </search>
+  
+   <search id="tstats_query">
+    <query>
+      |makeresults 
+      |eval usetstats="Yes" 
+      |eval notstats="No"
+      |eval tstatstag=`tstatstag`
+      
+      |eval tstats_count=if(tstatstag=="Yes", "|tstats fillnull_value=\"-null-\" count where","")
+      
+      |eval stats_count=if(tstatstag=="No", "|stats count ", "")
+      
+    </query>
+    <done>
+      <set token="tstats_count">$result.tstats_count$</set>
+      <set token="stats_count">$result.stats_count$</set>
+      
+      <set token="count_type">$result.count_type$</set>
+      <set token="by_type">$result.by_type$</set>
+      <set token="by_email">$result.by_email$</set>
+    </done>
+  </search>
+  
   <search id="base_vpc">
     <query>
-    |tstats count  fillnull_value="-null-" where `gcp_index` (sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:compute:vpc_flows) by _time, $datatag$logName, $datatag$resource.labels.project_id, $datatag$resource.labels.location, $datatag$jsonPayload.src_vpc.vpc_name, $datatag$resource.labels.subnetwork_name, $datatag$jsonPayload.src_instance.vm_name, $datatag$jsonPayload.connection.src_ip,  $datatag$jsonPayload.dest_vpc.vpc_name, $datatag$jsonPayload.dest_instance.vm_name, $datatag$jsonPayload.connection.dest_ip, $datatag$jsonPayload.bytes_sent, $datatag$jsonPayload.packets_sent
+    $tstats_count$ `gcp_index` (sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:compute:vpc_flows) $stats_count$ by _time, $datatag$logName, $datatag$resource.labels.project_id, $datatag$resource.labels.location, $datatag$jsonPayload.src_vpc.vpc_name, $datatag$resource.labels.subnetwork_name, $datatag$jsonPayload.src_instance.vm_name, $datatag$jsonPayload.connection.src_ip,  $datatag$jsonPayload.dest_vpc.vpc_name, $datatag$jsonPayload.dest_instance.vm_name, $datatag$jsonPayload.connection.dest_ip, $datatag$jsonPayload.bytes_sent, $datatag$jsonPayload.packets_sent
     </query>
     <earliest>$TimeRangePicker.earliest$</earliest>
     <latest>$TimeRangePicker.latest$</latest>
@@ -38,7 +61,7 @@
       <fieldForLabel>Project_ID</fieldForLabel>
       <fieldForValue>Project_ID</fieldForValue>
       <search base="base_vpc">
-        <query>|rename data.logName as logName 
+        <query>|rename $datatag$logName as logName 
 |eval Project_ID=replace(logName,"projects\/(\S+)\/logs\S+","\1")
 |stats count by Project_ID</query>
         <earliest>-7d@h</earliest>

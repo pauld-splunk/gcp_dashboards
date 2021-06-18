@@ -1,4 +1,4 @@
-<!-- v1.3-->
+<!-- v1.4-->
 <dashboard>
   <label>GCP App Setup</label>
   <row>
@@ -22,16 +22,25 @@
         </p>
 <p>All Metrics collected by SIM supported</p>
 <p>Follow the instructions for these collection methods before setting up this app.</p>
-<h1>
-          <strong>Macros</strong>
-        </h1>
-<p>The GCP app requires some initial setup of macros to work with your Splunk environment. Set the macro settings according to the tables below:</p>
-<br/>(Note below your current macro settings - if these are blank/empty, you will need to set them to the correct values before the dashboards work)
 
-<p>
-          <b>Splunk Add-On for Google Cloud Platform</b>
+<h1>
+<strong>Sourcetypes</strong>
+</h1>
+For the dashboards to work properly, you will need to ensure that these sourcetypes are used. This is especially important if you are using HEC as a collection method.<br/>
+All logs via pub-sub : <b>google:gcp:pubsub:message</b> <br/>
+Note vpc flow logs can also be <b>google:gcp:compute:vpc_flows</b><br/>
+All asset data : <b>google:gcp:assets</b>, <b>google:gcp:buckets:jsondata</b> or <b>google:gcp:compute:instance</b><br/>
+All metrics (events) : <b>google:gcp:monitoring</b>
+<br/>
+<h1>
+<strong>Macros</strong>
+</h1>
+<p>The GCP app requires some initial setup of macros to work with your Splunk environment. Set the macro settings according to the tables below:</p>
+(Note below your current macro settings - if these are blank/empty, you will need to set them to the correct values before the dashboards work)
+<br/>
+<b>Splunk Add-On for Google Cloud Platform</b>
 <br/>If you are collecting the GCP Pub-Sub data via the GCP Add-On, and also collecting metrics via the Add-On, then you will need to set the following :<br/>
-        </p>
+
 <table style="border-collapse: collapse; width: 80%;" border="1">
 <tbody>
 <tr>
@@ -215,10 +224,15 @@
     <panel>
       <html>
 <p/>
-<h2>
-          <b>Props/Transforms</b>
-        </h2>
-<p>If you want to use tstats based searches for faster performance, you will need to apply these changes to your props.conf / transforms.conf in the local directory of the GCP Add-On.</p>
+<h1>
+          <b><strong>Search Performance Settings</strong></b>
+        </h1>
+<p>If you want to use tstats based searches for faster performance, you will need to apply these changes to your Splunk Environment.</p>
+
+<p>
+<h2><strong>Props.conf</strong></h2>
+Update the props.conf in the local directory of the GCP Add-On with the following settings:</p>
+For Splunk Cloud deployments, update the sourcetype in the UI (administrator access required)
 <p>
           <span style="text-decoration: underline;">props.conf:</span>
         </p>
@@ -227,14 +241,9 @@
 AUTO_KV_JSON = false
 KV_MODE = none
 INDEXED_EXTRACTIONS = json
-SHOULD_LINEMERGE = false
-LINE_BREAKER = ([\r\n]+)\{
-TIME_FORMAT = %Y-%m-%dT%H:%M:%S.%3N
-MAX_TIMESTAMP_LOOKAHEAD = 30
-TIME_PREFIX = \"timestamp\"\:\s+\"
 TRUNCATE = 0
 CHARSET=UTF-8
-TRANSFORMS-gcp_sourcetype_gcp_compute_vpc_flow_logs=sourcetype_gcp_compute_vpc_flow_logs<br/>
+<br/>
 [google:gcp:compute:vpc_flows]
 INDEXED_EXTRACTIONS = json
 AUTO_KV_JSON = false
@@ -258,27 +267,14 @@ AUTO_KV_JSON = false
 </pre>
 </blockquote>
 <p>
-          <span style="text-decoration: underline;">transforms.conf</span>
-        </p>
-<blockquote>
-<pre>[gcp_set_sourcetype]
-REGEX = \"logName\"\:.+\/logs\/([^\.]+).+\%2F([^\"\,]+)
-FORMAT = sourcetype::google:gcp:$1:$2
-DEST_KEY = MetaData:Sourcetype<br/>
-[gcp_set_source]
-REGEX = \"logName\"\:\s?\"([^"]+)
-FORMAT = source::$1
-DEST_KEY = MetaData:Source<br/>
-[gcp_set_host]
-REGEX = \"logName\"\:\s?\"\w+\/([^\/]+)\/
-FORMAT = host::$1
-DEST_KEY = MetaData:Host
-[sourcetype_gcp_compute_vpc_flow_logs]
-REGEX = \"logName\"\:\s+\"\S*\/logs\/compute\.googleapis\.com\%2Fvpc_flows\"
-FORMAT = sourcetype::google:gcp:compute:vpc_flows
-DEST_KEY = MetaData:Sourcetype</pre>
-</blockquote>
-<p>Also, as some of the json in GCP's message payloads are large, you will need to apply this update to your limits.conf: ($SPLUNK_HOME$/etc/system/local/limits.conf)</p>
+<strong>Message Payload sizes: Limits.conf</strong>  
+</p>  
+
+<p>As some of the json in GCP's message payloads are large, you will need to apply this update to your limits.conf: ($SPLUNK_HOME$/etc/system/local/limits.conf). <br/>
+Note that for Splunk Cloud deployments, this will require a Support ticket to increase the values</p>
+<p>
+<span style="text-decoration: underline;">limits.conf:</span>
+</p>
 <blockquote>
 <pre>[kv]
 limit = 0

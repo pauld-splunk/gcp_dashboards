@@ -1,4 +1,4 @@
-<!--v1.2-->
+<!--v1.4-->
 <form>
   <label>GCP VPC Traffic Overview</label>
   <search id="source_data_query">
@@ -10,6 +10,50 @@
       <set token="datatag">$result.datatag$</set>
     </done>
   </search>
+  
+  <search id="tstats_query">
+    <query>
+      |makeresults 
+      |eval usetstats="Yes" 
+      |eval notstats="No"
+      |eval tstatstag=`tstatstag`
+      
+      |eval tstats_count=if(tstatstag=="Yes", "|tstats fillnull_value=null count where","")
+      
+      |eval stats_count=if(tstatstag=="No", "|stats count ", "")
+      
+      |eval tstats_count_dc=if(tstatstag=="Yes", "|tstats dc(\"$datatag$jsonPayload.connection.protocol\") as Protocols where", "")
+      |eval stats_dc=if(tstatstag=="No", "|stats dc(\"$datatag$jsonPayload.connection.protocol\") as Protocols", "")
+      
+      |eval tstats_sum_bytes=if(tstatstag=="Yes", "|tstats sum(\"$datatag$jsonPayload.bytes_sent\") as total_bytes where", "")
+      |eval stats_sum_bytes=if(tstatstag=="No", "|stats sum(\"$datatag$jsonPayload.bytes_sent\") as total_bytes", "")
+      
+      |eval tstats_sum_packets=if(tstatstag=="Yes", "|tstats  sum(\"$datatag$jsonPayload.packets_sent\") as total_packets_sent where", "")
+      |eval stats_sum_packets=if(tstatstag=="No", "|stats sum(\"$datatag$jsonPayload.packets_sent\") as total_packets_sent", "")
+      
+      |eval tstats_sum_dest=if(tstatstag=="Yes", "|tstats dc(\"$datatag$jsonPayload.connection.dest_ip\") as Dest where", "")
+      |eval stats_sum_dest=if(tstatstag=="No", "|stats dc(\"$datatag$jsonPayload.connection.dest_ip\") as Dest ", "")
+      
+      |eval tstats_sum_sources=if(tstatstag=="Yes", "|tstats dc($datatag$jsonPayload.connection.src_ip) as Sources where", "")
+      |eval stats_sum_sources=if(tstatstag=="No", "|stats dc($datatag$jsonPayload.connection.src_ip) as Sources ", "")
+      
+    </query>
+    <done>
+      <set token="tstats_count">$result.tstats_count$</set>
+      <set token="stats_count">$result.stats_count$</set>
+      <set token="tstats_count_dc">$result.tstats_count_dc$</set>
+      <set token="stats_dc">$result.stats_dc$</set>
+      <set token="tstats_sum_bytes">$result.tstats_sum_bytes$</set>
+      <set token="stats_sum_bytes">$result.stats_sum_bytes$</set>
+      <set token="tstats_sum_packets">$result.tstats_sum_packets$</set>
+      <set token="stats_sum_packets">$result.stats_sum_packets$</set>
+      <set token="tstats_sum_dest">$result.tstats_sum_dest$</set>
+      <set token="stats_sum_dest">$result.stats_sum_dest$</set>
+      <set token="tstats_sum_sources">$result.tstats_sum_sources$</set>
+      <set token="stats_sum_sources">$result.stats_sum_sources$</set>
+    </done>
+  </search>
+  
   
   <fieldset submitButton="false">
     <input type="time" token="field1">
@@ -25,7 +69,7 @@
       <title>Number of VMs</title>
       <single>
         <search>
-          <query>|tstats fillnull_value=null count  where `gcp_index` (sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:compute:vpc_flows)  "$datatag$logName"="*/logs/compute.googleapis.com%2Fvpc_flows" by "$datatag$jsonPayload.src_instance.vm_name", "$datatag$jsonPayload.dest_instance.vm_name" | rename "$datatag$jsonPayload.src_instance.vm_name" as vmsrc | rename "$datatag$jsonPayload.dest_instance.vm_name" as vmdest | eval allvms=if(vmsrc="null", vmdest, vmsrc)| stats dc(allvms) as vms</query>
+          <query>$tstats_count$ `gcp_index` (sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:compute:vpc_flows)  "$datatag$logName"="*/logs/compute.googleapis.com%2Fvpc_flows" $stats_count$ by "$datatag$jsonPayload.src_instance.vm_name", "$datatag$jsonPayload.dest_instance.vm_name" | rename "$datatag$jsonPayload.src_instance.vm_name" as vmsrc | rename "$datatag$jsonPayload.dest_instance.vm_name" as vmdest | eval allvms=if(vmsrc="null", vmdest, vmsrc)| stats dc(allvms) as vms</query>
           <earliest>$field1.earliest$</earliest>
           <latest>$field1.latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -53,7 +97,7 @@
       <title>Protocols</title>
       <single>
         <search>
-          <query>|tstats dc("$datatag$jsonPayload.connection.protocol") as Protocols where `gcp_index` (sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:compute:vpc_flows) "$datatag$logName"="*/logs/compute.googleapis.com%2Fvpc_flows"</query>
+          <query>$tstats_count_dc$ `gcp_index` (sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:compute:vpc_flows) "$datatag$logName"="*/logs/compute.googleapis.com%2Fvpc_flows" $stats_dc$ </query>
           <earliest>$field1.earliest$</earliest>
           <latest>$field1.latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -81,7 +125,7 @@
       <title>Total Traffic (GB)</title>
       <single>
         <search>
-          <query>|tstats sum("$datatag$jsonPayload.bytes_sent") as total_bytes sum("$datatag$jsonPayload.packets_sent") as total_packets_sent where `gcp_index` (sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:compute:vpc_flows)  "$datatag$logName"="*/logs/compute.googleapis.com%2Fvpc_flows"  
+          <query> $tstats_sum_bytes$ `gcp_index` (sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:compute:vpc_flows)  "$datatag$logName"="*/logs/compute.googleapis.com%2Fvpc_flows"  $stats_sum_bytes$
 | eval GB = round((((total_bytes / 1024) / 1024) / 1024),2)
 | fields + GB</query>
           <earliest>$field1.earliest$</earliest>
@@ -98,7 +142,7 @@
       <title>Total Packets</title>
       <single>
         <search>
-          <query>|tstats  sum("$datatag$jsonPayload.packets_sent") as total_packets_sent where `gcp_index` (sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:compute:vpc_flows) "$datatag$logName"="*/logs/compute.googleapis.com%2Fvpc_flows"</query>
+          <query>$tstats_sum_packets$ `gcp_index` (sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:compute:vpc_flows) "$datatag$logName"="*/logs/compute.googleapis.com%2Fvpc_flows" $stats_sum_packets$</query>
           <earliest>$field1.earliest$</earliest>
           <latest>$field1.latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -113,7 +157,7 @@
       <title>Destinations</title>
       <single>
         <search>
-          <query>|tstats dc("$datatag$jsonPayload.connection.dest_ip") as Dest where `gcp_index` (sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:compute:vpc_flows)  "$datatag$logName"="*/logs/compute.googleapis.com%2Fvpc_flows"</query>
+          <query>$tstats_sum_dest$ `gcp_index` (sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:compute:vpc_flows)  "$datatag$logName"="*/logs/compute.googleapis.com%2Fvpc_flows" $stats_sum_dest$</query>
           <earliest>$field1.earliest$</earliest>
           <latest>$field1.latest$</latest>
           <sampleRatio>1</sampleRatio>

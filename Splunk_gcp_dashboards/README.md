@@ -39,6 +39,17 @@ You will need assets information via Cloud Functions (see https://github.com/spl
 
 ## Setup / Installation
 
+### Sourcetypes
+For the dashboards to work properly, you will need to ensure that these sourcetypes are used. This is especially important if you are using HEC as a collection method.
+
+All logs via pub-sub : <strong>google:gcp:pubsub:message</strong>
+
+Note vpc flow logs can also be <strong>google:gcp:compute:vpc_flows</strong>
+
+All asset data : <strong>google:gcp:assets</strong>, <strong>google:gcp:buckets:jsondata</strong> or <strong>google:gcp:compute:instance</strong>
+
+All metrics (events) : google:gcp:monitoring
+
 ### Macros
 The GCP app requires some initial setup of macros to work with your Splunk environment. Set the macro settings according to the tables below:
 
@@ -104,6 +115,8 @@ Default setting will be that this macro is set to "notstats", which will use sta
 
 If you want to use tstats based searches for faster performance, you will need to apply these changes to your props.conf / transforms.conf in the local directory of the GCP Add-On.
 
+For Splunk Cloud deployments, update the sourcetype in the UI (administrator access required)
+
 **props.conf**
 
 <pre>
@@ -111,13 +124,8 @@ If you want to use tstats based searches for faster performance, you will need t
 AUTO_KV_JSON = false
 KV_MODE=none
 INDEXED_EXTRACTIONS = json
-SHOULD_LINEMERGE = false
-LINE_BREAKER = ([\r\n]+)\{
-TIME_FORMAT = %Y-%m-%dT%H:%M:%S.%3N
-MAX_TIMESTAMP_LOOKAHEAD = 30
-TIME_PREFIX = \"timestamp\"\:\s+\"
 TRUNCATE = 0
-TRANSFORMS-gcp_sourcetype_gcp_compute_vpc_flow_logs=sourcetype_gcp_compute_vpc_flow_logs
+CHARSET=UTF-8
 
 [google:gcp:compute:vpc_flows]
 INDEXED_EXTRACTIONS = json
@@ -144,19 +152,12 @@ INDEXED_EXTRACTIONS = json
 AUTO_KV_JSON = false
 
 
-</pre>
-
-**transforms.conf**
-<pre>
-[sourcetype_gcp_compute_vpc_flow_logs]
-REGEX = \"logName\"\:\s+\"\S*\/logs\/compute\.googleapis\.com\%2Fvpc_flows\"
-FORMAT = sourcetype::google:gcp:compute:vpc_flows
-DEST_KEY = MetaData:Sourcetype
-</pre>
 
 
 ## limits.conf
 As some of the json in GCP's message payloads are large, you will need to apply this update to your limits.conf: ($SPLUNK_HOME$/etc/system/local/limits.conf)
+
+Note that for Splunk Cloud deployments, this will require a Support ticket to increase the values
 
 <pre>
 [kv]
@@ -169,17 +170,17 @@ max_extractor_time = 2000
 
 # Release Notes
 
-## Version 1.0 Jan 2021
+## Version 1.1 Jan 2021
 
 Initial release
 
-## Version 1.1 
+## Version 1.2 
 (minor updates and bugfixes)
 
+Bugfixes (Compute Overview, vpc overview, iam overview)
 Update to VPC & "Security Overview: Public Access" dashboards to align with other dashboards with datatags (compatability with Dataflow)
 Update adding additional index for assets - gcp_assets_index. Backwards compatible
 Update to default setting of usetstats macro - default is NOT to use this, i.e. the dashboards work without changing the default add-on sourcetype settings
-Bugfix to Compute Engine Overview
 Documentation update to transforms.conf and props.conf descriptions in the documentation: 
 	- remove unused changes/ fix to props definitions which causes error
 	- added props.conf indexed extraction for google:gcp:buckets:jsondata

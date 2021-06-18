@@ -1,7 +1,6 @@
-<!-- v2.1-->
+<!-- v2.2-->
 <form>
   <label>IAM Overview</label>
-  
   <search id="source_data_query">
     <query>
       |makeresults | eval addon="data."| eval dataflow="" 
@@ -469,6 +468,128 @@
         <option name="trellis.scales.shared">1</option>
         <option name="trellis.size">medium</option>
       </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Service Account Creation</title>
+      <table>
+        <search>
+          <query>`gcp_index` sourcetype=google:gcp:pubsub:audit:auth  $datatag$protoPayload.methodName="google.iam.admin.v1.CreateServiceAccount"
+| rename $datatag$protoPayload.authenticationInfo.principalEmail as "Principal Email"
+| rename $datatag$protoPayload.requestMetadata.callerIp as "Source IP"
+| rename $datatag$protoPayload.requestMetadata.callerSuppliedUserAgent as "User Agent"
+| rename $datatag$protoPayload.response.email as "Service Account Email"
+| rename $datatag$protoPayload.response.project_id as Project
+| table _time, "Principal Email", "Source IP", "User Agent", Project, "Service Account Email"</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Service Account Key Creation</title>
+      <table>
+        <search>
+          <query>`gcp_index` sourcetype=google:gcp:pubsub:audit:auth $datatag$resource.type="service_account" $datatag$protoPayload.methodName="google.iam.admin.v1.CreateServiceAccountKey"
+| rename $datatag$protoPayload.authenticationInfo.principalEmail as "Principal Email"
+| rename $datatag$protoPayload.requestMetadata.callerIp as "Source IP"
+| rename $datatag$protoPayload.requestMetadata.callerSuppliedUserAgent as "User Agent"
+| rename $datatag$protoPayload.response.name as "Key Name"
+| rename $datatag$protoPayload.response.valid_after_time.seconds as "Valid After"
+| rename $datatag$protoPayload.response.valid_before_time.seconds as "Valid Before"
+| eval "Valid After"=strftime('Valid After', "%F %T")
+| eval "Valid Before"=strftime('Valid Before', "%F %T")
+| eval "Private Key Type" = case('data.protoPayload.request.private_key_type' == 0, "Unspecified", 'data.protoPayload.request.private_key_type' == 1, "PKCS12", 'data.protoPayload.request.private_key_type' == 2, "Google JSON credential file")
+| table _time, "Principal Email", "Source IP", "User Agent", "Key Name", "Private Key Type", "Valid After", "Valid Before"</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>External members access activity to organization</title>
+      <table>
+        <search>
+          <query>`gcp_index` sourcetype="google:gcp:pubsub:message" $datatag$protoPayload.@type="type.googleapis.com/google.cloud.audit.AuditLog"
+ $datatag$resource.type="project"
+ $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.member=*
+ $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.member!="(.*@redacted\.iam\.gserviceaccount.com)"
+| rename data.protoPayload.authenticationInfo.principalEmail as "Principal Email"
+| rename data.protoPayload.serviceData.policyDelta.bindingDeltas{}.action as Action
+| rename "data.resource.labels.project_id" as "Project"
+| rename data.protoPayload.serviceData.policyDelta.bindingDeltas{}.member as Member
+| table _time, "Principal Email", Project, Member, Action</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Virtual machines launched with the default service account</title>
+      <table>
+        <search>
+          <query>`gcp_index` sourcetype="google:gcp:pubsub:message" $datatag$resource.type="gce_instance" 
+| regex $datatag$protoPayload.methodName="^\w+?\.?compute\.instances\.insert"
+| rename $datatag$protoPayload.methodName as "API Method"
+| rename $datatag$protoPayload.authenticationInfo.principalEmail as "Principal Email"
+| rename $datatag$protoPayload.requestMetadata.callerIp as "Source IP"
+| rename $datatag$protoPayload.requestMetadata.callerSuppliedUserAgent as "User Agent"
+| rename $datatag$protoPayload.resourceName as "Resource Name"
+| rename $datatag$protoPayload.request.serviceAccounts{}.email as ServiceAccount
+| rename $datatag$timestamp as time
+| join ServiceAccount [
+search `gcp_index` sourcetype=google:gcp:assets  "resource.data.displayName"="Compute Engine default service account" | stats count by resource.data.email | fields - count |rename resource.data.email as ServiceAccount
+| append [ | stats count | fields - count | eval ServiceAccount="default" ]
+] 
+| table time, "Principal Email", "Source IP", "User Agent", "Resource Name", "ServiceAccount"</query>
+<!--
+|tstats count where `gcp_index` sourcetype="google:gcp:pubsub:message" data.resource.type="gce_instance" by data.protoPayload.methodName, data.protoPayload.authenticationInfo.principalEmail, data.protoPayload.requestMetadata.callerIp, data.protoPayload.requestMetadata.callerSuppliedUserAgent, data.protoPayload.resourceName, data.protoPayload.request.serviceAccounts{}.email, data.timestamp
+| regex data.protoPayload.methodName="^\w+?\.?compute\.instances\.insert"
+| rename data.protoPayload.methodName as "API Method"
+| rename data.protoPayload.authenticationInfo.principalEmail as "Principal Email"
+| rename data.protoPayload.requestMetadata.callerIp as "Source IP"
+| rename data.protoPayload.requestMetadata.callerSuppliedUserAgent as "User Agent"
+| rename data.protoPayload.resourceName as "Resource Name"
+| rename "data.protoPayload.request.serviceAccounts{}.email" as ServiceAccount
+| rename data.timestamp as time
+| join ServiceAccount [
+|tstats count where `gcp_index` sourcetype=google:gcp:assets  "resource.data.displayName"="Compute Engine default service account" by resource.data.email | fields - count |rename resource.data.email as ServiceAccount
+| append [ | stats count | fields - count | eval ServiceAccount="default" ]
+] 
+| table time, "Principal Email", "Source IP", "User Agent", "Resource Name", "ServiceAccount"
+-->
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
     </panel>
   </row>
 </form>

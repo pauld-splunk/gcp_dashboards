@@ -1,4 +1,4 @@
-<!-- gcp_compute v2.4-->
+<!-- gcp_compute v2.6-->
 <form>
   <label>GCP Compute Engine Overview</label>
 
@@ -44,7 +44,7 @@
   </search>
   
   <search id="baseInstances">
-    <query>$tstats_dc_id$ `gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type=compute.googleapis.com/Instance $text_search$ $stats_dc_id$ by _time, name, resource.$datatag$name, resource.$datatag$status, resource.$datatag$id, resource.$datatag$machineType, update_time 
+    <query>$tstats_dc_id$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type=compute.googleapis.com/Instance $text_search$ $stats_dc_id$ by _time, name, resource.data.name, resource.data.status, resource.data.id, resource.data.machineType, update_time 
        | eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1") 
        |eval zone=replace(name,"\S+zones\/(\S+)\/instances\S+","\1")
     </query>
@@ -54,9 +54,9 @@
   <search base="baseInstances">
     <query>
        search projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
-       |dedup resource.$datatag$id sortby -update_time
-       |search resource.$datatag$status="Running"
-       |stats dc(resource.$datatag$id) as count
+       |dedup resource.data.id sortby -update_time
+       |search resource.data.status="Running"
+       |stats dc(resource.data.id) as count
     </query>
     <done>
       <set token="running_tok">$result.count$</set>
@@ -65,9 +65,9 @@
   <search base="baseInstances">
     <query>
        search projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
-       |dedup resource.$datatag$id sortby -update_time
-       |search resource.$datatag$status="SUSPENDED" OR resource.$datatag$status="SUSPENDING"
-       |stats dc(resource.$datatag$id) as count
+       |dedup resource.data.id sortby -update_time
+       |search resource.data.status="SUSPENDED" OR resource.data.status="SUSPENDING"
+       |stats dc(resource.data.id) as count
     </query>
     <done>
       <set token="suspended_tok">$result.count$</set>
@@ -75,8 +75,8 @@
   </search>
   <search base="baseInstances">
     <query> search  projectid IN ($project_id_tok$) zone IN ($zone_tok$)
-|dedup resource.$datatag$id sortby -update_time
-|search resource.$datatag$status="TERMINATED" 
+|dedup resource.data.id sortby -update_time
+|search resource.data.status="TERMINATED" 
     |stats count as count</query>
     <done>
       <set token="stopped_tok">$result.count$</set>
@@ -142,7 +142,7 @@
       <title>Running Instances by Type</title>
       <chart>
         <search base="baseInstances">
-          <query>search resource.$datatag$status="Running"  projectid IN ($project_id_tok$) zone IN ($zone_tok$) | stats count by resource.$datatag$id, resource.$datatag$machineType | rename resource.$datatag$machineType as mType | eval Type=replace(mType,"^\S+machineTypes\/(\S+)","\1") | stats count by Type</query>
+          <query>search resource.data.status="Running"  projectid IN ($project_id_tok$) zone IN ($zone_tok$) | stats count by resource.data.id, resource.data.machineType | rename resource.data.machineType as mType | eval Type=replace(mType,"^\S+machineTypes\/(\S+)","\1") | stats count by Type</query>
         </search>
         <option name="charting.chart">bar</option>
         <option name="charting.drilldown">none</option>
@@ -153,7 +153,7 @@
       <title>Running Instances by Zones Over Time</title>
       <chart>
         <search base="baseInstances">
-          <query>search resource.$datatag$status="Running"  projectid IN ($project_id_tok$) zone IN ($zone_tok$) | timechart count by zone</query>
+          <query>search resource.data.status="Running"  projectid IN ($project_id_tok$) zone IN ($zone_tok$) | timechart count by zone</query>
         </search>
         <option name="charting.chart">column</option>
         <option name="charting.chart.nullValueMode">connect</option>
@@ -166,7 +166,12 @@
       <title>Operations</title>
       <chart>
         <search>
-          <query>|tstats count where `gcp_index` sourcetype="google:gcp:pubsub:message" "$datatag$logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" "$datatag$resource.type"=gce_instance by _time, $datatag$protoPayload.resourceName,$datatag$protoPayload.methodName, $datatag$protoPayload.response.operationType, $datatag$resource.labels.project_id, $datatag$resource.labels.zone
+          <query><!--|tstats count where `gcp_index` sourcetype="google:gcp:pubsub:message" "$datatag$logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" "$datatag$resource.type"=gce_instance by _time, $datatag$protoPayload.resourceName,$datatag$protoPayload.methodName, $datatag$protoPayload.response.operationType, $datatag$resource.labels.project_id, $datatag$resource.labels.zone
+|rename $datatag$protoPayload.methodName as methodName $datatag$protoPayload.resourceName as name, $datatag$resource.labels.project_id as projectid, $datatag$resource.labels.zone as zone
+          |search  projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
+|rename $datatag$protoPayload.response.operationType as Action
+|timechart count  by Action -->
+$tstats_count$ `gcp_index` sourcetype="google:gcp:pubsub:message" "$datatag$logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" "$datatag$resource.type"=gce_instance $stats_count$ by _time, $datatag$protoPayload.resourceName,$datatag$protoPayload.methodName, $datatag$protoPayload.response.operationType, $datatag$resource.labels.project_id, $datatag$resource.labels.zone
 |rename $datatag$protoPayload.methodName as methodName $datatag$protoPayload.resourceName as name, $datatag$resource.labels.project_id as projectid, $datatag$resource.labels.zone as zone
           |search  projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
 |rename $datatag$protoPayload.response.operationType as Action
@@ -187,11 +192,11 @@
       <table>
         <search base="baseInstances">
           <query>search projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
-|dedup resource.$datatag$id sortby -update_time
-          | rename resource.$datatag$machineType as mType resource.$datatag$id as "Instance ID"| eval Type=replace(mType,"^\S+machineTypes\/(\S+)","\1")
+|dedup resource.data.id sortby -update_time
+          | rename resource.data.machineType as mType resource.data.id as "Instance ID"| eval Type=replace(mType,"^\S+machineTypes\/(\S+)","\1")
           | eval Name=replace(name,"^\S+instances\/(\S+)","\1")
-          |table "Instance ID" , Name, projectid, zone, resource.$datatag$status, Type, update_time
-          |rename projectid as ProjectID, resource.$datatag$status as "Last Known Status" update_time as "Last Update"</query>
+          |table "Instance ID" , Name, projectid, zone, resource.data.status, Type, update_time
+          |rename projectid as ProjectID, resource.data.status as "Last Known Status" update_time as "Last Update"</query>
         </search>
         <option name="drilldown">cell</option>
         <option name="refresh.display">progressbar</option>
@@ -259,6 +264,28 @@
         <option name="charting.chart">line</option>
         <option name="charting.drilldown">none</option>
       </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Live migrated hosts</title>
+      <table>
+        <search>
+          <query>`gcp_index` sourcetype="google:gcp:pubsub:message" $datatag$resource.type="gce_instance" $datatag$protoPayload.methodName="compute.instances.migrateOnHostMaintenance"
+| rename $datatag$protoPayload.resourceName as Instance
+| table _time, Instance</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
     </panel>
   </row>
 </form>
