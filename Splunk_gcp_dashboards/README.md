@@ -172,7 +172,7 @@ max_extractor_time = 2000
 
 ## Version 1.1 Jan 2021
 
-Initial release
+Initial Splunkbase release
 
 ## Version 1.2 
 (minor updates and bugfixes)

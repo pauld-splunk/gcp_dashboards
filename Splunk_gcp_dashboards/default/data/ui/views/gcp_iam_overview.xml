@@ -1,4 +1,4 @@
-<!-- v2.2-->
+<!-- v2.4-->
 <form>
   <label>IAM Overview</label>
   <search id="source_data_query">
@@ -14,7 +14,7 @@
     <query>
       |makeresults 
       |eval usetstats="|tstats fillnull_value=\"-\" count where `gcp_index` sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:pubsub:audit:auth $datatag$protoPayload.methodName=\"*iam*\" by _time, $datatag$resource.type, $datatag$protoPayload.methodName, $datatag$resource.labels.project_id, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.authorizationInfo{}.permission, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role span=1s" 
-      |eval notstats="`gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName=\"iam.googleapis.com\""
+      |eval notstats="`gcp_index` sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:pubsub:audit:auth $datatag$protoPayload.serviceName=\"*iam*\" |fields _time, $datatag$resource.type, $datatag$protoPayload.methodName, $datatag$resource.labels.project_id, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.authorizationInfo{}.permission, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role"
       |eval tstatstag=`tstatstag`
     </query>
     <done>
@@ -25,7 +25,6 @@
   </search>
   <search id="base_iam">
     <query>
-        <!--|tstats fillnull_value="-" count where `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName="iam.googleapis.com" by _time, $datatag$protoPayload.methodName, $datatag$resource.labels.project_id, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.authorizationInfo{}.permission, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role -->
         $tstatstag$
     </query>
     <earliest>$time.earliest$</earliest>
@@ -44,8 +43,8 @@
       <choice value="*">ALL</choice>
       <fieldForLabel>ProjectID</fieldForLabel>
       <fieldForValue>ProjectID</fieldForValue>
-      <search base="base_iam">
-        <query>|rename $datatag$resource.labels.project_id as ProjectID | stats count by ProjectID </query>
+      <search  base="base_iam">
+        <query> rename $datatag$resource.labels.project_id as ProjectID | stats count by ProjectID </query>
       </search>
       <default>*</default>
       <initialValue>*</initialValue>
@@ -393,7 +392,7 @@
       <title>Added roles over time</title>
       <chart>
         <search base="base_iam">
-          <query>search $datatag$resource.labels.project_id =$project_tok$ $datatag$protoPayload.methodName=*SetIAMPolicy* data.protoPayload.serviceData.policyDelta.bindingDeltas{}.action=ADD | timechart count by $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role | fields - NULL</query>
+          <query>search $datatag$resource.labels.project_id =$project_tok$ $datatag$protoPayload.methodName=*SetIAMPolicy* $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action=ADD | timechart count by $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role | fields - NULL</query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -433,7 +432,7 @@
       <title>Removed roles over time</title>
       <chart>
         <search base="base_iam">
-          <query>search $datatag$resource.labels.project_id =$project_tok$ $datatag$protoPayload.methodName=*SetIAMPolicy* data.protoPayload.serviceData.policyDelta.bindingDeltas{}.action=REMOVE | timechart count by $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role | fields - NULL</query>
+          <query>search $datatag$resource.labels.project_id =$project_tok$ $datatag$protoPayload.methodName=*SetIAMPolicy* $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action=REMOVE | timechart count by $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role | fields - NULL</query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -504,7 +503,7 @@
 | rename $datatag$protoPayload.response.valid_before_time.seconds as "Valid Before"
 | eval "Valid After"=strftime('Valid After', "%F %T")
 | eval "Valid Before"=strftime('Valid Before', "%F %T")
-| eval "Private Key Type" = case('data.protoPayload.request.private_key_type' == 0, "Unspecified", 'data.protoPayload.request.private_key_type' == 1, "PKCS12", 'data.protoPayload.request.private_key_type' == 2, "Google JSON credential file")
+| eval "Private Key Type" = case('$datatag$protoPayload.request.private_key_type' == 0, "Unspecified", '$datatag$protoPayload.request.private_key_type' == 1, "PKCS12", '$datatag$protoPayload.request.private_key_type' == 2, "Google JSON credential file")
 | table _time, "Principal Email", "Source IP", "User Agent", "Key Name", "Private Key Type", "Valid After", "Valid Before"</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
@@ -523,10 +522,10 @@
  $datatag$resource.type="project"
  $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.member=*
  $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.member!="(.*@redacted\.iam\.gserviceaccount.com)"
-| rename data.protoPayload.authenticationInfo.principalEmail as "Principal Email"
-| rename data.protoPayload.serviceData.policyDelta.bindingDeltas{}.action as Action
-| rename "data.resource.labels.project_id" as "Project"
-| rename data.protoPayload.serviceData.policyDelta.bindingDeltas{}.member as Member
+| rename $datatag$protoPayload.authenticationInfo.principalEmail as "Principal Email"
+| rename $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action as Action
+| rename "$datatag$resource.labels.project_id" as "Project"
+| rename $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.member as Member
 | table _time, "Principal Email", Project, Member, Action</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
