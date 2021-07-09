@@ -1,4 +1,4 @@
-<!-- v2.4-->
+<!-- v2.5-->
 <form>
   <label>IAM Overview</label>
   <search id="source_data_query">
@@ -474,7 +474,7 @@
       <title>Service Account Creation</title>
       <table>
         <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:audit:auth  $datatag$protoPayload.methodName="google.iam.admin.v1.CreateServiceAccount"
+          <query>`gcp_index` sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:pubsub:audit:auth  $datatag$protoPayload.methodName="google.iam.admin.v1.CreateServiceAccount"
 | rename $datatag$protoPayload.authenticationInfo.principalEmail as "Principal Email"
 | rename $datatag$protoPayload.requestMetadata.callerIp as "Source IP"
 | rename $datatag$protoPayload.requestMetadata.callerSuppliedUserAgent as "User Agent"
@@ -494,7 +494,7 @@
       <title>Service Account Key Creation</title>
       <table>
         <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:audit:auth $datatag$resource.type="service_account" $datatag$protoPayload.methodName="google.iam.admin.v1.CreateServiceAccountKey"
+          <query>`gcp_index` sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:pubsub:audit:auth $datatag$resource.type="service_account" $datatag$protoPayload.methodName="google.iam.admin.v1.CreateServiceAccountKey"
 | rename $datatag$protoPayload.authenticationInfo.principalEmail as "Principal Email"
 | rename $datatag$protoPayload.requestMetadata.callerIp as "Source IP"
 | rename $datatag$protoPayload.requestMetadata.callerSuppliedUserAgent as "User Agent"
