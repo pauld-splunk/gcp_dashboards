@@ -1,5 +1,5 @@
-<!-- Cloud Functions Details v2.0 -->
-<form>
+<!-- Cloud Functions Details v2.1 -->
+<form version="1.1">
   <label>GCP Cloud Function Details</label>
   
   <search id="metrics_source_query">

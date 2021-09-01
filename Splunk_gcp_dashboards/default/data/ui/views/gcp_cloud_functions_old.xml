@@ -1,5 +1,5 @@
 
-<form>
+<form version="1.1">
   <search id="baseInfo">
     <query>
       | mstats max(_value) as Avg  WHERE metric_name="cloudfunctions.googleapis.com/function/execution_times" AND `gcp_metrics`  span=1h earliest=-24h BY function_name, project_id,region, memory,status, trigger_metric_name

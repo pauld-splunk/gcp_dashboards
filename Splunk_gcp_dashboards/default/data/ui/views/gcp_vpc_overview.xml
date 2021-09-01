@@ -1,5 +1,5 @@
-<!-- v1.7-->
-<form>
+<!-- v1.8-->
+<form version="1.1">
   <label>GCP VPC Overview Dashboard</label>
   <search id="source_data_query">
     <query>

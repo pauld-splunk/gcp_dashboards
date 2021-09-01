@@ -1,5 +1,5 @@
-<!-- infrastructure activity v1.10 -->
-<form>
+<!-- infrastructure activity v1.11 -->
+<form version="1.1">
   <label>GCP Infrastructure Activity</label>
   
   <init>

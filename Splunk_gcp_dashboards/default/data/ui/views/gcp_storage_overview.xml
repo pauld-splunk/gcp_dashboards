@@ -1,5 +1,5 @@
-<!-- gcp_storage_overview v1.5-->
-<form>
+<!-- gcp_storage_overview v1.6-->
+<form version="1.1">
   <label>GCP Storage Overview</label>
 
   <search id="source_data_query">

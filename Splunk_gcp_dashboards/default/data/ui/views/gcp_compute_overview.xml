@@ -1,5 +1,5 @@
-<!-- gcp_compute v2.6-->
-<form>
+<!-- gcp_compute v2.7-->
+<form version="1.1">
   <label>GCP Compute Engine Overview</label>
 
   <search id="source_data_query">
