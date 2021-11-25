@@ -1,4 +1,4 @@
-<!-- v1.4-->
+<!-- v1.5-->
 <form version="1.1">
   <label>GCP Audit Overview</label>
   
@@ -113,8 +113,8 @@
             
             <!-- |tstats count where `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName!="" $datatag$resource.type!="" by _time, $datatag$protoPayload.serviceName, $datatag$protoPayload.authenticationInfo.principalEmail |rename "$datatag$protoPayload.authenticationInfo.principalEmail" as username | timechart count by username useother=false usenull=false -->
             </query>
-          <earliest>-4h@m</earliest>
-          <latest>now</latest>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
         <option name="charting.chart">line</option>
