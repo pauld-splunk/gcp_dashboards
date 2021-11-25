@@ -133,6 +133,7 @@ AUTO_KV_JSON = false
 KV_MODE = none
 
 [google:gcp:assets]
+SHOULD_LINEMERGE = false
 AUTO_KV_JSON = false
 KV_MODE=none
 INDEXED_EXTRACTIONS = json
@@ -140,6 +141,7 @@ LINE_BREAKER = ([\r\n]+)
 NO_BINARY_CHECK = true
 disabled = false
 TRANSFORMS-sourcetype_splunk_gcp_compute_instance=gcp_compute_instance
+TRUNCATE=50000
 
 [google:gcp:buckets:jsondata]
 KV_MODE = none
