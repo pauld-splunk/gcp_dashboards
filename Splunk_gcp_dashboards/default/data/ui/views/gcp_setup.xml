@@ -1,4 +1,4 @@
-<!-- v1.5-->
+<!-- v1.6-->
 <dashboard version="1.1">
   <label>GCP App Setup</label>
   <row>
@@ -191,7 +191,7 @@ All metrics (events) : <b>google:gcp:monitoring</b>
                 <b>Macro</b>
               </td>
 <td style="width: 50%;">
-                <b>Value (default)</b>
+                <b>Value</b>
               </td>
 </tr>
 <tr>
@@ -241,7 +241,7 @@ For Splunk Cloud deployments, update the sourcetype in the UI (administrator acc
 AUTO_KV_JSON = false
 KV_MODE = none
 INDEXED_EXTRACTIONS = json
-TRUNCATE = 0
+TRUNCATE = 3000000
 CHARSET=UTF-8
 <br/>
 [google:gcp:compute:vpc_flows]
@@ -249,6 +249,8 @@ INDEXED_EXTRACTIONS = json
 AUTO_KV_JSON = false
 KV_MODE = none<br/>
 [google:gcp:assets]
+DATETIME_CONFIG = CURRENT
+SHOULD_LINEMERGE = false
 AUTO_KV_JSON = false
 KV_MODE=none
 INDEXED_EXTRACTIONS = json
