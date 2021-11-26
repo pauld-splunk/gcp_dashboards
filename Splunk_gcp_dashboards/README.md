@@ -124,7 +124,7 @@ For Splunk Cloud deployments, update the sourcetype in the UI (administrator acc
 AUTO_KV_JSON = false
 KV_MODE=none
 INDEXED_EXTRACTIONS = json
-TRUNCATE = 0
+TRUNCATE = 3000000
 CHARSET=UTF-8
 
 [google:gcp:compute:vpc_flows]
@@ -133,6 +133,7 @@ AUTO_KV_JSON = false
 KV_MODE = none
 
 [google:gcp:assets]
+DATETIME_CONFIG = CURRENT
 SHOULD_LINEMERGE = false
 AUTO_KV_JSON = false
 KV_MODE=none

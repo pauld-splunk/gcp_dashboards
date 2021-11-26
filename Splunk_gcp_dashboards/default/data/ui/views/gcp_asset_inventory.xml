@@ -1,4 +1,4 @@
-<!-- v1.8-->
+<!-- v1.9-->
 <form version="1.1">
   <label>GCP Asset Inventory</label>
   
@@ -28,7 +28,7 @@
       <set token="table_gcs">$result.table_gcs$</set>
     </done>
   </search>
-  <search id="latest_assets_indexed">
+<!--  <search id="latest_assets_indexed">
     <query>
       $tstats_simple$ `gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata OR sourcetype=google:gcp:compute:instance) $stats_count$ by _time |stats max(_time) as time | eval time=time-900
     </query>
@@ -36,6 +36,7 @@
       <set token="earliest_tok">$result.time$</set>
     </done>
   </search>
+-->  
   <search id="computeinstances">
     <query>$tstats_compute$ `gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type=compute.googleapis.com/Instance $stats_count$ by _time, name, resource.data.name, resource.data.status, resource.data.id, resource.data.machineType, update_time, ancestors{}
 | rename "ancestors{}" as ancestors
@@ -69,25 +70,30 @@
     <latest>$time.latest$</latest>
   </search>
   <search id="disconnectedstorage">
-    <query>| set diff
-[search `gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type="compute.googleapis.com/Instance" earliest=$earliest_tok$
-|eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
-|eval Zone=replace(name,"^\S+zones\/(\S+)\/instances\/\S+","\1") 
-|spath output=disklist path=resource.data.disks{}  
-|rex max_match=20 field=disklist "source\":\"https:\/\/www.googleapis.com\/compute\/v1\/projects\/(?&lt;diskName&gt;\S*)\","  
-|mvexpand diskName
-|dedup diskName
-|fields diskName
-|fields - _*
-]
-[search `gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk" earliest=$earliest_tok$
-|eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1")
-|eval Zone=replace(name,"^\S+zones\/(\S+)\/disks\/\S+","\1") 
-|eval diskName=replace(name,"^\S+projects\/(\S+)","\1")
-|dedup diskName
-|fields diskName
-|fields - _*
-]   
+    <query> 
+| set diff 
+    [ search `gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:compute:instance) asset_type="compute.googleapis.com/Instance" 
+    | eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1") 
+    | eval Zone=replace(name,"^\S+zones\/(\S+)\/instances\/\S+","\1") 
+    | spath output=disklist path=resource.data.disks{} 
+    | rex max_match=20 field=disklist "source\":\"https:\/\/www.googleapis.com\/compute\/v1\/projects\/(?&lt;diskName&gt;\S*)\"," 
+    | mvexpand diskName 
+    | bin span=900s _time 
+    | stats latest(_time) AS latest_recorded_event by diskName 
+    | eventstats max(latest_recorded_event) AS latest_recording 
+    | where latest_recorded_event=latest_recording 
+    | fields diskName
+        ] 
+    [ search `gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="compute.googleapis.com/Disk" 
+    | eval projectid=replace(name,"\S+projects\/(\S+)\/zones\S+","\1") 
+    | eval Zone=replace(name,"^\S+zones\/(\S+)\/disks\/\S+","\1") 
+    | eval diskName=replace(name,"^\S+projects\/(\S+)","\1") 
+    | bin span=900s _time 
+    | stats latest(_time) AS latest_recorded_event by diskName 
+    | eventstats max(latest_recorded_event) AS latest_recording 
+    | where latest_recorded_event=latest_recording 
+    | fields diskName
+        ]
     </query>
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
