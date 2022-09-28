@@ -1,4 +1,5 @@
-<!-- v2.6-->
+<!-- v2.7-->
+<!-- Add-On 4.0 -->
 <form version="1.1">
   <label>IAM Overview</label>
   <search id="source_data_query">
@@ -13,8 +14,8 @@
   <search id="tstats_query">
     <query>
       |makeresults 
-      |eval usetstats="|tstats fillnull_value=\"-\" count where `gcp_index` sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:pubsub:audit:auth $datatag$protoPayload.methodName=\"*iam*\" by _time, $datatag$resource.type, $datatag$protoPayload.methodName, $datatag$resource.labels.project_id, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.authorizationInfo{}.permission, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role span=1s" 
-      |eval notstats="`gcp_index` sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:pubsub:audit:auth $datatag$protoPayload.serviceName=\"*iam*\" |fields _time, $datatag$resource.type, $datatag$protoPayload.methodName, $datatag$resource.labels.project_id, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.authorizationInfo{}.permission, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role"
+      |eval usetstats="|tstats fillnull_value=\"-\" count where `gcp_index` `gcp_sourcetype_iam_activity` $datatag$protoPayload.methodName=\"*iam*\" by _time, $datatag$resource.type, $datatag$protoPayload.methodName, $datatag$resource.labels.project_id, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.authorizationInfo{}.permission, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role span=1s" 
+      |eval notstats="`gcp_index` `gcp_sourcetype_iam_activity` $datatag$protoPayload.serviceName=\"*iam*\" |fields _time, $datatag$resource.type, $datatag$protoPayload.methodName, $datatag$resource.labels.project_id, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.authorizationInfo{}.permission, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role"
       |eval tstatstag=`tstatstag`
     </query>
     <done>
@@ -474,7 +475,7 @@
       <title>Service Account Creation</title>
       <table>
         <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:pubsub:audit:auth  $datatag$protoPayload.methodName="google.iam.admin.v1.CreateServiceAccount"
+          <query>`gcp_index` `gcp_sourcetype_iam_activity`  $datatag$protoPayload.methodName="google.iam.admin.v1.CreateServiceAccount"
 | rename $datatag$protoPayload.authenticationInfo.principalEmail as "Principal Email"
 | rename $datatag$protoPayload.requestMetadata.callerIp as "Source IP"
 | rename $datatag$protoPayload.requestMetadata.callerSuppliedUserAgent as "User Agent"
@@ -494,7 +495,7 @@
       <title>Service Account Key Creation</title>
       <table>
         <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:pubsub:audit:auth $datatag$resource.type="service_account" $datatag$protoPayload.methodName="google.iam.admin.v1.CreateServiceAccountKey"
+          <query>`gcp_index` `gcp_sourcetype_iam_activity` $datatag$resource.type="service_account" $datatag$protoPayload.methodName="google.iam.admin.v1.CreateServiceAccountKey"
 | rename $datatag$protoPayload.authenticationInfo.principalEmail as "Principal Email"
 | rename $datatag$protoPayload.requestMetadata.callerIp as "Source IP"
 | rename $datatag$protoPayload.requestMetadata.callerSuppliedUserAgent as "User Agent"
@@ -518,7 +519,7 @@
       <title>External members access activity to organization</title>
       <table>
         <search>
-          <query>`gcp_index` sourcetype="google:gcp:pubsub:message" $datatag$protoPayload.@type="type.googleapis.com/google.cloud.audit.AuditLog"
+          <query>`gcp_index` `gcp_sourcetype_iam_activity` $datatag$protoPayload.@type="type.googleapis.com/google.cloud.audit.AuditLog"
  $datatag$resource.type="project"
  $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.member=*
  $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.member!="(.*@redacted\.iam\.gserviceaccount.com)"
@@ -546,7 +547,7 @@
       <title>Virtual machines launched with the default service account</title>
       <table>
         <search>
-          <query>`gcp_index` sourcetype="google:gcp:pubsub:message" $datatag$resource.type="gce_instance" 
+          <query>`gcp_index` `gcp_sourcetype_iam_activity` $datatag$resource.type="gce_instance" 
 | regex $datatag$protoPayload.methodName="^\w+?\.?compute\.instances\.insert"
 | rename $datatag$protoPayload.methodName as "API Method"
 | rename $datatag$protoPayload.authenticationInfo.principalEmail as "Principal Email"

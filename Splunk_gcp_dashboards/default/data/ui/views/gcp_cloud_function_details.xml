@@ -1,10 +1,11 @@
-<!-- Cloud Functions Details v2.1 -->
+<!-- Cloud Functions Details v2.3 -->
+<!-- Add-on 4.x -->
 <form version="1.1">
   <label>GCP Cloud Function Details</label>
-  
-  <search id="metrics_source_query">
+
+  <search id="base_info_search">
     <query>
-      |makeresults 
+      | makeresults 
       | eval addon="addon"
       | eval metrics="metrics" 
       | eval sim="sim"
@@ -17,15 +18,28 @@
               "| sim flow query=\"data('function/execution_times', filter=filter('service', 'cloudfunctions')).publish()\" | stats count by function_name, project_id, region, memory, status, trigger_type | dedup function_name,project_id",
             (if (metricstag=="addon", "`gcp_metrics` sourcetype=google:gcp:monitoring | stats count by resource.labels.function_name, resource.labels.project_id, resource.labels.region, metric.labels.memory, metric.labels.status, metric.labels.trigger_type |rename resource.labels.function_name as function_name, resource.labels.project_id as project_id, resource.labels.region as region, metric.labels.memory as memory, metric.labels.status as status, metric.labels.trigger_type
  as trigger_metric_name","")))))
+     
       
-      |eval fn_execution=
+    </query> 
+    <done>
+      <set token="base_info_search">$result.base_info_search$</set>
+    </done>
+  </search>
+  
+  <search id="source_queries">
+     <query>
+      | makeresults 
+      | eval addon="addon"
+      | eval metrics="metrics" 
+      | eval sim="sim"
+      | eval metricstag=`metricstag`
+      | eval fn_execution=
             if(metricstag=="metrics",
               "| mstats avg(_value) as _value WHERE `gcp_metrics` metric_name=\"cloudfunctions.googleapis.com/function/execution_times\" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=$secs_for_bin$s BY function_name",
             (if (metricstag=="sim", 
               "| sim flow query=\"data('function/execution_times', filter=filter('service', 'cloudfunctions') and filter('project_id','$project_id_tok$') and filter('region','$zone_tok$') and filter('function_name','$function_tok$')).publish()\"",
             (if (metricstag=="addon",
               "`gcp_metrics` sourcetype=google:gcp:monitoring resource.labels.project_id=$project_id_tok$ resource.labels.region=$zone_tok$ resource.labels.function_name=$function_tok$ metric.type=cloudfunctions.googleapis.com/function/execution_times |rename points{}.value.distributionValue.mean as _value resource.labels.function_name as function_name","")))))
-      
       |eval fn_execution_count=
             if(metricstag=="metrics",
               "| mstats avg(_value) as _value WHERE `gcp_metrics` metric_name=\"cloudfunctions.googleapis.com/function/execution_count\" AND `gcp_metrics` AND project_id IN ($project_id_tok$) AND region IN ($zone_tok$) AND function_name IN ($function_tok$) span=$secs_for_bin$s BY function_name",
@@ -61,18 +75,19 @@
           (if (metricstag=="addon",
             "`gcp_metrics` sourcetype=google:gcp:monitoring resource.labels.project_id=$project_id_tok$ resource.labels.region=$zone_tok$ resource.labels.function_name=$function_tok$ metric.type=cloudfunctions.googleapis.com/function/network_egress
 |rename points{}.value.int64Value as _value resource.labels.function_name as function_name","")))))
-
-    </query>
-    <done>
-      <set token="metrics_source">$result.metricstag$</set>
-      <set token="base_info_search">$result.base_info_search$</set>
-      <set token="fn_execution">$result.fn_execution$</set>
-      <set token="fn_execution_count">$result.fn_execution_count$</set>
-      <set token="fn_instances">$result.fn_instances$</set>
-      <set token="fn_memory">$result.fn_memory$</set>
-      <set token="fn_network">$result.fn_network$</set>
-    </done>
+     </query>
+     <done>
+       <set token="fn_execution">$result.fn_execution$</set>
+       <set token="metrics_source">$result.metricstag$</set>
+       <set token="fn_execution">$result.fn_execution$</set>
+       <set token="fn_execution_count">$result.fn_execution_count$</set>
+       <set token="fn_instances">$result.fn_instances$</set>
+       <set token="fn_memory">$result.fn_memory$</set>
+       <set token="fn_network">$result.fn_network$</set>
+     </done>
   </search>
+  
+  
   <search id="source_data_query">
     <query>
       |makeresults | eval addon="data."| eval dataflow="" 
@@ -82,13 +97,7 @@
       <set token="datatag">$result.datatag$</set>
     </done>
   </search>
-  <search id="baseHead">
-    <query>
-      |makeresults
-      |eval 
-      |eval base_search=if( 
-    </query>
-  </search>
+  
   <search id="tstats_query">
     <query>
       |makeresults 
@@ -114,6 +123,7 @@
     <set token="minspan">30</set>
     <set token="show_annotations">*</set>
   </init>
+  
   <fieldset submitButton="false">
     <input type="time" token="time">
       <label></label>
@@ -154,7 +164,7 @@
       <choice value="*">ALL</choice>
     </input>
     <input type="dropdown" token="annotate_filter" searchWhenChanged="true">
-      <label>Annotation FIlter</label>
+      <label>Annotation Filter</label>
       <choice value="*">ALL</choice>
       <choice value="NOTICE">NOTICE</choice>
       <choice value="INFO">INFO</choice>
@@ -485,7 +495,7 @@
     <panel depends="$hide$">
       <table>
         <search id="eventBase">
-          <query>$tstatstag$ $show_annotations$ `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$resource.labels.function_name=$function_tok$ $datatag$logName=*$project_id_tok$* $tstats_post_tag$
+          <query>$tstatstag$ $show_annotations$ `gcp_index` `gcp_sourcetype_resources_activity` $datatag$resource.labels.function_name=$function_tok$ $datatag$logName=*$project_id_tok$* $tstats_post_tag$
 |rename $datatag$textPayload as textPayload $datatag$protoPayload.methodName as methodName $datatag$severity as severity
 |eval message=if(textPayload!="null",textPayload, methodName)
 |table _time, severity, message</query>
@@ -517,7 +527,7 @@
       <event>
         <title>Events</title>
         <search>
-          <query>`gcp_index` sourcetype=google:gcp:pubsub:message data.resource.labels.function_name=$function_tok$ data.logName=*$project_id_tok$*</query>
+          <query>`gcp_index` `gcp_sourcetype_resources_activity` $datatag$resource.labels.function_name=$function_tok$ $datatag$logName=*$project_id_tok$*</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>

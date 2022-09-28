@@ -192,3 +192,19 @@ Added Service Account Activity External members access activity to IAM Activity 
 Added VMs created by Default Service Account into IAM Activity Dashboard
 Added Live Migrated Hosts to Compute Engine Overview
 
+
+## Version 1.3 September 2022
+Version updated to support Splunk Add-on for Google Cloud Platform version 4.0.0 and Data Manager 1.7 (or later)
+
+Includes minor bugfixes
+Updates to sourceypes for compatability with new add-on. Noting that this is backwards compatible with eariler versions of the sourcetypes in previous releases.
+New macros:
+ "gcp_sourcetype_xx"= these support the new add-on sourcetypes - only change these if Add-On updates new sourcetypes
+ "gke_internal_xx"= these are included to remove internal "noise" from gke service messages. (Infrastructure Activity dashboard). You can update this according to your requirements
+
+Known Issue with Splunk 8.2 onwards: 
+If using the accelerated version with tstats searches, warnings will be shown on all dashboards. These messages can be ignored.
+
+
+
+

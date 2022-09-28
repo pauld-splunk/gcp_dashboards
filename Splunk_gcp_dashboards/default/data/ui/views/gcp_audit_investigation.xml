@@ -1,4 +1,5 @@
-<!-- v2.3-->
+<!-- v2.4-->
+<!-- Add-on 4.x -->
 <form version="1.1">
   <label>GCP Audit Investigation</label>
   
@@ -33,7 +34,7 @@
   </search>
   <search id="audit_selection_base">
     <query>
-       $tstatstag$ `gcp_index` sourcetype=google:* $search_text_tok$ $datatag$logName="*activity" OR $datatag$logName="*data_access" OR $datatag$logName="*system_event" $tstats_post_midtag$ by _time, sourcetype, $datatag$resource.labels.project_id, $datatag$logName, $datatag$protoPayload.resourceName, $datatag$resource.type, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.serviceName, $datatag$protoPayload.methodName, $datatag$protoPayload.requestMetadata.callerIp, $datatag$protoPayload.requestMetadata.callerSuppliedUserAgent $tstats_post_endtag$
+       $tstatstag$ `gcp_index` `gcp_sourcetype_pubsub_audit` $search_text_tok$ $datatag$logName="*activity" OR $datatag$logName="*data_access" OR $datatag$logName="*system_event" $tstats_post_midtag$ by _time, sourcetype, $datatag$resource.labels.project_id, $datatag$logName, $datatag$protoPayload.resourceName, $datatag$resource.type, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.serviceName, $datatag$protoPayload.methodName, $datatag$protoPayload.requestMetadata.callerIp, $datatag$protoPayload.requestMetadata.callerSuppliedUserAgent $tstats_post_endtag$
        | rename $datatag$resource.labels.project_id as ProjectID, $datatag$logName as LogName, $datatag$protoPayload.authenticationInfo.principalEmail as Email, $datatag$protoPayload.serviceName as ServiceName, $datatag$protoPayload.resourceName as ResourceName, $datatag$resource.type as ResourceType, $datatag$protoPayload.methodName as MethodName, $datatag$protoPayload.requestMetadata.callerIp as CallerIP, $datatag$protoPayload.requestMetadata.callerSuppliedUserAgent as UserAgent
     </query>
     <earliest>$time.earliest$</earliest>

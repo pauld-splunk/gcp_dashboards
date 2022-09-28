@@ -1,4 +1,5 @@
-<!-- infrastructure activity v1.11 -->
+<!-- infrastructure activity v1.12 -->
+<!-- Add-on 4.x -->
 <form version="1.1">
   <label>GCP Infrastructure Activity</label>
   
@@ -36,7 +37,7 @@
       |eval count_type=if(tstatstag!=" ","sum(count)","count")
       
       |eval tstats_by_crud=if(tstatstag=="Yes","by 
-$datatag$protoPayload.methodName, $datatag$resource.type, $datatag$timestamp, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.requestMetadata.callerIp, $datatag$protoPayload.authorizationInfo{}.permission, $datatag$protoPayload.authorizationInfo{}.resourceAttributes.name, $datatag$protoPayload.authorizationInfo{}.resource","")
+$datatag$protoPayload.methodName, $datatag$protoPayload.resourceName, $datatag$resource.type, $datatag$timestamp, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.requestMetadata.callerIp, $datatag$protoPayload.authorizationInfo{}.permission, $datatag$protoPayload.authorizationInfo{}.resourceAttributes.name, $datatag$protoPayload.authorizationInfo{}.resource","")
 
       
     </query>
@@ -102,7 +103,7 @@ $datatag$protoPayload.methodName, $datatag$resource.type, $datatag$timestamp, $d
     </done>
   </search>
   <search id="functions">
-    <query>$tstats_dc_function$ `gcp_index` sourcetype="google:gcp:pubsub:message" $datatag$logName="*cloud-functions" $datatag$resource.labels.project_id=$project_id_tok$  $stats_dc_function$
+    <query>$tstats_dc_function$ `gcp_index` `gcp_sourcetype_platform` $datatag$logName="*cloud-functions" $datatag$resource.labels.project_id=$project_id_tok$  $stats_dc_function$
     </query>
     <done>
       <eval token="Function_count">if(isnull($result.number$),0,$result.number$)</eval>
@@ -143,7 +144,7 @@ $datatag$protoPayload.methodName, $datatag$resource.type, $datatag$timestamp, $d
   </search>
   <search id="CreateCount">
     <query>
-       $tstats_count$ `gcp_index` sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  data.protoPayload.methodName IN (*create*, *insert*) data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$) $stats_count$
+       $tstats_count$ `gcp_index` `gcp_sourcetype_pubsub_admin_activity`  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  data.protoPayload.methodName IN (*create*, *insert*) data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$) NOT($datatag$protoPayload.resourceName IN (`gke_internal_resources`)) NOT($datatag$protoPayload.methodName IN (`gke_internal_methods`)) $stats_count$
     </query>
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
@@ -153,7 +154,7 @@ $datatag$protoPayload.methodName, $datatag$resource.type, $datatag$timestamp, $d
   </search>
   <search id="UpdateCount">
     <query>
-       $tstats_count$ `gcp_index` sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  data.protoPayload.methodName IN (*update*, *patch*) data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$) $stats_count$
+       $tstats_count$ `gcp_index` `gcp_sourcetype_pubsub_admin_activity`  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  data.protoPayload.methodName IN (*update*, *patch*) data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$) NOT($datatag$protoPayload.resourceName IN (`gke_internal_resources`)) NOT($datatag$protoPayload.methodName IN (`gke_internal_methods`)) $stats_count$
     </query>
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
@@ -163,7 +164,7 @@ $datatag$protoPayload.methodName, $datatag$resource.type, $datatag$timestamp, $d
   </search>
   <search id="DeleteCount">
     <query>
-       $tstats_count$ `gcp_index` sourcetype="google:gcp:pubsub:message"  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  data.protoPayload.methodName IN (*delete*) data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$) $stats_count$
+       $tstats_count$ `gcp_index` `gcp_sourcetype_pubsub_admin_activity`  "data.logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity"  data.protoPayload.methodName IN (*delete*) data.resource.labels.project_id IN ($project_id_tok$) AND data.resource.type IN($resource_type_tok$) NOT($datatag$protoPayload.resourceName IN (`gke_internal_resources`)) NOT($datatag$protoPayload.methodName IN (`gke_internal_methods`)) $stats_count$
     </query>
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
@@ -203,7 +204,7 @@ $datatag$protoPayload.methodName, $datatag$resource.type, $datatag$timestamp, $d
         <fieldForLabel>resourceType</fieldForLabel>
         <fieldForValue>resourceType</fieldForValue>
         <search>
-          <query>$tstats_dc_type$ `gcp_index` sourcetype=google:gcp:pubsub:message data.resource.labels.project_id IN ($project_id_tok$) $stats_dc_type$ by $datatag$resource.labels.project_id,  $datatag$resource.type| rename  $datatag$resource.type as resourceType|stats count by resourceType</query>
+          <query>$tstats_dc_type$ `gcp_index` `gcp_sourcetype_resources_activity` data.resource.labels.project_id IN ($project_id_tok$) $stats_dc_type$ by $datatag$resource.labels.project_id,  $datatag$resource.type| rename  $datatag$resource.type as resourceType|stats count by resourceType</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -306,7 +307,7 @@ $datatag$protoPayload.methodName, $datatag$resource.type, $datatag$timestamp, $d
       <chart>
         <search>
           <query>
-            $tstats_count$ `gcp_index` sourcetype="google:gcp:pubsub:message"  "data.logName"="*/logs/cloudaudit.googleapis.com%2Factivity" $datatag$resource.labels.project_id IN ($project_id_tok$) $datatag$protoPayload.methodName IN ($create_del_tok$) AND $datatag$resource.type IN($resource_type_tok$)  
+            $tstats_count$ `gcp_index` `gcp_sourcetype_pubsub_admin_activity`  "data.logName"="*/logs/cloudaudit.googleapis.com%2Factivity" $datatag$resource.labels.project_id IN ($project_id_tok$) $datatag$protoPayload.methodName IN ($create_del_tok$) AND $datatag$resource.type IN($resource_type_tok$) NOT($datatag$protoPayload.resourceName IN (`gke_internal_resources`)) NOT($datatag$protoPayload.methodName IN (`gke_internal_methods`))
             $tstats_by_methodname$ | timechart span=$secs_for_bin$s $count_type$ by $datatag$protoPayload.methodName 
             <!--|tstats count where `gcp_index` sourcetype="google:gcp:pubsub:message"  "data.logName"="*/logs/cloudaudit.googleapis.com%2Factivity" data.resource.labels.project_id IN ($project_id_tok$) "data.protoPayload.methodName" IN ($create_del_tok$) AND data.resource.type IN($resource_type_tok$)  by _time, "data.protoPayload.methodName" span=$secs_for_bin$s | timechart span=$secs_for_bin$s sum(count) by data.protoPayload.methodName -->
             </query>
@@ -325,7 +326,7 @@ $datatag$protoPayload.methodName, $datatag$resource.type, $datatag$timestamp, $d
       <title>Create</title>
       <table>
         <search>
-          <query>$tstats_nulls$ `gcp_index` sourcetype="google:gcp:pubsub:message" $datatag$logName="projects/*/logs/cloudaudit.googleapis.com%2Factivity" $datatag$resource.labels.project_id IN ($project_id_tok$) AND $datatag$resource.type IN($resource_type_tok$) ($datatag$protoPayload.methodName IN ("*create*", "*insert*") AND $datatag$protoPayload.authorizationInfo{}.permission="*create*") $tstats_by_crud$
+          <query>$tstats_nulls$ `gcp_index` `gcp_sourcetype_pubsub_admin_activity` $datatag$logName="projects/*/logs/cloudaudit.googleapis.com%2Factivity" $datatag$resource.labels.project_id IN ($project_id_tok$) AND $datatag$resource.type IN($resource_type_tok$) ($datatag$protoPayload.methodName IN ("*create*", "*insert*") AND $datatag$protoPayload.authorizationInfo{}.permission="*create*") NOT($datatag$protoPayload.resourceName IN (`gke_internal_resources`)) NOT($datatag$protoPayload.methodName IN (`gke_internal_methods`)) $tstats_by_crud$
 | eval name1='$datatag$protoPayload.authorizationInfo{}.resourceAttributes.name'
 | eval name2='$datatag$protoPayload.authorizationInfo{}.resource'
 | eval Name=if(name1="-", name2,name1)
@@ -357,7 +358,7 @@ data.protoPayload.methodName, data.resource.type, attributes.logging.googleapis.
       <title>Update/Insert</title>
       <table>
         <search>
-          <query>$tstats_nulls$ `gcp_index` sourcetype="google:gcp:pubsub:message" $datatag$logName="projects/*/logs/cloudaudit.googleapis.com%2Factivity" $datatag$resource.labels.project_id IN ($project_id_tok$) AND $datatag$resource.type IN($resource_type_tok$) ($datatag$protoPayload.methodName IN ("*update*","*patch*","*insert*" ) AND $datatag$protoPayload.authorizationInfo{}.permission IN ("*update*","*insert*")) $tstats_by_crud$
+          <query>$tstats_nulls$ `gcp_index` `gcp_sourcetype_pubsub_admin_activity` $datatag$logName="projects/*/logs/cloudaudit.googleapis.com%2Factivity" $datatag$resource.labels.project_id IN ($project_id_tok$) AND $datatag$resource.type IN($resource_type_tok$) ($datatag$protoPayload.methodName IN ("*update*","*patch*","*insert*" ) AND $datatag$protoPayload.authorizationInfo{}.permission IN ("*update*","*insert*")) NOT($datatag$protoPayload.resourceName IN (`gke_internal_resources`)) NOT($datatag$protoPayload.methodName IN (`gke_internal_methods`)) $tstats_by_crud$
 | eval name1='$datatag$protoPayload.authorizationInfo{}.resourceAttributes.name'
 | eval name2='$datatag$protoPayload.authorizationInfo{}.resource'
 | eval Name=if(name1="-", name2,name1)
@@ -379,7 +380,7 @@ data.protoPayload.methodName, data.resource.type, attributes.logging.googleapis.
       <title>Delete</title>
       <table>
         <search>
-          <query>$tstats_nulls$ `gcp_index` sourcetype="google:gcp:pubsub:message" $datatag$logName="projects/*/logs/cloudaudit.googleapis.com%2Factivity" $datatag$resource.labels.project_id IN ($project_id_tok$) AND $datatag$resource.type IN($resource_type_tok$) $datatag$protoPayload.methodName IN (*delete*) $tstats_by_crud$
+          <query>$tstats_nulls$ `gcp_index` `gcp_sourcetype_pubsub_admin_activity` $datatag$logName="projects/*/logs/cloudaudit.googleapis.com%2Factivity" $datatag$resource.labels.project_id IN ($project_id_tok$) AND $datatag$resource.type IN($resource_type_tok$) $datatag$protoPayload.methodName IN (*delete*) NOT($datatag$protoPayload.resourceName IN (`gke_internal_resources`)) NOT($datatag$protoPayload.methodName IN (`gke_internal_methods`)) $tstats_by_crud$
 | eval name1='$datatag$protoPayload.authorizationInfo{}.resourceAttributes.name'
 | eval name2='$datatag$protoPayload.authorizationInfo{}.resource'
 | eval Name=if(name1="-", name2,name1)

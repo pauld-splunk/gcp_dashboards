@@ -1,10 +1,8 @@
-<!-- v1.1-->
+<!-- v1.2-->
+<!--work in progress - this is still considered a beta version -->
+<!-- Add-on 4.x -->
 <form version="1.1">
-
   <label>Cloud SQL Overview</label>
-
-  <description>V1.0</description>
-  
   <search id="source_data_query">
     <query>
       |makeresults | eval addon="data."| eval dataflow="" 
@@ -17,8 +15,8 @@
   <search id="tstats_query">
     <query>
       |makeresults 
-      |eval usetstats="|tstats fillnull_value=\"-\" count where `gcp_index` sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:pubsub:audit:auth $datatag$protoPayload.methodName=\"*iam*\" by _time, $datatag$resource.type, $datatag$protoPayload.methodName, $datatag$resource.labels.project_id, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.authorizationInfo{}.permission, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role span=1s" 
-      |eval notstats="`gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName=\"iam.googleapis.com\""
+      |eval usetstats="|tstats fillnull_value=\"-\" count where `gcp_index` `gcp_sourcetype_pubsub_audit` $datatag$protoPayload.methodName=\"*iam*\" by _time, $datatag$resource.type, $datatag$protoPayload.methodName, $datatag$resource.labels.project_id, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.authorizationInfo{}.permission, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role span=1s" 
+      |eval notstats="`gcp_index` `gcp_sourcetype_pubsub_audit` $datatag$protoPayload.serviceName=\"iam.googleapis.com\""
       |eval searchtag=`tstatstag`
     </query>
     <done>
@@ -31,12 +29,11 @@
     <query>
         <!--|tstats fillnull_value="-" count where `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName="iam.googleapis.com" by _time, $datatag$protoPayload.methodName, $datatag$resource.labels.project_id, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.authorizationInfo{}.permission, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role -->
         <!--$searchtag$-->
-        | tstats fillnull_value="-" count where `gcp_index` sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" by _time, $datatag$resource.labels.project_id, $datatag$protoPayload.requestMetadata.callerIp, $datatag$protoPayload.methodName, $datatag$protoPayload.resourceName, $datatag$resource.labels.region, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$severity span=1s
+        | tstats fillnull_value="-" count where `gcp_index` `gcp_sourcetype_pubsub_audit` data.protoPayload.serviceName="cloudsql.googleapis.com" by _time, $datatag$resource.labels.project_id, $datatag$protoPayload.requestMetadata.callerIp, $datatag$protoPayload.methodName, $datatag$protoPayload.resourceName, $datatag$resource.labels.region, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$severity span=1s
     </query>
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
   </search>
-  
   <fieldset submitButton="false">
     <input type="time" token="time">
       <label>Time</label>
@@ -54,7 +51,6 @@
           <query>
             <!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" | -->
             iplocation $datatag$protoPayload.requestMetadata.callerIp | geostats latfield=lat longfield=lon count by $datatag$protoPayload.requestMetadata.callerIp</query>
-          
         </search>
         <option name="drilldown">none</option>
         <option name="mapping.choroplethLayer.colorBins">5</option>
@@ -88,9 +84,9 @@
       <title>Created Resources</title>
       <chart>
         <search base="base_sql">
-          <query><!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
+          <query>
+            <!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
           search $datatag$protoPayload.methodName="cloudsql.*.create" | stats count by $datatag$protoPayload.methodName</query>
-          
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -130,9 +126,9 @@
       <title>Deleted Resources</title>
       <chart>
         <search base="base_sql">
-          <query><!-- index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
+          <query>
+            <!-- index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
           search $datatag$protoPayload.methodName="cloudsql.*.delete" | stats count by $datatag$protoPayload.methodName</query>
-          
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -174,9 +170,9 @@
       <title>Event Count by Region</title>
       <chart>
         <search base="base_sql">
-          <query><!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com"-->
+          <query>
+            <!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com"-->
           | top limit=20 $datatag$resource.labels.region</query>
-          
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -216,9 +212,9 @@
       <title>Top Users</title>
       <chart>
         <search base="base_sql">
-          <query><!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
+          <query>
+            <!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
           | top limit=20 $datatag$protoPayload.authenticationInfo.principalEmail</query>
-          
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -258,9 +254,9 @@
       <title>Cloud SQL Errors</title>
       <single>
         <search base="base_sql">
-          <query><!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
+          <query>
+            <!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
           search $datatag$severity=ERROR | timechart count</query>
-          
         </search>
         <option name="colorBy">trend</option>
         <option name="colorMode">none</option>
@@ -287,9 +283,9 @@
       <title>Count by method</title>
       <chart>
         <search base="base_sql">
-          <query><!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
+          <query>
+            <!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
           | stats count by $datatag$protoPayload.methodName, $datatag$resource.type</query>
-          
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -329,9 +325,9 @@
       <title>Requests by Severity</title>
       <chart>
         <search base="base_sql">
-          <query><!-- index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
+          <query>
+            <!-- index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
           | timechart count by $datatag$severity limit=10</query>
-          
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -371,9 +367,9 @@
       <title>Request by Method</title>
       <chart>
         <search base="base_sql">
-          <query><!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
+          <query>
+            <!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
           | stats count by $datatag$protoPayload.methodName</query>
-        
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -417,7 +413,6 @@
         <search base="base_sql">
           <query> <!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
           | timechart count by $datatag$protoPayload.methodName</query>
-          
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -457,9 +452,9 @@
       <title>Requests by instance</title>
       <chart>
         <search base="base_sql">
-          <query><!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
+          <query>
+            <!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
           | timechart count by $datatag$protoPayload.resourceName limit=10</query>
-          
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -501,9 +496,9 @@
       <title>Resource deletions over time</title>
       <chart>
         <search base="base_sql">
-          <query><!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
+          <query>
+            <!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
           search $datatag$protoPayload.methodName="cloudsql.*.delete" | timechart count by $datatag$protoPayload.methodName</query>
-          
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -543,9 +538,9 @@
       <title>Resource creations over time</title>
       <chart>
         <search base="base_sql">
-          <query><!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
+          <query>
+            <!--index=* sourcetype=google:gcp:pubsub:message data.protoPayload.serviceName="cloudsql.googleapis.com" -->
           search $datatag$protoPayload.methodName="cloudsql.*.create" | timechart count by $datatag$protoPayload.methodName</query>
-          
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>

@@ -1,4 +1,5 @@
-<!-- v1.1-->
+<!-- v1.2-->
+<!-- Add-on 4.x -->
 <form version="1.1">
   <label>BigQuery Overview</label>
   
@@ -14,8 +15,8 @@
   <search id="tstats_query">
     <query>
       |makeresults 
-      |eval usetstats="|tstats fillnull_value=\"-\" count where `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName=\"bigquery.googleapis.com\" by _time, $datatag$resource.labels.project_id, $datatag$protoPayload.methodName, $datatag$severity, $datatag$protoPayload.requestMetadata.callerIp, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobConfiguration.query.query, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.startTime, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.endTime, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.status.code, $datatag$protoPayload.status.message, $datatag$protoPayload.authorizationInfo{}.granted span=1s" 
-      |eval notstats=" `gcp_index` sourcetype=google:gcp:pubsub:message $datatag$protoPayload.serviceName=\"bigquery.googleapis.com\" "
+      |eval usetstats="|tstats fillnull_value=\"-\" count where `gcp_index` `gcp_sourcetype_resources_activity` $datatag$protoPayload.serviceName=\"bigquery.googleapis.com\" by _time, $datatag$resource.labels.project_id, $datatag$protoPayload.methodName, $datatag$severity, $datatag$protoPayload.requestMetadata.callerIp, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobConfiguration.query.query, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.startTime, $datatag$protoPayload.serviceData.jobCompletedEvent.job.jobStatistics.endTime, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.status.code, $datatag$protoPayload.status.message, $datatag$protoPayload.authorizationInfo{}.granted span=1s" 
+      |eval notstats=" `gcp_index` `gcp_sourcetype_resources_activity` $datatag$protoPayload.serviceName=\"bigquery.googleapis.com\" "
       |eval tstatstag=`tstatstag`
     </query>
     <done>

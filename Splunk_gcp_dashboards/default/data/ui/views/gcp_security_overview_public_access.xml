@@ -1,4 +1,5 @@
-<!-- v1.6-->
+<!-- v1.7-->
+<!-- Add-on 4.x -->
 <form version="1.1">
   <label>GCP - Security Overview: Public Access</label>
   <search id="source_data_query">
@@ -53,7 +54,7 @@
       <fieldForLabel>ProjectID</fieldForLabel>
       <fieldForValue>ProjectID</fieldForValue>
       <search>
-        <query>$tstats_count$  `gcp_index` sourcetype="google:gcp:pubsub:message" $stats_count$ by $datatag$resource.labels.project_id |rename $datatag$resource.labels.project_id as "ProjectID"</query>
+        <query>$tstats_count$  `gcp_index` `gcp_sourcetype_pubsub_audit` $stats_count$ by $datatag$resource.labels.project_id |rename $datatag$resource.labels.project_id as "ProjectID"</query>
       </search>
       <choice value="*">ALL</choice>
       <default>*</default>
@@ -64,7 +65,7 @@
       <title>Public GCS Buckets</title>
       <table>
         <search>
-          <query>$tstats_count$  `gcp_index` sourcetype="google:gcp:pubsub:message" $datatag$resource.labels.project_id=$project_id_tok$ $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.member=allUsers $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action=ADD $datatag$protoPayload.serviceName="storage.googleapis.com" $stats_count$ by $datatag$resource.labels.project_id, $datatag$resource.labels.bucket_name, $datatag$protoPayload.resourceName, $datatag$resource.labels.location, $datatag$protoPayload.methodName, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.member, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.requestMetadata.callerIp, _time
+          <query>$tstats_count$  `gcp_index` `gcp_sourcetype_pubsub_audit` $datatag$resource.labels.project_id=$project_id_tok$ $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.member=allUsers $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action=ADD $datatag$protoPayload.serviceName="storage.googleapis.com" $stats_count$ by $datatag$resource.labels.project_id, $datatag$resource.labels.bucket_name, $datatag$protoPayload.resourceName, $datatag$resource.labels.location, $datatag$protoPayload.methodName, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.member, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.requestMetadata.callerIp, _time
 | table _time, $datatag$resource.labels.project_id, $datatag$resource.labels.bucket_name, $datatag$protoPayload.resourceName, $datatag$resource.labels.location, $datatag$protoPayload.methodName, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.member, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.requestMetadata.callerIp
 | rename $datatag$resource.labels.project_id as "Project ID", $datatag$resource.labels.location as Location, $datatag$protoPayload.methodName AS methodName, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action as action, $datatag$resource.labels.bucket_name as Bucket, $datatag$protoPayload.resourceName as resourceName, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.member as Member, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role as role, $datatag$protoPayload.authenticationInfo.principalEmail as "Principal email", $datatag$protoPayload.requestMetadata.callerIp as callerIp </query>
           <earliest>$time.earliest$</earliest>
@@ -81,7 +82,7 @@
       <title>GCP Instances Created / updated with External IP address</title>
       <table>
         <search>
-          <query>$tstats_count$ `gcp_index` sourcetype="google:gcp:pubsub:message" $datatag$resource.labels.project_id=$project_id_tok$ $datatag$protoPayload.authorizationInfo{}.permission="compute.subnetworks.useExternalIp" $stats_count$ by attributes.timestamp, $datatag$protoPayload.resourceName, $datatag$protoPayload.authenticationInfo.principalEmail 
+          <query>$tstats_count$ `gcp_index` `gcp_sourcetype_pubsub_audit` $datatag$resource.labels.project_id=$project_id_tok$ $datatag$protoPayload.authorizationInfo{}.permission="compute.subnetworks.useExternalIp" $stats_count$ by attributes.timestamp, $datatag$protoPayload.resourceName, $datatag$protoPayload.authenticationInfo.principalEmail 
 | rename attributes.timestamp as Time, $datatag$protoPayload.resourceName as "Resource Name", $datatag$protoPayload.authenticationInfo.principalEmail as "Principal email"
 | table Time, "Resource Name", "Principal email"</query>
           <earliest>$time.earliest$</earliest>
@@ -98,7 +99,7 @@
       <title>GCP Instances with access/activity on port 22</title>
       <table>
         <search>
-          <query>$tstats_count$ `gcp_index` sourcetype="google:gcp:pubsub:message" $datatag$resource.labels.project_id=$project_id_tok$ $datatag$logName="*/logs/compute.googleapis.com%2Fvpc_flows" $datatag$jsonPayload.reporter=DEST $datatag$jsonPayload.connection.dest_port=22 $stats_count$ by $datatag$resource.labels.project_id, $datatag$jsonPayload.dest_instance.vm_name, $datatag$jsonPayload.connection.dest_ip, $datatag$resource.labels.location,  $datatag$resource.labels.subnetwork_name 
+          <query>$tstats_count$ `gcp_index` `gcp_sourcetype_pubsub_audit` $datatag$resource.labels.project_id=$project_id_tok$ $datatag$logName="*/logs/compute.googleapis.com%2Fvpc_flows" $datatag$jsonPayload.reporter=DEST $datatag$jsonPayload.connection.dest_port=22 $stats_count$ by $datatag$resource.labels.project_id, $datatag$jsonPayload.dest_instance.vm_name, $datatag$jsonPayload.connection.dest_ip, $datatag$resource.labels.location,  $datatag$resource.labels.subnetwork_name 
 | dedup $datatag$jsonPayload.connection.dest_ip 
 | rename $datatag$resource.labels.project_id as "Project ID", $datatag$jsonPayload.dest_instance.vm_name as "VM name", $datatag$jsonPayload.connection.dest_ip as "Dest IP", $datatag$resource.labels.location as Location,  $datatag$resource.labels.subnetwork_name as "Subnetwork Name"
 | table "Project ID", "VM name", "Dest IP", Location, "Subnetwork Name"</query>

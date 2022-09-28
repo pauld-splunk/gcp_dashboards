@@ -1,4 +1,5 @@
-<!-- gcp_compute v2.7-->
+<!-- gcp_compute v2.8-->
+<!-- Add-on 4.x -->
 <form version="1.1">
   <label>GCP Compute Engine Overview</label>
 
@@ -166,12 +167,8 @@
       <title>Operations</title>
       <chart>
         <search>
-          <query><!--|tstats count where `gcp_index` sourcetype="google:gcp:pubsub:message" "$datatag$logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" "$datatag$resource.type"=gce_instance by _time, $datatag$protoPayload.resourceName,$datatag$protoPayload.methodName, $datatag$protoPayload.response.operationType, $datatag$resource.labels.project_id, $datatag$resource.labels.zone
-|rename $datatag$protoPayload.methodName as methodName $datatag$protoPayload.resourceName as name, $datatag$resource.labels.project_id as projectid, $datatag$resource.labels.zone as zone
-          |search  projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
-|rename $datatag$protoPayload.response.operationType as Action
-|timechart count  by Action -->
-$tstats_count$ `gcp_index` sourcetype="google:gcp:pubsub:message" "$datatag$logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" "$datatag$resource.type"=gce_instance $stats_count$ by _time, $datatag$protoPayload.resourceName,$datatag$protoPayload.methodName, $datatag$protoPayload.response.operationType, $datatag$resource.labels.project_id, $datatag$resource.labels.zone
+          <query>
+$tstats_count$ `gcp_index` `gcp_sourcetype_pubsub_admin_activity` "$datatag$logName"="projects/*/logs/cloudaudit.googleapis.com%2Factivity" "$datatag$resource.type"=gce_instance $stats_count$ by _time, $datatag$protoPayload.resourceName,$datatag$protoPayload.methodName, $datatag$protoPayload.response.operationType, $datatag$resource.labels.project_id, $datatag$resource.labels.zone
 |rename $datatag$protoPayload.methodName as methodName $datatag$protoPayload.resourceName as name, $datatag$resource.labels.project_id as projectid, $datatag$resource.labels.zone as zone
           |search  projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
 |rename $datatag$protoPayload.response.operationType as Action
@@ -218,7 +215,7 @@ $tstats_count$ `gcp_index` sourcetype="google:gcp:pubsub:message" "$datatag$logN
       <title>Recent Activity / Users</title>
       <table>
         <search>
-          <query>$tstats_count$ `gcp_index` sourcetype="google:gcp:pubsub:message" $datatag$logName="projects/*/logs/cloudaudit.googleapis.com%2Factivity" $datatag$resource.type=gce_instance $stats_count$ by _time, $datatag$protoPayload.resourceName, $datatag$protoPayload.methodName, $datatag$protoPayload.response.operationType, $datatag$protoPayload.response.user, $datatag$resource.labels.project_id, $datatag$resource.labels.zone
+          <query>$tstats_count$ `gcp_index` `gcp_sourcetype_pubsub_admin_activity` $datatag$logName="projects/*/logs/cloudaudit.googleapis.com%2Factivity" $datatag$resource.type=gce_instance $stats_count$ by _time, $datatag$protoPayload.resourceName, $datatag$protoPayload.methodName, $datatag$protoPayload.response.operationType, $datatag$protoPayload.response.user, $datatag$resource.labels.project_id, $datatag$resource.labels.zone
 |rename $datatag$protoPayload.methodName as methodName $datatag$protoPayload.resourceName as Instance, $datatag$protoPayload.response.operationType as Action, $datatag$protoPayload.response.user as User  $datatag$resource.labels.project_id as projectid, $datatag$resource.labels.zone as zone
 |search  projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
 |table _time, Instance, Action, User</query>
@@ -235,7 +232,7 @@ $tstats_count$ `gcp_index` sourcetype="google:gcp:pubsub:message" "$datatag$logN
       <title>Top Users</title>
       <table>
         <search>
-          <query>$tstats_count$ `gcp_index` sourcetype="google:gcp:pubsub:message" $datatag$logName="projects/*/logs/cloudaudit.googleapis.com%2Factivity" $datatag$resource.type=gce_instance $stats_count$ by _time, $datatag$protoPayload.resourceName,$datatag$protoPayload.methodName, $datatag$protoPayload.response.operationType, $datatag$protoPayload.response.user, $datatag$resource.labels.project_id, $datatag$resource.labels.zone
+          <query>$tstats_count$ `gcp_index` `gcp_sourcetype_pubsub_admin_activity` $datatag$logName="projects/*/logs/cloudaudit.googleapis.com%2Factivity" $datatag$resource.type=gce_instance $stats_count$ by _time, $datatag$protoPayload.resourceName,$datatag$protoPayload.methodName, $datatag$protoPayload.response.operationType, $datatag$protoPayload.response.user, $datatag$resource.labels.project_id, $datatag$resource.labels.zone
 |rename $datatag$protoPayload.methodName as methodName $datatag$protoPayload.resourceName as Instance, $datatag$protoPayload.response.operationType as Action, $datatag$protoPayload.response.user as User  $datatag$resource.labels.project_id as projectid, $datatag$resource.labels.zone as zone
 |search projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
 |chart sum(count) by User, Action | addtotals
@@ -254,7 +251,7 @@ $tstats_count$ `gcp_index` sourcetype="google:gcp:pubsub:message" "$datatag$logN
       <title>Instance Errors/Warnings</title>
       <chart>
         <search>
-          <query>$tstats_count$ `gcp_index` sourcetype="google:gcp:pubsub:message" $datatag$logName="projects/*/logs/cloudaudit.googleapis.com%2Factivity" $datatag$resource.type=gce_instance $stats_count$ by _time, $datatag$protoPayload.resourceName,$datatag$protoPayload.methodName, $datatag$resource.labels.project_id, $datatag$resource.labels.zone, $datatag$protoPayload.status.message, $datatag$protoPayload.response.error.errors{}.reason, $datatag$severity, $datatag$protoPayload.authenticationInfo.principalEmail
+          <query>$tstats_count$ `gcp_index` `gcp_sourcetype_pubsub_admin_activity` $datatag$logName="projects/*/logs/cloudaudit.googleapis.com%2Factivity" $datatag$resource.type=gce_instance $stats_count$ by _time, $datatag$protoPayload.resourceName,$datatag$protoPayload.methodName, $datatag$resource.labels.project_id, $datatag$resource.labels.zone, $datatag$protoPayload.status.message, $datatag$protoPayload.response.error.errors{}.reason, $datatag$severity, $datatag$protoPayload.authenticationInfo.principalEmail
 |rename $datatag$protoPayload.methodName as methodName $datatag$protoPayload.resourceName as Instance, $datatag$protoPayload.response.operationType as Action, $datatag$resource.labels.project_id as projectid, $datatag$resource.labels.zone as zone, $datatag$protoPayload.status.message as Message, $datatag$protoPayload.response.error.errors{}.reason as Reason, $datatag$severity as Severity, $datatag$protoPayload.authenticationInfo.principalEmail as User
 |search  projectid IN ($project_id_tok$) zone IN ($zone_tok$) 
 |timechart count  by Reason</query>
@@ -271,7 +268,7 @@ $tstats_count$ `gcp_index` sourcetype="google:gcp:pubsub:message" "$datatag$logN
       <title>Live migrated hosts</title>
       <table>
         <search>
-          <query>`gcp_index` sourcetype="google:gcp:pubsub:message" $datatag$resource.type="gce_instance" $datatag$protoPayload.methodName="compute.instances.migrateOnHostMaintenance"
+          <query>`gcp_index` `gcp_sourcetype_resources_activity` $datatag$resource.type="gce_instance" $datatag$protoPayload.methodName="compute.instances.migrateOnHostMaintenance"
 | rename $datatag$protoPayload.resourceName as Instance
 | table _time, Instance</query>
           <earliest>-24h@h</earliest>

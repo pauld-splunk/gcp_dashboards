@@ -1,4 +1,4 @@
-<!-- v1.6-->
+<!-- v1.7-->
 <form version="1.1">
   <label>Containers Overview</label>
     <search id="source_data_query">
@@ -36,13 +36,7 @@
 | eval ProjectID=replace(Name,"^\S+projects\/(\S+)\/(zones|locations)\S*","\1")
 | eval Zone=replace(Name,"^\S+(zones|locations)\/(\S+)\/clusters\S*","\2")
 | eval ClusterName=replace(Name,"^\S+clusters\/(\S+)\/k8s\S*","\1")
-    <!-- |tstats dc(name) where `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata) asset_type="k8s.io/Node" by name,resource.data.metadata.name, resource.data.metadata.annotations.container.googleapis.com/instance_id,resource.data.metadata.labels.beta.kubernetes.io/instance-type, resource.data.metadata.labels.kubernetes.io/hostname, resource.data.metadata.labels.cloud.google.com/gke-nodepool, resource.data.status.nodeInfo.containerRuntimeVersion 
-| rename name as Name,resource.data.metadata.name as NodeName, resource.data.metadata.annotations.container.googleapis.com/instance_id as Instance_ID, resource.data.metadata.labels.beta.kubernetes.io/instance-type as InstanceType, resource.data.metadata.labels.kubernetes.io/hostname as HostName, resource.data.metadata.labels.cloud.google.com/gke-nodepool as NodePool, resource.data.status.nodeInfo.containerRuntimeVersion as containerRuntimeVersion
-| eval ProjectID=replace(Name,"^\S+projects\/(\S+)\/(zones|locations)\S*","\1")
-| eval Zone=replace(Name,"^\S+(zones|locations)\/(\S+)\/clusters\S*","\2")
-| eval ClusterName=replace(Name,"^\S+clusters\/(\S+)\/k8s\S*","\1")
-
--->
+    
     </query>
     <earliest>$time.earliest$</earliest>
     <latest>$time.latest$</latest>
@@ -139,7 +133,7 @@
       <html>
         <center>
           <h1>
-            <a href="/app/gcp_dashboards/gcp_container_details?form.project_id_tok=$project_id_tok$&amp;form.zone_tok=$zone_tok$&amp;form.cluster_tok=$cluster_tok$" target="_blank">Click here for Metrics on $cclustername$</a>
+            <a href="/app/Splunk_gcp_dashboards/gcp_container_details?form.project_id_tok=$project_id_tok$&amp;form.zone_tok=$zone_tok$&amp;form.cluster_tok=$cluster_tok$" target="_blank">Click here for Metrics on $cclustername$</a>
           </h1>
         </center>
       </html>

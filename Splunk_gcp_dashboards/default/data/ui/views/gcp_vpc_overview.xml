@@ -1,4 +1,5 @@
-<!-- v1.8-->
+<!-- v1.9-->
+<!-- Add-on 4.x -->
 <form version="1.1">
   <label>GCP VPC Overview Dashboard</label>
   <search id="source_data_query">
@@ -35,7 +36,7 @@
   
   <search id="base_vpc">
     <query>
-    $tstats_count$ `gcp_index` (sourcetype=google:gcp:pubsub:message OR sourcetype=google:gcp:compute:vpc_flows) $stats_count$ by _time, $datatag$logName, $datatag$resource.labels.project_id, $datatag$resource.labels.location, $datatag$jsonPayload.src_vpc.vpc_name, $datatag$resource.labels.subnetwork_name, $datatag$jsonPayload.src_instance.vm_name, $datatag$jsonPayload.connection.src_ip,  $datatag$jsonPayload.dest_vpc.vpc_name, $datatag$jsonPayload.dest_instance.vm_name, $datatag$jsonPayload.connection.dest_ip, $datatag$jsonPayload.bytes_sent, $datatag$jsonPayload.packets_sent
+    $tstats_count$ `gcp_index` (`gcp_sourcetype_platform` OR sourcetype=google:gcp:compute:vpc_flows) $stats_count$ by _time, $datatag$logName, $datatag$resource.labels.project_id, $datatag$resource.labels.location, $datatag$jsonPayload.src_vpc.vpc_name, $datatag$resource.labels.subnetwork_name, $datatag$jsonPayload.src_instance.vm_name, $datatag$jsonPayload.connection.src_ip,  $datatag$jsonPayload.dest_vpc.vpc_name, $datatag$jsonPayload.dest_instance.vm_name, $datatag$jsonPayload.connection.dest_ip, $datatag$jsonPayload.bytes_sent, $datatag$jsonPayload.packets_sent
     </query>
     <earliest>$TimeRangePicker.earliest$</earliest>
     <latest>$TimeRangePicker.latest$</latest>
