@@ -1,4 +1,4 @@
-<!-- v1.6-->
+<!-- v1.7-->
 <dashboard version="1.1">
   <label>GCP App Setup</label>
   <row>
@@ -15,10 +15,12 @@
 <p>2) GCP DataFlow. <a href="https://cloud.google.com/blog/products/data-analytics/connect-to-splunk-with-a-dataflow-template">https://cloud.google.com/blog/products/data-analytics/connect-to-splunk-with-a-dataflow-template</a>
         </p>
 <p>All Data collected supported. (pre-install the GCP Add-On advised)</p>
-<p>3) Cloud Functions <a href="https://github.com/splunk/gcp_functions">https://github.com/splunk/gcp_functions</a>
+<p>3) Data Manager (<a href="https://docs.splunk.com/Documentation/DM">https://docs.splunk.com/Documentation/DM</a>)</p>
+<p>All Data collected from GCP supported. Note that this is for Splunk Cloud only</p>
+<p>4) Cloud Functions <a href="https://github.com/splunk/gcp_functions">https://github.com/splunk/gcp_functions</a>
         </p>
 <p>All Data collected supported. (pre-install the GCP Add-On)</p>
-<p>4) Splunk Infrastructure Monitoring Add-on (SIM) <a href="https://splunkbase.splunk.com/app/5247/">https://splunkbase.splunk.com/app/5247/</a>
+<p>5) Splunk Infrastructure Monitoring Add-on (SIM) <a href="https://splunkbase.splunk.com/app/5247/">https://splunkbase.splunk.com/app/5247/</a>
         </p>
 <p>All Metrics collected by SIM supported</p>
 <p>Follow the instructions for these collection methods before setting up this app.</p>
@@ -27,10 +29,11 @@
 <strong>Sourcetypes</strong>
 </h1>
 For the dashboards to work properly, you will need to ensure that these sourcetypes are used. This is especially important if you are using HEC as a collection method.<br/>
-All logs via pub-sub : <b>google:gcp:pubsub:message</b> <br/>
-Note vpc flow logs can also be <b>google:gcp:compute:vpc_flows</b><br/>
+All logs via pub-sub must confrorm to the Add-On sourcetypes: <b>google:gcp:pubsub:message, google:gcp:pubsub:audit:admin_activity, google:gcp:pubsub:audit:data_access, google:gcp:pubsub:audit:system_event, google:gcp:pubsub:audit:policy_denied, google:gcp:pubsub:audit:auth, google:gcp:pubsub:platform, google:gcp:pubsub:access_transparency, google:gcp:buckets:accesslogs.</b> See Docs for details  <br/>
+(Note vpc flow logs can also be <b>google:gcp:compute:vpc_flows)</b><br/>
 All asset data : <b>google:gcp:assets</b>, <b>google:gcp:buckets:jsondata</b> or <b>google:gcp:compute:instance</b><br/>
-All metrics (events) : <b>google:gcp:monitoring</b>
+All metrics (events) : <b>google:gcp:monitoring</b><br/>
+Note that if Heavy Forwarders are used, you will need to ensure that the Add-On for Google Cloud Platform is installed and configured appropriately (including any changes per described below)
 <br/>
 <h1>
 <strong>Macros</strong>

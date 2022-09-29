@@ -24,11 +24,15 @@ All Data collection methods/sources supported (PubSub, Metrics, GCS)
 
 All Data collected supported. (pre-install the GCP Add-On advised)
 
-3) Cloud Functions https://github.com/splunk/gcp_functions
+3) Data Manager (https://docs.splunk.com/Documentation/DM)
+
+All Data collected from GCP supported. Note that this is for Splunk Cloud only
+
+34 Cloud Functions https://github.com/splunk/gcp_functions
 
 All Data collected supported. (pre-install the GCP Add-On)
 
-4) Splunk Infrastructure Monitoring Add-on (SIM) https://splunkbase.splunk.com/app/5247/
+5) Splunk Infrastructure Monitoring Add-on (SIM) https://splunkbase.splunk.com/app/5247/
 
 All Metrics collected by SIM supported
 
@@ -42,9 +46,9 @@ You will need assets information via Cloud Functions (see https://github.com/spl
 ### Sourcetypes
 For the dashboards to work properly, you will need to ensure that these sourcetypes are used. This is especially important if you are using HEC as a collection method.
 
-All logs via pub-sub : <strong>google:gcp:pubsub:message</strong>
+All logs via pub-sub : <strong>google:gcp:pubsub:message, google:gcp:pubsub:audit:admin_activity, google:gcp:pubsub:audit:data_access, google:gcp:pubsub:audit:system_event, google:gcp:pubsub:audit:policy_denied, google:gcp:pubsub:audit:auth, google:gcp:pubsub:platform, google:gcp:pubsub:access_transparency, google:gcp:buckets:accesslogs</strong>. See Docs for details
 
-Note vpc flow logs can also be <strong>google:gcp:compute:vpc_flows</strong>
+(Note vpc flow logs can also be <strong>google:gcp:compute:vpc_flows</strong>)
 
 All asset data : <strong>google:gcp:assets</strong>, <strong>google:gcp:buckets:jsondata</strong> or <strong>google:gcp:compute:instance</strong>
 
