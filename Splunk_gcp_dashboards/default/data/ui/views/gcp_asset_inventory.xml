@@ -1,4 +1,4 @@
-<!-- v1.9-->
+<!-- v1.10-->
 <form version="1.1">
   <label>GCP Asset Inventory</label>
   
@@ -160,7 +160,7 @@
 | rename "ancestors{}" as ancestors
 |search ancestors=$project_tok$
 |rename resource.data.projectNumber as project_number
-| join project_number [ $tstats_gcs2$ `gcp_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata)  asset_type=compute.googleapis.com/Project $table_gcs$ resource.parent, resource.data.name
+| join project_number [ $tstats_gcs2$ `gcp_assets_index` (sourcetype="google:gcp:assets" OR sourcetype=google:gcp:buckets:jsondata)  asset_type=compute.googleapis.com/Project $table_gcs$ resource.parent, resource.data.name
 |rename resource.parent as parent resource.data.name as ProjectID
 |eval project_number=replace(parent,"\S+projects\/(\d+)","\1")
 |fields - count, - parent]
