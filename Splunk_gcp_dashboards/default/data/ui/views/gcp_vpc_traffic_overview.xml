@@ -1,4 +1,4 @@
-<!--v1.6-->
+<!--v1.7-->
 <!-- Add-on 4.x -->
 <form version="1.1">
   <label>GCP VPC Traffic Overview</label>
@@ -21,22 +21,22 @@
       
       |eval tstats_count=if(tstatstag=="Yes", "|tstats fillnull_value=null count where","")
       
-      |eval stats_count=if(tstatstag=="No", "|stats count ", "")
+      |eval stats_count=if(tstatstag=="No", "| fillnull  $datatag$jsonPayload.src_vpc.vpc_name $datatag$resource.labels.subnetwork_name $datatag$jsonPayload.src_instance.vm_name $datatag$jsonPayload.connection.src_ip  $datatag$jsonPayload.dest_vpc.vpc_name $datatag$jsonPayload.dest_instance.vm_name $datatag$jsonPayload.connection.dest_ip $datatag$jsonPayload.bytes_sent $datatag$jsonPayload.packets_sent |stats count ", "")
       
       |eval tstats_count_dc=if(tstatstag=="Yes", "|tstats dc(\"$datatag$jsonPayload.connection.protocol\") as Protocols where", "")
-      |eval stats_dc=if(tstatstag=="No", "|stats dc(\"$datatag$jsonPayload.connection.protocol\") as Protocols", "")
+      |eval stats_dc=if(tstatstag=="No", "| fillnull  $datatag$jsonPayload.src_vpc.vpc_name $datatag$resource.labels.subnetwork_name $datatag$jsonPayload.src_instance.vm_name $datatag$jsonPayload.connection.src_ip  $datatag$jsonPayload.dest_vpc.vpc_name $datatag$jsonPayload.dest_instance.vm_name $datatag$jsonPayload.connection.dest_ip $datatag$jsonPayload.bytes_sent $datatag$jsonPayload.packets_sent|stats dc(\"$datatag$jsonPayload.connection.protocol\") as Protocols", "")
       
       |eval tstats_sum_bytes=if(tstatstag=="Yes", "|tstats sum(\"$datatag$jsonPayload.bytes_sent\") as total_bytes where", "")
-      |eval stats_sum_bytes=if(tstatstag=="No", "|stats sum(\"$datatag$jsonPayload.bytes_sent\") as total_bytes", "")
+      |eval stats_sum_bytes=if(tstatstag=="No", "| fillnull  $datatag$jsonPayload.src_vpc.vpc_name $datatag$resource.labels.subnetwork_name $datatag$jsonPayload.src_instance.vm_name $datatag$jsonPayload.connection.src_ip  $datatag$jsonPayload.dest_vpc.vpc_name $datatag$jsonPayload.dest_instance.vm_name $datatag$jsonPayload.connection.dest_ip $datatag$jsonPayload.bytes_sent $datatag$jsonPayload.packets_sent|stats sum(\"$datatag$jsonPayload.bytes_sent\") as total_bytes", "")
       
       |eval tstats_sum_packets=if(tstatstag=="Yes", "|tstats  sum(\"$datatag$jsonPayload.packets_sent\") as total_packets_sent where", "")
-      |eval stats_sum_packets=if(tstatstag=="No", "|stats sum(\"$datatag$jsonPayload.packets_sent\") as total_packets_sent", "")
+      |eval stats_sum_packets=if(tstatstag=="No", "| fillnull  $datatag$jsonPayload.src_vpc.vpc_name $datatag$resource.labels.subnetwork_name $datatag$jsonPayload.src_instance.vm_name $datatag$jsonPayload.connection.src_ip  $datatag$jsonPayload.dest_vpc.vpc_name $datatag$jsonPayload.dest_instance.vm_name $datatag$jsonPayload.connection.dest_ip $datatag$jsonPayload.bytes_sent $datatag$jsonPayload.packets_sent|stats sum(\"$datatag$jsonPayload.packets_sent\") as total_packets_sent", "")
       
       |eval tstats_sum_dest=if(tstatstag=="Yes", "|tstats dc(\"$datatag$jsonPayload.connection.dest_ip\") as Dest where", "")
-      |eval stats_sum_dest=if(tstatstag=="No", "|stats dc(\"$datatag$jsonPayload.connection.dest_ip\") as Dest ", "")
+      |eval stats_sum_dest=if(tstatstag=="No", "| fillnull  $datatag$jsonPayload.src_vpc.vpc_name $datatag$resource.labels.subnetwork_name $datatag$jsonPayload.src_instance.vm_name $datatag$jsonPayload.connection.src_ip  $datatag$jsonPayload.dest_vpc.vpc_name $datatag$jsonPayload.dest_instance.vm_name $datatag$jsonPayload.connection.dest_ip $datatag$jsonPayload.bytes_sent $datatag$jsonPayload.packets_sent|stats dc(\"$datatag$jsonPayload.connection.dest_ip\") as Dest ", "")
       
       |eval tstats_sum_sources=if(tstatstag=="Yes", "|tstats dc($datatag$jsonPayload.connection.src_ip) as Sources where", "")
-      |eval stats_sum_sources=if(tstatstag=="No", "|stats dc($datatag$jsonPayload.connection.src_ip) as Sources ", "")
+      |eval stats_sum_sources=if(tstatstag=="No", "| fillnull  $datatag$jsonPayload.src_vpc.vpc_name $datatag$resource.labels.subnetwork_name $datatag$jsonPayload.src_instance.vm_name $datatag$jsonPayload.connection.src_ip  $datatag$jsonPayload.dest_vpc.vpc_name $datatag$jsonPayload.dest_instance.vm_name $datatag$jsonPayload.connection.dest_ip $datatag$jsonPayload.bytes_sent $datatag$jsonPayload.packets_sent|stats dc($datatag$jsonPayload.connection.src_ip) as Sources ", "")
       
     </query>
     <done>
@@ -70,7 +70,7 @@
       <title>Number of VMs</title>
       <single>
         <search>
-          <query>$tstats_count$ `gcp_index` (`gcp_sourcetype_platform` OR sourcetype=google:gcp:compute:vpc_flows)  "$datatag$logName"="*/logs/compute.googleapis.com%2Fvpc_flows" $stats_count$ by "$datatag$jsonPayload.src_instance.vm_name", "$datatag$jsonPayload.dest_instance.vm_name" | rename "$datatag$jsonPayload.src_instance.vm_name" as vmsrc | rename "$datatag$jsonPayload.dest_instance.vm_name" as vmdest | eval allvms=if(vmsrc="null", vmdest, vmsrc)| stats dc(allvms) as vms</query>
+          <query>$tstats_count$ `gcp_index` (`gcp_sourcetype_platform` OR sourcetype=google:gcp:compute:vpc_flows)  "$datatag$logName"="*/logs/compute.googleapis.com%2Fvpc_flows" TERM("*compute.googleapis.com%2Fvpc_flows") $stats_count$ by "$datatag$jsonPayload.src_instance.vm_name", "$datatag$jsonPayload.dest_instance.vm_name" | rename "$datatag$jsonPayload.src_instance.vm_name" as vmsrc | rename "$datatag$jsonPayload.dest_instance.vm_name" as vmdest | eval allvms=if(vmsrc="null", vmdest, vmsrc)| search allvms!=0| stats dc(allvms) as vms</query>
           <earliest>$field1.earliest$</earliest>
           <latest>$field1.latest$</latest>
           <sampleRatio>1</sampleRatio>
