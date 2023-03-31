@@ -1,4 +1,4 @@
-<!-- v1.9-->
+<!-- v2.1-->
 <!-- Add-on 4.x -->
 <form version="1.1">
   <label>GCP VPC Overview Dashboard</label>
@@ -12,21 +12,30 @@
     </done>
   </search>
   
+  <init>
+    <set token="relativetm">86400</set>
+  </init>
+  
    <search id="tstats_query">
     <query>
       |makeresults 
       |eval usetstats="Yes" 
       |eval notstats="No"
       |eval tstatstag=`tstatstag`
+ 
+  
+      |eval stats_count=if(tstatstag=="No", "| fillnull  $datatag$jsonPayload.src_vpc.vpc_name $datatag$resource.labels.subnetwork_name $datatag$jsonPayload.src_instance.vm_name $datatag$jsonPayload.connection.src_ip  $datatag$jsonPayload.dest_vpc.vpc_name $datatag$jsonPayload.dest_instance.vm_name $datatag$jsonPayload.connection.dest_ip $datatag$jsonPayload.bytes_sent $datatag$jsonPayload.packets_sent |bin span=$secs_for_bin$s _time  |stats count as counter sum($datatag$jsonPayload.packets_sent) as total_packets_sent sum($datatag$jsonPayload.bytes_sent) as total_bytes dc($datatag$jsonPayload.connection.src_ip) as Sources dc($datatag$jsonPayload.connection.dest_ip) as Dest ", "")
       
-      |eval tstats_count=if(tstatstag=="Yes", "|tstats fillnull_value=\"-null-\" count where","")
+      |eval tstats_count=if(tstatstag=="Yes", "|tstats  fillnull_value=\"-null-\" count as counter sum($datatag$jsonPayload.packets_sent) as total_packets_sent sum($datatag$jsonPayload.bytes_sent) as total_bytes dc($datatag$jsonPayload.connection.src_ip) as Sources dc($datatag$jsonPayload.connection.dest_ip) as Dest where","")
       
-      |eval stats_count=if(tstatstag=="No", "|stats count ", "")
+      |eval tstats_span=if(tstatstag=="Yes", "span=$secs_for_bin$s","")
+      
       
     </query>
     <done>
       <set token="tstats_count">$result.tstats_count$</set>
       <set token="stats_count">$result.stats_count$</set>
+      <set token="tstats_span">$result.tstats_span$</set>
       
       <set token="count_type">$result.count_type$</set>
       <set token="by_type">$result.by_type$</set>
@@ -36,14 +45,14 @@
   
   <search id="base_vpc">
     <query>
-    $tstats_count$ `gcp_index` (`gcp_sourcetype_platform` OR sourcetype=google:gcp:compute:vpc_flows) $stats_count$ by _time, $datatag$logName, $datatag$resource.labels.project_id, $datatag$resource.labels.location, $datatag$jsonPayload.src_vpc.vpc_name, $datatag$resource.labels.subnetwork_name, $datatag$jsonPayload.src_instance.vm_name, $datatag$jsonPayload.connection.src_ip,  $datatag$jsonPayload.dest_vpc.vpc_name, $datatag$jsonPayload.dest_instance.vm_name, $datatag$jsonPayload.connection.dest_ip, $datatag$jsonPayload.bytes_sent, $datatag$jsonPayload.packets_sent
+    $tstats_count$ `gcp_index` (`gcp_sourcetype_platform` OR sourcetype=google:gcp:compute:vpc_flows) TERM("*compute.googleapis.com%2Fvpc_flows") $stats_count$ by _time, $datatag$logName, $datatag$resource.labels.project_id, $datatag$resource.labels.location, $datatag$jsonPayload.src_vpc.vpc_name, $datatag$resource.labels.subnetwork_name, $datatag$jsonPayload.src_instance.vm_name, $datatag$jsonPayload.connection.src_ip,  $datatag$jsonPayload.dest_vpc.vpc_name, $datatag$jsonPayload.dest_instance.vm_name, $datatag$jsonPayload.connection.dest_ip $tstats_span$
     </query>
     <earliest>$TimeRangePicker.earliest$</earliest>
     <latest>$TimeRangePicker.latest$</latest>
   </search>
   <search id="sub_vpc_search" base="base_vpc">
     <query>
-    |search $datatag$resource.labels.project_id IN ($projectid_tok$)  $datatag$resource.labels.location IN ($location_tok$) ($datatag$jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR $datatag$jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) $datatag$resource.labels.subnetwork_name IN ($subnet_tok$) ($datatag$jsonPayload.src_instance.vm_name IN ($instance_tok$) OR $datatag$jsonPayload.dest_instance.vm_name IN ($instance_tok$))
+    |search  $datatag$resource.labels.project_id IN ($projectid_tok$)  $datatag$resource.labels.location IN ($location_tok$) ($datatag$jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR $datatag$jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) $datatag$resource.labels.subnetwork_name IN ($subnet_tok$) ($datatag$jsonPayload.src_instance.vm_name IN ($instance_tok$) OR $datatag$jsonPayload.dest_instance.vm_name IN ($instance_tok$))
     </query>
   </search>
   <fieldset submitButton="false" autoRun="true">
@@ -53,6 +62,10 @@
         <earliest>-24h@h</earliest>
         <latest>now</latest>
       </default>
+      <change>
+        <eval token="relativetm">relative_time(now(), $TimeRangePicker.latest$)-relative_time(now(), $TimeRangePicker.earliest$)</eval>
+        <eval token="form.secs_for_bin">if($relativetm$/100&lt;1,1, if($relativetm$/6000&lt;1,60, if($relativetm$/60000&lt;1,600, if($relativetm$/180000&lt;1,1800, if($relativetm$/360000&lt;1,3600, if($relativetm$/8640000&lt;1,86400, if($relativetm$/8640000&lt;1,86400,26784000)))))))</eval>
+      </change>
     </input>
     <input type="multiselect" token="projectid_tok" searchWhenChanged="true">
       <label>Project ID</label>
@@ -78,7 +91,7 @@
       <fieldForLabel>location</fieldForLabel>
       <fieldForValue>location</fieldForValue>
       <search base="base_vpc">
-        <query>| search $datatag$resource.labels.project_id IN ($projectid_tok$) |stats count by $datatag$resource.labels.project_id, $datatag$resource.labels.location| fields $datatag$resource.labels.location | dedup $datatag$resource.labels.location| rename $datatag$resource.labels.location as location| search NOT location="-null-" AND NOT location="-"</query>
+        <query>|search  $datatag$resource.labels.project_id IN ($projectid_tok$) |stats count by $datatag$resource.labels.project_id, $datatag$resource.labels.location| fields $datatag$resource.labels.location | dedup $datatag$resource.labels.location| rename $datatag$resource.labels.location as location| search NOT location="-null-" AND NOT location="-"</query>
       </search>
       <delimiter>,</delimiter>
     </input>
@@ -105,7 +118,7 @@
       <fieldForLabel>subnetwork_name</fieldForLabel>
       <fieldForValue>subnetwork_name</fieldForValue>
       <search base="base_vpc">
-        <query>| search $datatag$resource.labels.project_id IN ($projectid_tok$) AND $datatag$resource.labels.location IN ($location_tok$) AND ($datatag$jsonPayload.src_vpc.vpc_name IN ($vpc_tok$) OR $datatag$jsonPayload.dest_vpc.vpc_name IN ($vpc_tok$))
+        <query>|search  $datatag$resource.labels.project_id IN ($projectid_tok$) AND $datatag$resource.labels.location IN ($location_tok$) AND ($datatag$jsonPayload.src_vpc.vpc_name IN ($vpc_tok$) OR $datatag$jsonPayload.dest_vpc.vpc_name IN ($vpc_tok$))
           |stats count by $datatag$resource.labels.project_id, $datatag$resource.labels.location, $datatag$jsonPayload.src_vpc.vpc_name, $datatag$resource.labels.subnetwork_name, $datatag$jsonPayload.dest_vpc.vpc_name 
          | rename $datatag$resource.labels.subnetwork_name as subnetwork_name |dedup subnetwork_name| search NOT subnetwork_name="-null-"</query>
         <earliest>-24h@h</earliest>
@@ -121,13 +134,17 @@
       <fieldForLabel>vms</fieldForLabel>
       <fieldForValue>vms</fieldForValue>
       <search base="base_vpc">
-        <query>|search $datatag$resource.labels.project_id IN ($projectid_tok$)  $datatag$resource.labels.location IN ($location_tok$) ($datatag$jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR $datatag$jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) $datatag$resource.labels.subnetwork_name IN ($subnet_tok$)
+        <query>|search  $datatag$resource.labels.project_id IN ($projectid_tok$)  $datatag$resource.labels.location IN ($location_tok$) ($datatag$jsonPayload.dest_vpc.vpc_name IN($vpc_tok$) OR $datatag$jsonPayload.src_vpc.vpc_name IN($vpc_tok$)) $datatag$resource.labels.subnetwork_name IN ($subnet_tok$)
         |stats count by $datatag$resource.labels.project_id, $datatag$resource.labels.location, $datatag$jsonPayload.src_vpc.vpc_name, $datatag$resource.labels.subnetwork_name, $datatag$jsonPayload.src_instance.vm_name, $datatag$jsonPayload.dest_vpc.vpc_name, $datatag$jsonPayload.dest_instance.vm_name 
         |rename $datatag$jsonPayload.src_instance.vm_name as src_vm, $datatag$jsonPayload.dest_instance.vm_name as dest_vm |eval vms=coalesce(src_vm,dest_vm) | fields vms | dedup vms | search NOT vms="-null-"</query>
         <earliest>-24h@h</earliest>
         <latest>now</latest>
       </search>
       <delimiter>,</delimiter>
+    </input>
+    <input type="text" token="secs_for_bin" depends="$never$" searchWhenChanged="true">
+      <label>secs_for_bin</label>
+      <default>3600</default>
     </input>
   </fieldset>
   <row>
@@ -136,9 +153,9 @@
       <single>
         <search base="sub_vpc_search">
           <query>
-          |stats sum("$datatag$jsonPayload.bytes_sent") as total_bytes sum("$datatag$jsonPayload.packets_sent") as total_packets_sent   by _time
-| eval GB = round((((total_bytes / 1024) / 1024) / 1024),2)
-| fields + GB |timechart avg(GB)</query>
+          |stats sum(total_bytes) as total_bytes by _time
+| eval GB = round((((total_bytes / 1024) / 1024) / 1024),4)
+| fields + GB |timechart sum(GB)</query>
           <earliest>$TimeRangePicker.earliest$</earliest>
           <latest>$TimeRangePicker.latest$</latest>
         </search>
@@ -153,7 +170,7 @@
       <single>
         <search base="sub_vpc_search">
           <query>
-          |stats  sum("$datatag$jsonPayload.packets_sent") as total_packets_sent  by _time | timechart sum(total_packets_sent)</query>
+          |stats  sum(total_packets_sent) as total_packets_sent  by _time | timechart sum(total_packets_sent)</query>
           <earliest>$TimeRangePicker.earliest$</earliest>
           <latest>$TimeRangePicker.latest$</latest>
         </search>
@@ -188,8 +205,8 @@
       <title>Number of VPC Events by Source</title>
       <chart>
         <search base="sub_vpc_search">
-          <query>| search NOT $datatag$jsonPayload.connection.src_ip="-null-"
-|stats count  by _time, $datatag$jsonPayload.connection.src_ip  |timechart count by $datatag$jsonPayload.connection.src_ip useother=f</query>
+          <query>| search $datatag$jsonPayload.connection.src_ip!="-null-" $datatag$jsonPayload.connection.src_ip!=0
+|timechart count(counter) by $datatag$jsonPayload.connection.src_ip useother=f</query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -229,7 +246,8 @@
       <title>VPC Events Destination</title>
       <map>
         <search base="sub_vpc_search">
-          <query>search $datatag$jsonPayload.connection.dest_ip!="-null-" |stats count  by $datatag$jsonPayload.connection.dest_ip | iplocation $datatag$jsonPayload.connection.dest_ip | geostats count by City</query>
+          <query>search $datatag$jsonPayload.connection.dest_ip!="-null-" |stats count  by $datatag$jsonPayload.connection.dest_ip 
+          |search $datatag$jsonPayload.connection.dest_ip!=0| iplocation $datatag$jsonPayload.connection.dest_ip | geostats count by City</query>
         </search>
         <option name="drilldown">none</option>
         <option name="mapping.choroplethLayer.colorBins">5</option>
