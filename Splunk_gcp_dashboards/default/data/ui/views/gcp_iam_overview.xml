@@ -1,4 +1,4 @@
-<!-- v2.7-->
+<!-- v2.8-->
 <!-- Add-On 4.0 -->
 <form version="1.1">
   <label>IAM Overview</label>
@@ -14,14 +14,21 @@
   <search id="tstats_query">
     <query>
       |makeresults 
-      |eval usetstats="|tstats fillnull_value=\"-\" count where `gcp_index` `gcp_sourcetype_iam_activity` $datatag$protoPayload.methodName=\"*iam*\" by _time, $datatag$resource.type, $datatag$protoPayload.methodName, $datatag$resource.labels.project_id, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.authorizationInfo{}.permission, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role span=1s" 
-      |eval notstats="`gcp_index` `gcp_sourcetype_iam_activity` $datatag$protoPayload.serviceName=\"*iam*\" |fields _time, $datatag$resource.type, $datatag$protoPayload.methodName, $datatag$resource.labels.project_id, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.authorizationInfo{}.permission, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role"
+      
+      |eval usetstats="Yes" 
+      |eval notstats="No"
       |eval tstatstag=`tstatstag`
+      
+      |eval aggregate=if(tstatstag=="Yes", "sum(count)","count") 
+      
+      |eval usetstats="|tstats fillnull_value=\"-\" count where `gcp_index` `gcp_sourcetype_iam_activity` $datatag$protoPayload.methodName=\"*iam*\" by _time, $datatag$resource.type, $datatag$protoPayload.methodName, $datatag$resource.labels.project_id, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.authorizationInfo{}.permission, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role" 
+      |eval notstats="`gcp_index` `gcp_sourcetype_iam_activity` $datatag$protoPayload.methodName=\"*iam*\" |fields _time, $datatag$resource.type, $datatag$protoPayload.methodName, $datatag$resource.labels.project_id, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.authorizationInfo{}.permission, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action, $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role"
+      |eval tstatstag=`tstatstag`
+      
     </query>
     <done>
       <set token="tstatstag">$result.tstatstag$</set>
-      <set token="tstats_post_midtag">$result.tstats_post_midtag$</set>
-      <set token="tstats_post_endtag">$result.tstats_post_endtag$</set>
+      <set token="aggregate">$result.aggregate$</set>
     </done>
   </search>
   <search id="base_iam">
@@ -56,7 +63,7 @@
       <title>Operations</title>
       <chart>
         <search base="base_iam">
-          <query> search $datatag$resource.labels.project_id =$project_tok$ | timechart count by $datatag$protoPayload.methodName
+          <query> search $datatag$resource.labels.project_id=$project_tok$ $datatag$resource.labels.project_id !="-" $datatag$protoPayload.methodName!="-" | timechart $aggregate$ by $datatag$protoPayload.methodName
           </query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
@@ -75,7 +82,7 @@
         <option name="charting.chart.bubbleMaximumSize">50</option>
         <option name="charting.chart.bubbleMinimumSize">10</option>
         <option name="charting.chart.bubbleSizeBy">area</option>
-        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.nullValueMode">zero</option>
         <option name="charting.chart.showDataLabels">none</option>
         <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
         <option name="charting.chart.stackMode">stacked</option>
@@ -96,7 +103,7 @@
       <title>Service Account activity</title>
       <table>
         <search base="base_iam">
-          <query>search $datatag$resource.labels.project_id =$project_tok$ $datatag$resource.type=service_account| table _time, $datatag$protoPayload.authenticationInfo.principalEmail,$datatag$protoPayload.methodName, $datatag$protoPayload.authorizationInfo{}.permission | sort - _time
+          <query>search $datatag$resource.labels.project_id=$project_tok$ $datatag$resource.type=service_account $datatag$resource.labels.project_id !="-" $datatag$protoPayload.methodName!="-"| table _time, $datatag$protoPayload.authenticationInfo.principalEmail,$datatag$protoPayload.methodName, $datatag$protoPayload.authorizationInfo{}.permission | sort - _time
           |rename $datatag$protoPayload.authenticationInfo.principalEmail as "Principal Email",$datatag$protoPayload.methodName as "Method Name" , $datatag$protoPayload.authorizationInfo{}.permission as "Permission"</query>
         </search>
         <option name="count">5</option>
@@ -115,7 +122,7 @@
       <title>Operations by project</title>
       <chart>
         <search base="base_iam">
-          <query>search $datatag$resource.labels.project_id =$project_tok$ | timechart count by $datatag$resource.labels.project_id</query>
+          <query>search $datatag$resource.labels.project_id =$project_tok$ $datatag$resource.labels.project_id !="-" $datatag$protoPayload.methodName!="-"| timechart $aggregate$ by $datatag$resource.labels.project_id</query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -133,7 +140,7 @@
         <option name="charting.chart.bubbleMaximumSize">50</option>
         <option name="charting.chart.bubbleMinimumSize">10</option>
         <option name="charting.chart.bubbleSizeBy">area</option>
-        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.nullValueMode">zero</option>
         <option name="charting.chart.showDataLabels">none</option>
         <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
         <option name="charting.chart.stackMode">stacked</option>
@@ -155,7 +162,7 @@
       <title>IAM Role activity</title>
       <table>
         <search base="base_iam">
-          <query>search $datatag$resource.labels.project_id =$project_tok$  $datatag$resource.type=iam_role | table _time, $datatag$protoPayload.authenticationInfo.principalEmail,$datatag$protoPayload.methodName, $datatag$protoPayload.authorizationInfo{}.permission
+          <query>search $datatag$resource.labels.project_id =$project_tok$  $datatag$resource.type=iam_role $datatag$resource.labels.project_id !="-" $datatag$protoPayload.methodName!="-" | table _time, $datatag$protoPayload.authenticationInfo.principalEmail,$datatag$protoPayload.methodName, $datatag$protoPayload.authorizationInfo{}.permission
 |rename $datatag$protoPayload.authenticationInfo.principalEmail as "Principal Email",$datatag$protoPayload.methodName as "Method Name" , $datatag$protoPayload.authorizationInfo{}.permission as "Permission"</query>
         </search>
         <option name="count">10</option>
@@ -174,7 +181,7 @@
       <title>IAM role method breakdown</title>
       <chart>
         <search base="base_iam">
-          <query>search $datatag$resource.labels.project_id =$project_tok$ | stats count by $datatag$protoPayload.methodName</query>
+          <query>search $datatag$resource.labels.project_id =$project_tok$ $datatag$resource.labels.project_id !="-" $datatag$protoPayload.methodName!="-" | stats $aggregate$ by $datatag$protoPayload.methodName</query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -192,7 +199,7 @@
         <option name="charting.chart.bubbleMaximumSize">50</option>
         <option name="charting.chart.bubbleMinimumSize">10</option>
         <option name="charting.chart.bubbleSizeBy">area</option>
-        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.nullValueMode">zero</option>
         <option name="charting.chart.showDataLabels">none</option>
         <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
         <option name="charting.chart.stackMode">default</option>
@@ -213,7 +220,7 @@
       <title>Role changes by method</title>
       <chart>
         <search base="base_iam">
-          <query>search $datatag$resource.labels.project_id =$project_tok$ | timechart count by $datatag$protoPayload.methodName</query>
+          <query>search $datatag$resource.labels.project_id =$project_tok$ $datatag$resource.labels.project_id !="-" $datatag$protoPayload.methodName!="-"| timechart $aggregate$ by $datatag$protoPayload.methodName</query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -231,7 +238,7 @@
         <option name="charting.chart.bubbleMaximumSize">50</option>
         <option name="charting.chart.bubbleMinimumSize">10</option>
         <option name="charting.chart.bubbleSizeBy">area</option>
-        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.nullValueMode">zero</option>
         <option name="charting.chart.showDataLabels">none</option>
         <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
         <option name="charting.chart.stackMode">default</option>
@@ -252,7 +259,7 @@
       <title>Role changes by project</title>
       <chart>
         <search base="base_iam">
-          <query>search $datatag$resource.labels.project_id =$project_tok$ | timechart count by $datatag$resource.labels.project_id</query>
+          <query>search $datatag$resource.labels.project_id =$project_tok$ $datatag$resource.labels.project_id !="-" $datatag$protoPayload.methodName!="-"| timechart $aggregate$ by $datatag$resource.labels.project_id</query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -270,7 +277,7 @@
         <option name="charting.chart.bubbleMaximumSize">50</option>
         <option name="charting.chart.bubbleMinimumSize">10</option>
         <option name="charting.chart.bubbleSizeBy">area</option>
-        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.nullValueMode">zero</option>
         <option name="charting.chart.showDataLabels">none</option>
         <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
         <option name="charting.chart.stackMode">default</option>
@@ -293,7 +300,7 @@
       <title>Policy changes by project</title>
       <chart>
         <search base="base_iam">
-          <query>search $datatag$resource.labels.project_id =$project_tok$ $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action!="-"| timechart count by $datatag$resource.labels.project_id</query>
+          <query>search $datatag$resource.labels.project_id =$project_tok$ $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action!="-" $datatag$resource.labels.project_id !="-" $datatag$protoPayload.methodName!="-"| timechart $aggregate$ by $datatag$resource.labels.project_id</query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -311,7 +318,7 @@
         <option name="charting.chart.bubbleMaximumSize">50</option>
         <option name="charting.chart.bubbleMinimumSize">10</option>
         <option name="charting.chart.bubbleSizeBy">area</option>
-        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.nullValueMode">zero</option>
         <option name="charting.chart.showDataLabels">none</option>
         <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
         <option name="charting.chart.stackMode">default</option>
@@ -335,7 +342,7 @@
       <title>User IAM operations</title>
       <table>
         <search base="base_iam">
-          <query>search $datatag$resource.labels.project_id =$project_tok$ | stats count by $datatag$protoPayload.authenticationInfo.principalEmail | sort - count |rename $datatag$protoPayload.authenticationInfo.principalEmail as "Principal Email"</query>
+          <query>search $datatag$resource.labels.project_id =$project_tok$ $datatag$resource.labels.project_id !="-" $datatag$protoPayload.methodName!="-"| stats $aggregate$ by $datatag$protoPayload.authenticationInfo.principalEmail | sort - count |rename $datatag$protoPayload.authenticationInfo.principalEmail as "Principal Email"</query>
         </search>
         <option name="count">10</option>
         <option name="dataOverlayMode">none</option>
@@ -351,8 +358,8 @@
       <title>Role Assignments</title>
       <chart>
         <search base="base_iam">
-          <query>search $datatag$resource.labels.project_id =$project_tok$  $datatag$protoPayload.methodName=*SetIAMPolicy* $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action=REMOVE OR $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action=ADD
-          | stats count by $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action</query>
+          <query>search $datatag$resource.labels.project_id =$project_tok$  $datatag$protoPayload.methodName=*SetIAMPolicy* ($datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action=REMOVE OR $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action=ADD) $datatag$resource.labels.project_id !="-" $datatag$protoPayload.methodName!="-"
+          | stats $aggregate$ by $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action</query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -370,7 +377,7 @@
         <option name="charting.chart.bubbleMaximumSize">50</option>
         <option name="charting.chart.bubbleMinimumSize">10</option>
         <option name="charting.chart.bubbleSizeBy">area</option>
-        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.nullValueMode">zero</option>
         <option name="charting.chart.showDataLabels">none</option>
         <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
         <option name="charting.chart.stackMode">default</option>
@@ -393,7 +400,7 @@
       <title>Added roles over time</title>
       <chart>
         <search base="base_iam">
-          <query>search $datatag$resource.labels.project_id =$project_tok$ $datatag$protoPayload.methodName=*SetIAMPolicy* $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action=ADD | timechart count by $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role | fields - NULL</query>
+          <query>search $datatag$resource.labels.project_id =$project_tok$ $datatag$protoPayload.methodName=*SetIAMPolicy* $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action=ADD $datatag$resource.labels.project_id !="-" $datatag$protoPayload.methodName!="-"| timechart $aggregate$ by $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role | fields - NULL</query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -411,7 +418,7 @@
         <option name="charting.chart.bubbleMaximumSize">50</option>
         <option name="charting.chart.bubbleMinimumSize">10</option>
         <option name="charting.chart.bubbleSizeBy">area</option>
-        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.nullValueMode">zero</option>
         <option name="charting.chart.showDataLabels">none</option>
         <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
         <option name="charting.chart.stackMode">stacked</option>
@@ -433,7 +440,7 @@
       <title>Removed roles over time</title>
       <chart>
         <search base="base_iam">
-          <query>search $datatag$resource.labels.project_id =$project_tok$ $datatag$protoPayload.methodName=*SetIAMPolicy* $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action=REMOVE | timechart count by $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role | fields - NULL</query>
+          <query>search $datatag$resource.labels.project_id =$project_tok$ $datatag$protoPayload.methodName=*SetIAMPolicy* $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.action=REMOVE $datatag$resource.labels.project_id !="-" $datatag$protoPayload.methodName!="-"| timechart $aggregate$ by $datatag$protoPayload.serviceData.policyDelta.bindingDeltas{}.role | fields - NULL</query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
@@ -451,7 +458,7 @@
         <option name="charting.chart.bubbleMaximumSize">50</option>
         <option name="charting.chart.bubbleMinimumSize">10</option>
         <option name="charting.chart.bubbleSizeBy">area</option>
-        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.nullValueMode">zero</option>
         <option name="charting.chart.showDataLabels">none</option>
         <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
         <option name="charting.chart.stackMode">stacked</option>
