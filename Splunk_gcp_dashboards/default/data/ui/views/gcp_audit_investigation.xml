@@ -1,4 +1,4 @@
-<!-- v2.4-->
+<!-- v2.5-->
 <!-- Add-on 4.x -->
 <form version="1.1">
   <label>GCP Audit Investigation</label>
@@ -23,7 +23,7 @@
       |makeresults 
       |eval usetstats="|tstats fillnull_value=\"null\" count where" |eval notstats=" "
       |eval tstatstag=`tstatstag`
-      |eval tstats_post_midtag=if(tstatstag!=" "," ","| fillnull value=\"null\" _time, $datatag$resource.labels.project_id, $datatag$logName, $datatag$protoPayload.resourceName, $datatag$resource.type, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.serviceName, $datatag$protoPayload.methodName, $datatag$protoPayload.requestMetadata.callerIp, $datatag$protoPayload.requestMetadata.callerSuppliedUserAgent | stats count")
+      |eval tstats_post_midtag=if(tstatstag!=" "," ","| fillnull value=\"null\" _time, $datatag$resource.labels.project_id, $datatag$logName, $datatag$protoPayload.resourceName, $datatag$resource.type, $datatag$protoPayload.authenticationInfo.principalEmail, $datatag$protoPayload.serviceName, $datatag$protoPayload.methodName, $datatag$protoPayload.requestMetadata.callerIp, $datatag$protoPayload.requestMetadata.callerSuppliedUserAgent | bin span=$secs_for_bin$s _time | stats count")
       |eval tstats_post_endtag=if(tstatstag!=" ", "span=$secs_for_bin$s", "")
     </query>
     <done>
@@ -271,7 +271,7 @@
       <chart>
         <search base="annotations" type="annotation"></search>
         <search base="audit_selection_base">
-          <query>search LogName=$project_tok$* AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)| timechart span=$secs_for_bin$s sum(count) by $by_token$ limit=20</query>
+          <query>search $by_token$!=null LogName=$project_tok$* AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)| timechart span=$secs_for_bin$s sum(count) by $by_token$ limit=20</query>
         </search>
         <selection>
           <set token="selection.earliest">$start$</set>
@@ -320,7 +320,7 @@
       <title>Email Principal</title>
       <chart>
         <search base="audit_selection_base">
-          <query>search LogName=$project_tok$* AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)| timechart span=$secs_for_bin$s sum(count) by Email limit=10</query>
+          <query>search Email!=null LogName=$project_tok$* AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)| timechart span=$secs_for_bin$s sum(count) by Email limit=10</query>
         </search>
         <option name="charting.chart">column</option>
         <option name="charting.chart.stackMode">stacked</option>
@@ -335,7 +335,7 @@
       <title>User Agent</title>
       <chart>
         <search base="audit_selection_base">
-          <query>search LogName=$project_tok$* AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)| timechart span=$secs_for_bin$s sum(count) by UserAgent limit=10</query>
+          <query>search UserAgent!=null LogName=$project_tok$* AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)| timechart span=$secs_for_bin$s sum(count) by UserAgent limit=10</query>
         </search>
         <option name="charting.chart">column</option>
         <option name="charting.chart.stackMode">stacked100</option>
@@ -350,7 +350,7 @@
       <title>Caller IP</title>
       <chart>
         <search base="audit_selection_base">
-          <query>search LogName=$project_tok$* AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)| timechart span=$secs_for_bin$s sum(count) by CallerIP limit=10</query>
+          <query>search CallerIP!=null LogName=$project_tok$* AND sourcetype IN ($sourcetype_tok$) AND LogName IN ($logname_tok$) AND Email IN ($email_tok$) AND ServiceName IN ($service_tok$) AND ResourceName IN ($name_tok$) AND ResourceType IN ($type_tok$) AND MethodName IN ($method_tok$)| timechart span=$secs_for_bin$s sum(count) by CallerIP limit=10</query>
         </search>
         <option name="charting.chart">column</option>
         <option name="charting.chart.stackMode">stacked100</option>
