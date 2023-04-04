@@ -1,4 +1,4 @@
-<!-- v2.2-->
+<!-- v2.3-->
 <!-- Add-on 4.x -->
 <form version="1.1">
   <label>GCP VPC Overview Dashboard</label>
@@ -24,9 +24,9 @@
       |eval tstatstag=`tstatstag`
  
   
-      |eval stats_count=if(tstatstag=="No", "| fillnull  $datatag$jsonPayload.src_vpc.vpc_name $datatag$resource.labels.subnetwork_name $datatag$jsonPayload.src_instance.vm_name $datatag$jsonPayload.connection.src_ip  $datatag$jsonPayload.dest_vpc.vpc_name $datatag$jsonPayload.dest_instance.vm_name $datatag$jsonPayload.connection.dest_ip $datatag$jsonPayload.bytes_sent $datatag$jsonPayload.packets_sent |bin span=$secs_for_bin$s _time  |stats count as counter sum($datatag$jsonPayload.packets_sent) as total_packets_sent sum($datatag$jsonPayload.bytes_sent) as total_bytes dc($datatag$jsonPayload.connection.src_ip) as Sources dc($datatag$jsonPayload.connection.dest_ip) as Dest ", "")
+      |eval stats_count=if(tstatstag=="No", "| fillnull  $datatag$jsonPayload.src_vpc.vpc_name $datatag$resource.labels.subnetwork_name $datatag$jsonPayload.src_instance.vm_name $datatag$jsonPayload.connection.src_ip  $datatag$jsonPayload.dest_vpc.vpc_name $datatag$jsonPayload.dest_instance.vm_name $datatag$jsonPayload.connection.dest_ip $datatag$jsonPayload.bytes_sent $datatag$jsonPayload.packets_sent |bin span=$secs_for_bin$s _time  |stats count as counter sum($datatag$jsonPayload.packets_sent) as total_packets_sent sum($datatag$jsonPayload.bytes_sent) as total_bytes dc($datatag$jsonPayload.connection.src_ip) as Sources dc($datatag$jsonPayload.connection.dest_ip) as Dest dc($datatag$jsonPayload.connection.protocol) as Protocols ", "")
       
-      |eval tstats_count=if(tstatstag=="Yes", "|tstats  fillnull_value=\"-null-\" count as counter sum($datatag$jsonPayload.packets_sent) as total_packets_sent sum($datatag$jsonPayload.bytes_sent) as total_bytes dc($datatag$jsonPayload.connection.src_ip) as Sources dc($datatag$jsonPayload.connection.dest_ip) as Dest where","")
+      |eval tstats_count=if(tstatstag=="Yes", "|tstats  fillnull_value=\"-null-\" count as counter sum($datatag$jsonPayload.packets_sent) as total_packets_sent sum($datatag$jsonPayload.bytes_sent) as total_bytes dc($datatag$jsonPayload.connection.src_ip) as Sources dc($datatag$jsonPayload.connection.dest_ip) as Dest  where","")
       
       |eval tstats_span=if(tstatstag=="Yes", "span=$secs_for_bin$s","")
       
@@ -48,7 +48,7 @@
   
   <search id="base_vpc">
     <query>
-    $tstats_count$ `gcp_index` (`gcp_sourcetype_platform` OR sourcetype=google:gcp:compute:vpc_flows) TERM("*compute.googleapis.com%2Fvpc_flows") $stats_count$ by _time, $datatag$logName, $datatag$resource.labels.project_id, $datatag$resource.labels.location, $datatag$jsonPayload.src_vpc.vpc_name, $datatag$resource.labels.subnetwork_name, $datatag$jsonPayload.src_instance.vm_name, $datatag$jsonPayload.connection.src_ip,  $datatag$jsonPayload.dest_vpc.vpc_name, $datatag$jsonPayload.dest_instance.vm_name, $datatag$jsonPayload.connection.dest_ip $tstats_span$
+    $tstats_count$ `gcp_index` (`gcp_sourcetype_platform` OR sourcetype=google:gcp:compute:vpc_flows) TERM("*compute.googleapis.com%2Fvpc_flows") $stats_count$ by _time, $datatag$logName, $datatag$resource.labels.project_id, $datatag$resource.labels.location, $datatag$jsonPayload.src_vpc.vpc_name, $datatag$resource.labels.subnetwork_name, $datatag$jsonPayload.src_instance.vm_name, $datatag$jsonPayload.connection.src_ip,  $datatag$jsonPayload.dest_vpc.vpc_name, $datatag$jsonPayload.dest_instance.vm_name, $datatag$jsonPayload.connection.dest_ip, $datatag$jsonPayload.connection.protocol $tstats_span$
     </query>
     <earliest>$TimeRangePicker.earliest$</earliest>
     <latest>$TimeRangePicker.latest$</latest>
@@ -210,6 +210,50 @@
         <search base="sub_vpc_search">
           <query>| search $datatag$jsonPayload.connection.src_ip!="-null-" $datatag$jsonPayload.connection.src_ip!=0
 |timechart count(counter) by $datatag$jsonPayload.connection.src_ip useother=f</query>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>VPC Protocols</title>
+      <chart>
+        <search base="sub_vpc_search">
+          <query>| search $datatag$jsonPayload.connection.protocol!="-null-" $datatag$jsonPayload.connection.protocol!=0
+          |rename $datatag$jsonPayload.connection.protocol as Decimal
+|lookup protocol-numbers.csv Decimal output Keyword |rename Keyword as Protocol
+|timechart count(counter) by Protocol useother=f
+          </query>
         </search>
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
