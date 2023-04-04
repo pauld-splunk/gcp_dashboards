@@ -1,4 +1,4 @@
-<!-- v2.1-->
+<!-- v2.2-->
 <!-- Add-on 4.x -->
 <form version="1.1">
   <label>GCP VPC Overview Dashboard</label>
@@ -30,6 +30,7 @@
       
       |eval tstats_span=if(tstatstag=="Yes", "span=$secs_for_bin$s","")
       
+      | eval field_in_hhmmss=tostring($secs_for_bin$, "duration")
       
     </query>
     <done>
@@ -40,6 +41,8 @@
       <set token="count_type">$result.count_type$</set>
       <set token="by_type">$result.by_type$</set>
       <set token="by_email">$result.by_email$</set>
+      
+      <set token="field_in_hhmmss">$result.field_in_hhmmss$</set>
     </done>
   </search>
   
@@ -149,7 +152,7 @@
   </fieldset>
   <row>
     <panel>
-      <title>Total Traffic (GB)</title>
+      <title>Total Traffic (GB/$field_in_hhmmss$)</title>
       <single>
         <search base="sub_vpc_search">
           <query>
@@ -166,7 +169,7 @@
       </single>
     </panel>
     <panel>
-      <title>Total Packets</title>
+      <title>Total Packets (per $field_in_hhmmss$)</title>
       <single>
         <search base="sub_vpc_search">
           <query>
@@ -179,7 +182,7 @@
       </single>
     </panel>
     <panel>
-      <title>Sources</title>
+      <title>Sources (per $field_in_hhmmss$)</title>
       <single>
         <search base="sub_vpc_search">
           <query>search $datatag$jsonPayload.connection.src_ip!="-null-" |stats dc($datatag$jsonPayload.connection.src_ip) as Sources   by _time |timechart sum(Sources)</query>
@@ -189,7 +192,7 @@
       </single>
     </panel>
     <panel>
-      <title>Destinations</title>
+      <title>Destinations (per $field_in_hhmmss$)</title>
       <single>
         <search base="sub_vpc_search">
           <query>search $datatag$jsonPayload.connection.dest_ip!="-null-" |stats dc("$datatag$jsonPayload.connection.dest_ip") as Dest  by _time | timechart sum(Dest)</query>
