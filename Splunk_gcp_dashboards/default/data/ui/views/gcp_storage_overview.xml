@@ -1,4 +1,4 @@
-<!-- gcp_storage_overview v1.6-->
+<!-- gcp_storage_overview v1.7-->
 <form version="1.1">
   <label>GCP Storage Overview</label>
 
@@ -133,8 +133,8 @@
     <input type="time" token="time_tok" searchWhenChanged="true">
       <label>Time Range</label>
       <default>
-        <earliest>-24h@h</earliest>
-        <latest>now</latest>
+        <earliest>$time_tok.earliest$</earliest>
+        <latest>$time_tok.latest$</latest>
       </default>
     </input>
     <input type="dropdown" token="project_id_tok" searchWhenChanged="true">
@@ -196,8 +196,8 @@
 |dedup diskval
 |eval count=mvcount(diskval)
 |stats count by Zone</query>
-          <earliest>-6h@m</earliest>
-          <latest>now</latest>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
         </search>
         <option name="charting.chart">pie</option>
         <option name="charting.drilldown">none</option>
@@ -228,8 +228,8 @@
           |stats count by latest(Size)
           |rename latest(Size) as Size -->
           </query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
         </search>
         <option name="charting.chart">column</option>
         <option name="charting.drilldown">none</option>
@@ -249,8 +249,8 @@
 |rename resource.data.type as sType 
 | eval Type=replace(sType,"\S+diskTypes\/(\S+)","\1")
 |stats count by Type</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
         </search>
         <option name="charting.chart">pie</option>
         <option name="charting.drilldown">none</option>
@@ -296,8 +296,8 @@
 |fields diskName
 |fields - _*
 ]</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
         </search>
         <option name="drilldown">none</option>
         <option name="refresh.display">progressbar</option>
@@ -330,8 +330,8 @@
 |table ProjectID, resource.data.id, resource.data.location, resource.data.locationType, resource.data.storageClass, resource.data.retentionPolicy.retentionPeriod, resource.data.retentionPolicy.effectiveTime, resource.data.retentionPolicy.isLocked
 |rename resource.data.location as Location, resource.data.locationType as "Location Type", resource.data.storageClass as "Storage Class", resource.data.retentionPolicy.retentionPeriod as "Retention Period", resource.data.retentionPolicy.effectiveTime as "Retention Effective Time", resource.data.retentionPolicy.isLocked as "Retention Policy Locked" -->
           </query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
+          <earliest>$time_tok.earliest$</earliest>
+          <latest>$time_tok.latest$</latest>
           <sampleRatio>1</sampleRatio>
         </search>
         <option name="count">20</option>

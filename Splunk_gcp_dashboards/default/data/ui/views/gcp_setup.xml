@@ -247,6 +247,14 @@ INDEXED_EXTRACTIONS = json
 TRUNCATE = 3000000
 CHARSET=UTF-8
 <br/>
+[google:gcp:pubsub:platform]
+AUTO_KV_JSON = false
+KV_MODE = none
+INDEXED_EXTRACTIONS = json
+TRUNCATE = 3000000
+CHARSET=UTF-8
+<br/>
+
 [google:gcp:compute:vpc_flows]
 INDEXED_EXTRACTIONS = json
 AUTO_KV_JSON = false
