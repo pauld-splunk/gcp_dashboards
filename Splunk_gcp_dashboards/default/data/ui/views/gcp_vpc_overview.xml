@@ -250,8 +250,8 @@
       <chart>
         <search base="sub_vpc_search">
           <query>| search $datatag$jsonPayload.connection.protocol!="-null-" $datatag$jsonPayload.connection.protocol!=0
-          |rename $datatag$jsonPayload.connection.protocol as Decimal
-|lookup protocol-numbers.csv Decimal output Keyword |rename Keyword as Protocol
+          |rename $datatag$jsonPayload.connection.protocol as protocol_code
+|lookup gcp_vpcflow_protocol_code_lookup.csv protocol_code output transport |rename transport as Protocol
 |timechart count(counter) by Protocol useother=f
           </query>
         </search>

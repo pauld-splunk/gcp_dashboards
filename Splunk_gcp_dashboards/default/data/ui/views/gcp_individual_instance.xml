@@ -1,4 +1,4 @@
-<!-- v2.6-->
+<!-- v2.7-->
 <!-- Add-on 4.x -->
 <form version="1.1">
   <label>GCP Single Instance Details</label>
@@ -259,7 +259,7 @@
 | spath output=disks path=resource.data.disks{}
 |rename resource.data.sourceImage as sourceImage
 |head 1
-| rex max_match=20 field=disks "\{\"autoDelete\":(?&lt;autoDelete&gt;[^,]+),\"boot\":(?&lt;boot&gt;[^,]+),\"deviceName\":\"(?&lt;deviceName&gt;[^\"]+)\",\"diskSizeGb\":\"(?&lt;size&gt;\d+)\"\S+\"index\":(?&lt;diskNumber&gt;\d+),\"interface\":\"(?&lt;interface&gt;[^\"]+)\",\S*\"mode\":\"(?&lt;mode&gt;[^\"]+)\",\S*\"source\"\S*\"type\":\"(?&lt;type&gt;[^\"]+)\"\}"
+| rex max_match=20 field=disks "\{\"architecture\":\"(?&lt;architecture&gt;[^,]+)\",\"autoDelete\":(?&lt;autoDelete&gt;[^,]+),\"boot\":(?&lt;boot&gt;[^,]+),\"deviceName\":\"(?&lt;deviceName&gt;[^\"]+)\",\"diskSizeGb\":\"(?&lt;size&gt;\d+)\"\S+\"index\":(?&lt;diskNumber&gt;\d+),\"interface\":\"(?&lt;interface&gt;[^\"]+)\",\S*\"mode\":\"(?&lt;mode&gt;[^\"]+)\",\S*\"source\"\S*\"type\":\"(?&lt;type&gt;[^\"]+)\"\}"
 |table diskNumber,deviceName,boot,size,autoDelete,interface,mode,type</query>
           <earliest>-7h</earliest>
           <latest>now</latest>
